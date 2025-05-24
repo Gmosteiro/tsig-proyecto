@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer } from 'react-leaflet'
+import { MapContainer, TileLayer, WMSTileLayer } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import StopMarker from '../components/map/StopMarker'
 import useMapData from '../hooks/useMapData'
@@ -23,6 +23,13 @@ export default function MapPage() {
                     <TileLayer
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         attribution="&copy; OpenStreetMap contributors"
+                    />
+                    <WMSTileLayer
+                        key="ft-caminera" // fuerza el remount si cambias el valor
+                        url="http://localhost:8080/geoserver/wms"
+                        layers="tsig:ft_caminera_nacional"
+                        format="image/png"
+                        transparent={true}
                     />
                     {stops && stops.map(stop => (
                         <StopMarker key={stop.id} stop={stop} />
