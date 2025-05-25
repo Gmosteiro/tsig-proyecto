@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, WMSTileLayer } from 'react-leaflet'
+import { MapContainer, TileLayer, WMSTileLayer, LayersControl } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import StopMarker from '../components/map/StopMarker'
 import useMapData from '../hooks/useMapData'
@@ -20,20 +20,32 @@ export default function MapPage() {
                     style={{ height: '80vh', width: '100%' }}
                 >
                     <StopForm />
-                    <TileLayer
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        attribution="&copy; OpenStreetMap contributors"
-                    /> {/* //No borar mapa base :) */}
-                    <WMSTileLayer
-                        key="ft-caminera" // fuerza el remount si cambias el valor
-                        url='http://localhost:8080/geoserver/wms' //"/geoserver/wms"// Checkear proxy
-                        layers="tsig:ft_caminera_nacional"
-                        format="image/png"
-                        transparent={true}
-                        tileSize={256}
-                        updateWhenZooming={false}
-                        updateWhenIdle={true}
-                    />
+                    <LayersControl position="topright">
+                        <LayersControl.BaseLayer checked name="OpenStreetMap">
+                            <TileLayer
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                attribution="&copy; OpenStreetMap contributors"
+                            />
+                        </LayersControl.BaseLayer>
+                        <LayersControl.BaseLayer name="Caminera Nacional">
+                            <WMSTileLayer
+                                url='http://localhost:8080/geoserver/wms'
+                                layers="tsig:ft_caminera_nacional"
+                                format="image/png"
+                                transparent={true}
+                                tileSize={256}
+                            />
+                        </LayersControl.BaseLayer>
+                        <LayersControl.BaseLayer name="Otra Capa">
+                            <WMSTileLayer
+                                url='http://localhost:8080/geoserver/wms'
+                                layers="tsig:otra_capa"
+                                format="image/png"
+                                transparent={true}
+                                tileSize={256}
+                            />
+                        </LayersControl.BaseLayer>
+                    </LayersControl>
                     {stops && stops.map(stop => (
                         <StopMarker key={stop.id} stop={stop} />
                     ))}

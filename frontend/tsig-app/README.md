@@ -8,5 +8,5 @@ npm run dev
 
 # Para recompilar
 
-docker-compose build backend
-docker-compose up -d backend
+docker-compose build frontend
+docker-compose up -d frontend
