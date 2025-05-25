@@ -25,11 +25,15 @@ export default function MapPage() {
                         attribution="&copy; OpenStreetMap contributors"
                     />
                     <WMSTileLayer
-                        key="ft-caminera" // fuerza el remount si cambias el valor
+                        key="ft-caminera"
                         url="http://localhost:8080/geoserver/wms"
                         layers="tsig:ft_caminera_nacional"
                         format="image/png"
                         transparent={true}
+                        tileSize={256}
+                        errorTileUrl="https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg" // optional, for debugging
+                        updateWhenZooming={false}
+                        updateWhenIdle={true}
                     />
                     {stops && stops.map(stop => (
                         <StopMarker key={stop.id} stop={stop} />
