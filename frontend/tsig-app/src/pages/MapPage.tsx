@@ -31,7 +31,6 @@ export default function MapPage() {
                         format="image/png"
                         transparent={true}
                         tileSize={256}
-                        errorTileUrl="https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg" // optional, for debugging
                         updateWhenZooming={false}
                         updateWhenIdle={true}
                     />
