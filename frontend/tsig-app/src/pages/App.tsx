@@ -1,5 +1,4 @@
 // src/App.tsx
-import '../assets/leafletDefaultIconFix'
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "../pages/LoginPage";
 import { useAuth } from "../context/authContext";

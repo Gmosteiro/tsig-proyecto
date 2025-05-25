@@ -26,7 +26,7 @@ export default function MapPage() {
                     />
                     <WMSTileLayer
                         key="ft-caminera" // fuerza el remount si cambias el valor
-                        url="http://localhost:8080/geoserver/wms"
+                        url="/geoserver/wms"
                         layers="tsig:ft_caminera_nacional"
                         format="image/png"
                         transparent={true}
