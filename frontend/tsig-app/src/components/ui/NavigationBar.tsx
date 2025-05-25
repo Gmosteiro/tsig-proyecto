@@ -50,7 +50,7 @@ const NavigationBar: React.FC = () => {
                     onClick={handleLogin}
                     className="bg-white text-blue-700 border-none rounded px-4 py-2 cursor-pointer font-bold shadow hover:bg-blue-50 transition-colors duration-200"
                 >
-                    Login
+                    Login Anacletico
                 </button>
             )}
         </nav>
