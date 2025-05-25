@@ -1,5 +1,5 @@
 # Variables
-GEOSERVER_URL="http://geoserver:8080/geoserver/rest"
+GEOSERVER_URL="http://localhost:8080/geoserver/rest"
 USER="admin"
 PASS="geoserver"
 

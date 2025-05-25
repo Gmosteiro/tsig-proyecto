@@ -30,6 +30,10 @@ export default function MapPage() {
                         layers="tsig:ft_caminera_nacional"
                         format="image/png"
                         transparent={true}
+                        tileSize={256}
+                        errorTileUrl="https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg" // optional, for debugging
+                        updateWhenZooming={false}
+                        updateWhenIdle={true}
                     />
                     {stops && stops.map(stop => (
                         <StopMarker key={stop.id} stop={stop} />

@@ -10,7 +10,6 @@ services:
             - "5433:5432" # <-- Cambiado a 5433 para evitar conflicto
         volumes:
             - postgis_data:/var/lib/postgresql/data
-            - ./backend/scripts/postgis:/docker-entrypoint-initdb.d
         healthcheck:
             test: ["CMD-SHELL", "pg_isready -U gisuser -d gisdb"]
             interval: 10s
@@ -48,14 +47,6 @@ services:
             - "3000:5173"
         depends_on:
             - backend
-
-    geoserver-init:
-        image: curlimages/curl:latest
-        depends_on:
-            - geoserver
-        entrypoint: ["/bin/sh", "-c", "sleep 30 && /scripts/geoserver-setup.sh"]
-        volumes:
-            - ./backend/scripts/geoserver/geoserver-setup.sh:/scripts/geoserver-setup.sh:ro
 
 volumes:
     postgis_data:
