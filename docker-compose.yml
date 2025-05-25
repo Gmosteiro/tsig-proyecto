@@ -1,49 +1,47 @@
-version: "3.8"
-
 services:
-  postgis:
-    image: postgis/postgis:15-3.3
-    platform: linux/amd64 # <-- Forzar arquitectura si estás en Mac M1/M2
-    environment:
-      POSTGRES_DB: gisdb
-      POSTGRES_USER: gisuser
-      POSTGRES_PASSWORD: secret
-    ports:
-      - "5433:5432" # <-- Cambiado a 5433 para evitar conflicto
-    volumes:
-      - postgis_data:/var/lib/postgresql/data
+    postgis:
+        image: postgis/postgis:15-3.3
+        platform: linux/amd64 # <-- Forzar arquitectura si estás en Mac M1/M2
+        environment:
+            POSTGRES_DB: gisdb
+            POSTGRES_USER: gisuser
+            POSTGRES_PASSWORD: secret
+        ports:
+            - "5433:5432" # <-- Cambiado a 5433 para evitar conflicto
+        volumes:
+            - postgis_data:/var/lib/postgresql/data
 
-  geoserver:
-    image: kartoza/geoserver
-    platform: linux/amd64 # <-- También forzar arquitectura
-    environment:
-      GEOSERVER_ADMIN_USER: admin
-      GEOSERVER_ADMIN_PASSWORD: geoserver
-    ports:
-      - "8080:8080"
-    volumes:
-      - geoserver_data:/opt/geoserver_data
+    geoserver:
+        image: kartoza/geoserver
+        platform: linux/amd64 # <-- También forzar arquitectura
+        environment:
+            GEOSERVER_ADMIN_USER: admin
+            GEOSERVER_ADMIN_PASSWORD: geoserver
+        ports:
+            - "8080:8080"
+        volumes:
+            - geoserver_data:/opt/geoserver_data
 
-  backend:
-    build:
-      context: ./backend
-    ports:
-      - "8081:8080"
-    depends_on:
-      - postgis
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgis:5432/gisdb # Mantener así (NO localhost)
-      SPRING_DATASOURCE_USERNAME: gisuser
-      SPRING_DATASOURCE_PASSWORD: secret
+    backend:
+        build:
+            context: ./backend
+        ports:
+            - "8081:8080"
+        depends_on:
+            - postgis
+        environment:
+            SPRING_DATASOURCE_URL: jdbc:postgresql://postgis:5432/gisdb # Mantener así (NO localhost)
+            SPRING_DATASOURCE_USERNAME: gisuser
+            SPRING_DATASOURCE_PASSWORD: secret
 
-  frontend:
-    build:
-      context: ./frontend/tsig-app
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
+    frontend:
+        build:
+            context: ./frontend/tsig-app
+        ports:
+            - "3000:80"
+        depends_on:
+            - backend
 
 volumes:
-  postgis_data:
-  geoserver_data:
+    postgis_data:
+    geoserver_data:
