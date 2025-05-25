@@ -23,10 +23,10 @@ export default function MapPage() {
                     <TileLayer
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         attribution="&copy; OpenStreetMap contributors"
-                    />
+                    /> {/* //No borar mapa base :) */}
                     <WMSTileLayer
                         key="ft-caminera" // fuerza el remount si cambias el valor
-                        url="/geoserver/wms"
+                        url='http://localhost:8080/geoserver/wms' //"/geoserver/wms"// Checkear proxy
                         layers="tsig:ft_caminera_nacional"
                         format="image/png"
                         transparent={true}
