@@ -1,19 +1,65 @@
-import { MapContainer, TileLayer, WMSTileLayer, LayersControl } from 'react-leaflet'
+import { MapContainer, TileLayer, WMSTileLayer, LayersControl, Marker, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import StopMarker from '../components/map/StopMarker'
 import useMapData from '../hooks/useMapData'
 import NavigationBar from '../components/ui/NavigationBar'
 import Footer from '../components/ui/Footer'
 import StopForm from '../components/map/StopForm'
+import { useState } from 'react'
+import L from 'leaflet'
 
+function AddPointControl({ onAddPoint }) {
+    useMapEvents({
+        click(e) {
+            onAddPoint([e.latlng.lat, e.latlng.lng])
+        }
+    })
+    return null
+}
 
 export default function MapPage() {
     const { stops } = useMapData()
+    const [adding, setAdding] = useState(false)
+    const [points, setPoints] = useState([])
+
+    const handleAddPoint = (latlng) => {
+        setPoints(prev => [...prev, latlng])
+    }
+
+    const handleUndo = () => {
+        setPoints(prev => prev.slice(0, -1))
+    }
+
+    const handleSubmit = () => {
+        console.log('Submitted points:', points)
+    }
 
     return (
         <div className="flex flex-col min-h-screen">
             <NavigationBar />
             <main className="flex-1">
+                <div className="flex gap-2 p-2">
+                    <button
+                        className={`px-3 py-1 rounded ${adding ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+                        onClick={() => setAdding(a => !a)}
+                    >
+                        {adding ? 'Adding: Click map' : 'Add Point'}
+                    </button>
+                    <button
+                        className="px-3 py-1 rounded bg-yellow-200"
+                        onClick={handleUndo}
+                        disabled={points.length === 0}
+                    >
+                        Control Z
+                    </button>
+                    <button
+                        className="px-3 py-1 rounded bg-green-500 text-white"
+                        onClick={handleSubmit}
+                        disabled={points.length === 0}
+                    >
+                        Submit
+                    </button>
+                </div>
                 <MapContainer
                     center={[-34.9011, -56.1645]}
                     zoom={13}
@@ -46,17 +92,22 @@ export default function MapPage() {
                                 tileSize={256}
                             />
                         </LayersControl.Overlay>
-
-                        {/* <LayersControl.BaseLayer name="Otra Capa">
-                            <WMSTileLayer
-                                url='http://localhost:8080/geoserver/wms'
-                                layers="tsig:otra_capa"
-                                format="image/png"
-                                transparent={true}
-                                tileSize={256}
-                            />
-                        </LayersControl.BaseLayer> */}
                     </LayersControl>
+                    {adding && <AddPointControl onAddPoint={handleAddPoint} />}
+                    {points.map((latlng, idx) => (
+                        <Marker
+                            key={idx}
+                            position={latlng}
+                            icon={L.icon({
+                                iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+                                iconSize: [25, 41],
+                                iconAnchor: [12, 41],
+                                popupAnchor: [1, -34],
+                                shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+                                shadowSize: [41, 41]
+                            })}
+                        />
+                    ))}
                     {stops && stops.map(stop => (
                         <StopMarker key={stop.id} stop={stop} />
                     ))}
