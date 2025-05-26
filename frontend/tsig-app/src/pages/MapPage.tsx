@@ -36,6 +36,17 @@ export default function MapPage() {
                                 tileSize={256}
                             />
                         </LayersControl.Overlay>
+                        <LayersControl.Overlay name="Paradas">
+                            <WMSTileLayer
+                                url='http://localhost:8080/geoserver/wms'
+                                layers="tsig:parada"
+                                styles="Parada"
+                                format="image/png"
+                                transparent={true}
+                                tileSize={256}
+                            />
+                        </LayersControl.Overlay>
+
                         {/* <LayersControl.BaseLayer name="Otra Capa">
                             <WMSTileLayer
                                 url='http://localhost:8080/geoserver/wms'
