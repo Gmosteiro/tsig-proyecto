@@ -1,14 +1,12 @@
 package com.example.tsigback.controller;
 
 import com.example.tsigback.entities.dtos.ParadaDTO;
+import com.example.tsigback.exception.ParadaLejosDeRutaException;
 import com.example.tsigback.service.ParadaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/parada")
@@ -25,8 +23,22 @@ public class ParadaController {
             }
             paradaService.altaParada(paradaDTO);
             return ResponseEntity.ok("La parada se ha creado correctamente");
+        } catch (ParadaLejosDeRutaException paradaLejosDeRutaException) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(paradaLejosDeRutaException.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
+
+//    @PutMapping("/modificar/{latitud}/{longitud}")
+//    public ResponseEntity<String> modificarParada(@PathVariable double latitud, @PathVariable double longitud) {
+//        try{
+//            if (paradaDTO == null) {
+//                return new ResponseEntity<>("Parada nula", HttpStatus.BAD_REQUEST);
+//            }
+//
+//
+//
+//        }
+//    }
 }

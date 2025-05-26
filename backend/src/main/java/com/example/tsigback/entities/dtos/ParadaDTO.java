@@ -14,8 +14,6 @@ public class ParadaDTO {
     private EstadoParada estado;
     private boolean refugio;
     private String observacion;
-
-    //El punto a crear
     private double latitud;
     private double longitud;
 }
