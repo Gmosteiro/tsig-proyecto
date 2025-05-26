@@ -20,14 +20,14 @@ export default function MapPage() {
                     style={{ height: '80vh', width: '100%' }}
                 >
                     <StopForm />
-                    <LayersControl position="topright">
-                        <LayersControl.BaseLayer checked name="OpenStreetMap">
+                    <LayersControl position="bottomright">
+                        <LayersControl.BaseLayer checked name="Mapa Base">
                             <TileLayer
                                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                                 attribution="&copy; OpenStreetMap contributors"
                             />
                         </LayersControl.BaseLayer>
-                        <LayersControl.BaseLayer name="Caminera Nacional">
+                        <LayersControl.Overlay name="Caminera Nacional">
                             <WMSTileLayer
                                 url='http://localhost:8080/geoserver/wms'
                                 layers="tsig:ft_caminera_nacional"
@@ -35,8 +35,19 @@ export default function MapPage() {
                                 transparent={true}
                                 tileSize={256}
                             />
-                        </LayersControl.BaseLayer>
-                        <LayersControl.BaseLayer name="Otra Capa">
+                        </LayersControl.Overlay>
+                        <LayersControl.Overlay name="Paradas">
+                            <WMSTileLayer
+                                url='http://localhost:8080/geoserver/wms'
+                                layers="tsig:parada"
+                                styles="Parada"
+                                format="image/png"
+                                transparent={true}
+                                tileSize={256}
+                            />
+                        </LayersControl.Overlay>
+
+                        {/* <LayersControl.BaseLayer name="Otra Capa">
                             <WMSTileLayer
                                 url='http://localhost:8080/geoserver/wms'
                                 layers="tsig:otra_capa"
@@ -44,7 +55,7 @@ export default function MapPage() {
                                 transparent={true}
                                 tileSize={256}
                             />
-                        </LayersControl.BaseLayer>
+                        </LayersControl.BaseLayer> */}
                     </LayersControl>
                     {stops && stops.map(stop => (
                         <StopMarker key={stop.id} stop={stop} />
