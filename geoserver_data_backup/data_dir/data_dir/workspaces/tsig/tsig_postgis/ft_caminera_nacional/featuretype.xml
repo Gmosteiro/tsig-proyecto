@@ -1,0 +1,41 @@
+<featureType>
+  <id>FeatureTypeInfoImpl-6de0af8c:19709c42a0b:-7ffd</id>
+  <name>ft_caminera_nacional</name>
+  <nativeName>ft_caminera_nacional</nativeName>
+  <namespace>
+    <id>NamespaceInfoImpl-6de0af8c:19709c42a0b:-7fff</id>
+  </namespace>
+  <title>ft_caminera_nacional</title>
+  <keywords>
+    <string>features</string>
+    <string>ft_caminera_nacional</string>
+  </keywords>
+  <srs>EPSG:4326</srs>
+  <nativeBoundingBox>
+    <minx>-58.42906188964844</minx>
+    <maxx>-53.2059326171875</maxx>
+    <miny>-34.97285842895508</miny>
+    <maxy>-30.112865447998047</maxy>
+    <crs>EPSG:4326</crs>
+  </nativeBoundingBox>
+  <latLonBoundingBox>
+    <minx>-58.42906188964844</minx>
+    <maxx>-53.2059326171875</maxx>
+    <miny>-34.97285842895508</miny>
+    <maxy>-30.112865447998047</maxy>
+    <crs>EPSG:4326</crs>
+  </latLonBoundingBox>
+  <projectionPolicy>FORCE_DECLARED</projectionPolicy>
+  <enabled>true</enabled>
+  <store class="dataStore">
+    <id>DataStoreInfoImpl-6de0af8c:19709c42a0b:-7ffe</id>
+  </store>
+  <serviceConfiguration>false</serviceConfiguration>
+  <maxFeatures>0</maxFeatures>
+  <numDecimals>0</numDecimals>
+  <padWithZeros>false</padWithZeros>
+  <forcedDecimal>false</forcedDecimal>
+  <overridingServiceSRS>false</overridingServiceSRS>
+  <skipNumberMatched>false</skipNumberMatched>
+  <circularArcPresent>false</circularArcPresent>
+</featureType>
