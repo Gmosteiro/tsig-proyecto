@@ -119,6 +119,15 @@ export default function MapPage() {
                                 tileSize={256}
                             />
                         </LayersControl.Overlay>
+                        <LayersControl.Overlay name="Departamentos">
+                            <WMSTileLayer
+                                url='http://localhost:8080/geoserver/wms'
+                                layers="tsig:ft_departamentos"
+                                format="image/png"
+                                transparent={true}
+                                tileSize={256}
+                            />
+                        </LayersControl.Overlay>
                     </LayersControl>
                     {adding && <AddPointControl onAddPoint={handleAddPoint} />}
                     {points.map((latlng, idx) => (
