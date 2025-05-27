@@ -47,7 +47,7 @@ public class RoutingRepository {
             "  FROM pgr_dijkstraVia( " +
             "    'SELECT id, source, target, cost, reverse_cost FROM ft_caminera_nacional_edges', " +
             "    ARRAY[" + viaNodes + "], " +
-            "    directed := false " +
+            "    directed := true " +
             "  )" +
             ")";
 

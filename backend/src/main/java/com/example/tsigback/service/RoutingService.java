@@ -28,6 +28,9 @@ public class RoutingService {
             if (dist > MAX_DIST) {
                 throw new IllegalArgumentException("One or more points are more than 100 meters from the route.");
             }
+            if (nodeId == null) {
+                throw new IllegalArgumentException("No nearby node found for point (" + pt.getLat() + ", " + pt.getLon() + ").");
+            }
             nodeIds.add(nodeId);
         }
 
