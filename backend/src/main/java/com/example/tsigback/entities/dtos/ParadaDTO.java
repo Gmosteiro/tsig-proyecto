@@ -9,7 +9,6 @@ import lombok.Data;
 @Builder
 @AllArgsConstructor
 public class ParadaDTO {
-
     private String nombre;
     private EstadoParada estado;
     private boolean refugio;

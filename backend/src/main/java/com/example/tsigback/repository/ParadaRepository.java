@@ -14,7 +14,7 @@ public interface ParadaRepository extends JpaRepository<Parada, Integer> {
     FROM ft_caminera_nacional
     WHERE ST_DWithin(
         ST_Transform(geom, 3857),
-        ST_Transform(CAST(:punto AS geometry), 3857),
+        ST_Transform(:punto , 3857),
         :distancia
     )
     """, nativeQuery = true)
