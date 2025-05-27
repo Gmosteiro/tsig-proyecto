@@ -1,0 +1,21 @@
+<dataStore>
+  <id>DataStoreInfoImpl--5b0256c0:1970f882771:-8000</id>
+  <name>tsig_postgis</name>
+  <type>PostGIS</type>
+  <enabled>true</enabled>
+  <workspace>
+    <id>WorkspaceInfoImpl-6de0af8c:19709c42a0b:-8000</id>
+  </workspace>
+  <connectionParameters>
+    <entry key="database">gisdb</entry>
+    <entry key="port">5432</entry>
+    <entry key="passwd">crypt2:rYcKyOF/2SVp5SF0r0n64tAARuxov2kpJ9tgQKX+knw=</entry>
+    <entry key="host">postgis</entry>
+    <entry key="dbtype">postgis</entry>
+    <entry key="namespace">http://tsig</entry>
+    <entry key="user">gisuser</entry>
+  </connectionParameters>
+  <__default>false</__default>
+  <dateCreated>2025-05-27 02:17:50.677 UTC</dateCreated>
+  <disableOnConnFailure>false</disableOnConnFailure>
+</dataStore>
