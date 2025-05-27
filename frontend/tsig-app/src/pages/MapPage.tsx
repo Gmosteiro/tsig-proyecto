@@ -22,17 +22,27 @@ export default function MapPage() {
     const { stops } = useMapData()
     const [adding, setAdding] = useState(false)
     const [points, setPoints] = useState<[number, number][]>([])
-    const [routeGeoJSON, setRouteGeoJSON] = useState(null)
+    const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
+    const [routeGeoJSON, setRouteGeoJSON] = useState<any>(null)
 
     const handleAddPoint = (latlng: [number, number]) => {
-        setPoints((prev: [number, number][]) => [...prev, latlng])
+        setPoints((prev) => [...prev, latlng])
     }
 
-    const handleUndo = () => {
-        setPoints(prev => prev.slice(0, -1))
+    const handleDeleteSelected = () => {
+        if (selectedIdx !== null) {
+            setPoints(prev => prev.filter((_, idx) => idx !== selectedIdx))
+            setSelectedIdx(null)
+        }
+    }
+
+    const handleMarkerDrag = (idx: number, e: any) => {
+        const { lat, lng } = e.target.getLatLng()
+        setPoints(prev => prev.map((p, i) => i === idx ? [lat, lng] : p))
     }
 
     const handleSubmit = async () => {
+        setRouteGeoJSON(null) // Remove previous route
         const payload = {
             points: points.map(([lat, lon]) => ({ lat, lon }))
         }
@@ -42,6 +52,13 @@ export default function MapPage() {
         } catch (err: any) {
             alert('Error: ' + (err?.response?.data || err.message))
         }
+    }
+
+    // Custom style for the route GeoJSON (red line)
+    const routeStyle = {
+        color: 'red',
+        weight: 5,
+        opacity: 0.9
     }
 
     return (
@@ -56,11 +73,11 @@ export default function MapPage() {
                         {adding ? 'Adding: Click map' : 'Add Point'}
                     </button>
                     <button
-                        className="px-3 py-1 rounded bg-yellow-200"
-                        onClick={handleUndo}
-                        disabled={points.length === 0}
+                        className="px-3 py-1 rounded bg-red-400 text-white"
+                        onClick={handleDeleteSelected}
+                        disabled={selectedIdx === null}
                     >
-                        Control Z
+                        Delete Selected Point
                     </button>
                     <button
                         className="px-3 py-1 rounded bg-green-500 text-white"
@@ -108,8 +125,15 @@ export default function MapPage() {
                         <Marker
                             key={idx}
                             position={latlng}
+                            draggable
+                            eventHandlers={{
+                                dragend: (e) => handleMarkerDrag(idx, e),
+                                click: () => setSelectedIdx(idx)
+                            }}
                             icon={L.icon({
-                                iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+                                iconUrl: selectedIdx === idx
+                                    ? "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png"
+                                    : "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
                                 iconSize: [25, 41],
                                 iconAnchor: [12, 41],
                                 popupAnchor: [1, -34],
@@ -121,7 +145,9 @@ export default function MapPage() {
                     {stops && stops.map(stop => (
                         <StopMarker key={stop.id} stop={stop} />
                     ))}
-                    {routeGeoJSON && <GeoJSON data={routeGeoJSON} />}
+                    {routeGeoJSON && (
+                        <GeoJSON data={routeGeoJSON} style={routeStyle} />
+                    )}
                 </MapContainer>
             </main>
             <Footer />
