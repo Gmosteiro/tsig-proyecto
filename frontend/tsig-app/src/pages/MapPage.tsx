@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, WMSTileLayer, LayersControl, Marker, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, WMSTileLayer, LayersControl, Marker, useMapEvents, GeoJSON } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import StopMarker from '../components/map/StopMarker'
 import useMapData from '../hooks/useMapData'
@@ -7,8 +7,9 @@ import Footer from '../components/ui/Footer'
 import StopForm from '../components/map/StopForm'
 import { useState } from 'react'
 import L from 'leaflet'
+import { getRouteGeoJSON } from '../services/api'
 
-function AddPointControl({ onAddPoint }) {
+function AddPointControl({ onAddPoint }: { onAddPoint: (latlng: [number, number]) => void }) {
     useMapEvents({
         click(e) {
             onAddPoint([e.latlng.lat, e.latlng.lng])
@@ -20,18 +21,27 @@ function AddPointControl({ onAddPoint }) {
 export default function MapPage() {
     const { stops } = useMapData()
     const [adding, setAdding] = useState(false)
-    const [points, setPoints] = useState([])
+    const [points, setPoints] = useState<[number, number][]>([])
+    const [routeGeoJSON, setRouteGeoJSON] = useState(null)
 
-    const handleAddPoint = (latlng) => {
-        setPoints(prev => [...prev, latlng])
+    const handleAddPoint = (latlng: [number, number]) => {
+        setPoints((prev: [number, number][]) => [...prev, latlng])
     }
 
     const handleUndo = () => {
         setPoints(prev => prev.slice(0, -1))
     }
 
-    const handleSubmit = () => {
-        console.log('Submitted points:', points)
+    const handleSubmit = async () => {
+        const payload = {
+            points: points.map(([lat, lon]) => ({ lat, lon }))
+        }
+        try {
+            const geojson = await getRouteGeoJSON(payload)
+            setRouteGeoJSON(typeof geojson === 'string' ? JSON.parse(geojson) : geojson)
+        } catch (err: any) {
+            alert('Error: ' + (err?.response?.data || err.message))
+        }
     }
 
     return (
@@ -111,6 +121,7 @@ export default function MapPage() {
                     {stops && stops.map(stop => (
                         <StopMarker key={stop.id} stop={stop} />
                     ))}
+                    {routeGeoJSON && <GeoJSON data={routeGeoJSON} />}
                 </MapContainer>
             </main>
             <Footer />

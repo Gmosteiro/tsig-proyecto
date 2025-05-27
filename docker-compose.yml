@@ -1,6 +1,8 @@
 services:
     postgis:
-        image: postgis/postgis:15-3.3
+        build:
+            context: ./backend/postgis
+            dockerfile: Dockerfile
         platform: linux/amd64
         environment:
             POSTGRES_DB: gisdb
@@ -30,6 +32,7 @@ services:
     backend:
         build:
             context: ./backend
+            dockerfile: Dockerfile
         ports:
             - "8081:8080"
         depends_on:
