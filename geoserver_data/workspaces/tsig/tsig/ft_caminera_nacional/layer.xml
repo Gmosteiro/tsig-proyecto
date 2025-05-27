@@ -1,16 +1,16 @@
 <layer>
   <name>ft_caminera_nacional</name>
-  <id>LayerInfoImpl-6de0af8c:19709c42a0b:-7ffc</id>
+  <id>LayerInfoImpl--1cff24c2:1970f7d3aac:-7ffc</id>
   <type>VECTOR</type>
   <defaultStyle>
-    <id>StyleInfoImpl--3a922076:1970975e88c:-7fff</id>
+    <id>StyleInfoImpl--363c17c2:1970f6f8c80:-7fff</id>
   </defaultStyle>
   <resource class="featureType">
-    <id>FeatureTypeInfoImpl-6de0af8c:19709c42a0b:-7ffd</id>
+    <id>FeatureTypeInfoImpl--1cff24c2:1970f7d3aac:-7ffd</id>
   </resource>
   <attribution>
     <logoWidth>0</logoWidth>
     <logoHeight>0</logoHeight>
   </attribution>
-  <dateCreated>2025-05-25 23:25:42.885 UTC</dateCreated>
+  <dateCreated>2025-05-27 02:06:43.725 UTC</dateCreated>
 </layer>

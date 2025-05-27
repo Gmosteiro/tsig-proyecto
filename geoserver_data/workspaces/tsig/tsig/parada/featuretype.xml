@@ -1,5 +1,5 @@
 <featureType>
-  <id>FeatureTypeInfoImpl--71663abe:1970a76ba1d:-8000</id>
+  <id>FeatureTypeInfoImpl--1cff24c2:1970f7d3aac:-7fff</id>
   <name>parada</name>
   <nativeName>parada</nativeName>
   <namespace>
@@ -21,35 +21,23 @@
   AUTHORITY[&quot;EPSG&quot;,&quot;4326&quot;]]</nativeCRS>
   <srs>EPSG:4326</srs>
   <nativeBoundingBox>
-    <minx>-58.42906188964844</minx>
-    <maxx>53.2059326171875</maxx>
-    <miny>-34.97285842895508</miny>
-    <maxy>-30.112865447998047</maxy>
+    <minx>-180.0</minx>
+    <maxx>180.0</maxx>
+    <miny>-90.0</miny>
+    <maxy>90.0</maxy>
+    <crs>EPSG:4326</crs>
   </nativeBoundingBox>
   <latLonBoundingBox>
-    <minx>-58.42906188964844</minx>
-    <maxx>53.2059326171875</maxx>
-    <miny>-34.97285842895508</miny>
-    <maxy>-30.112865447998047</maxy>
+    <minx>-180.0</minx>
+    <maxx>180.0</maxx>
+    <miny>-90.0</miny>
+    <maxy>90.0</maxy>
     <crs>EPSG:4326</crs>
   </latLonBoundingBox>
   <projectionPolicy>FORCE_DECLARED</projectionPolicy>
   <enabled>true</enabled>
-  <metadata>
-    <entry key="elevation">
-      <dimensionInfo>
-        <enabled>false</enabled>
-      </dimensionInfo>
-    </entry>
-    <entry key="time">
-      <dimensionInfo>
-        <enabled>false</enabled>
-      </dimensionInfo>
-    </entry>
-    <entry key="cachingEnabled">false</entry>
-  </metadata>
   <store class="dataStore">
-    <id>DataStoreInfoImpl-6de0af8c:19709c42a0b:-7ffe</id>
+    <id>DataStoreInfoImpl--1cff24c2:1970f7d3aac:-8000</id>
   </store>
   <serviceConfiguration>false</serviceConfiguration>
   <simpleConversionEnabled>false</simpleConversionEnabled>
