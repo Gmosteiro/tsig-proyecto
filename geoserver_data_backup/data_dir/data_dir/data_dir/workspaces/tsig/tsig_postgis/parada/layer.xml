@@ -1,0 +1,17 @@
+<layer>
+  <name>parada</name>
+  <id>LayerInfoImpl--71663abe:1970a76ba1d:-7fff</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--71663abe:1970a76ba1d:-7ffe</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl--71663abe:1970a76ba1d:-8000</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-05-26 02:40:42.625 UTC</dateCreated>
+  <dateModified>2025-05-26 03:34:12.334 UTC</dateModified>
+</layer>
