@@ -5,6 +5,7 @@ set -e
 
 SERVICE_NAME="geoserver"
 BACKUP_DIR="./geoserver_data_backup"
+WORKSPACES_DIR="$BACKUP_DIR/workspaces"
 
 # Obtener el container ID de GeoServer
 CONTAINER_ID=$(docker-compose ps -q $SERVICE_NAME)
@@ -14,15 +15,15 @@ if [ -z "$CONTAINER_ID" ]; then
   exit 1
 fi
 
-if [ ! -d "$BACKUP_DIR" ]; then
-  echo "No existe el directorio $BACKUP_DIR con el backup a aplicar."
+if [ ! -d "$WORKSPACES_DIR" ]; then
+  echo "No existe el directorio $WORKSPACES_DIR con el backup a aplicar."
   exit 1
 fi
 
-echo "Aplicando backup de $BACKUP_DIR al contenedor..."
-docker cp $BACKUP_DIR/. $CONTAINER_ID:/opt/geoserver/data_dir
+echo "Aplicando backup de $WORKSPACES_DIR al contenedor..."
+docker cp $WORKSPACES_DIR/. $CONTAINER_ID:/opt/geoserver/data_dir/workspaces
 
 echo "Reiniciando GeoServer..."
 docker restart $CONTAINER_ID
 
-echo "Backup aplicado correctamente."
+echo "Backup de workspaces aplicado correctamente."

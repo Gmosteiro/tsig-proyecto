@@ -3,3 +3,6 @@
 /.vscode/
 /.env
 .DS_Store
+
+geoserver_data_backup/*
+!geoserver_data_backup/workspaces/
