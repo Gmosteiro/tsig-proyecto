@@ -47,15 +47,15 @@ export default function MapPage() {
                             />
                         </LayersControl.Overlay>
 
-                        {/* <LayersControl.BaseLayer name="Otra Capa">
+                        <LayersControl.Overlay name="Departamentos">
                             <WMSTileLayer
                                 url='http://localhost:8080/geoserver/wms'
-                                layers="tsig:otra_capa"
+                                layers="tsig:ft_departamentos"
                                 format="image/png"
                                 transparent={true}
                                 tileSize={256}
                             />
-                        </LayersControl.BaseLayer> */}
+                        </LayersControl.Overlay>
                     </LayersControl>
                     {stops && stops.map(stop => (
                         <StopMarker key={stop.id} stop={stop} />
