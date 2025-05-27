@@ -13,3 +13,6 @@ docker-compose up -d frontend
 
 docker-compose build backend
 docker-compose up -d backend
+
+docker-compose build geoserver
+docker-compose up -d geoserver

@@ -4,7 +4,7 @@
 set -e
 
 SERVICE_NAME="geoserver"
-BACKUP_DIR="./geoserver_data_backup"
+BACKUP_DIR="./geoserver_data"
 WORKSPACES_BACKUP="$BACKUP_DIR/workspaces"
 
 # Obtener el container ID de GeoServer
