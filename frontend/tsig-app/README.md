@@ -10,3 +10,6 @@ npm run dev
 
 docker-compose build frontend
 docker-compose up -d frontend
+
+docker-compose build backend
+docker-compose up -d backend

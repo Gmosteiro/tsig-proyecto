@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Marker, Popup } from 'react-leaflet'
-import { LatLngExpression } from 'leaflet'
+import { LatLngTuple } from 'leaflet'
+import { createStop } from '../../services/api'
 
 export default function StopForm() {
-    const [position, setPosition] = useState<LatLngExpression>([-34.9011, -56.1645])
+    const [position, setPosition] = useState<LatLngTuple>([-34.9011, -56.1645])
     const [name, setName] = useState('Nueva Parada')
 
     return (
@@ -14,16 +15,27 @@ export default function StopForm() {
                 dragend(e) {
                     const marker = e.target
                     const newPos = marker.getLatLng()
-                    setPosition([newPos.lat, newPos.lng])
+                    setPosition([newPos.lat, newPos.lng] as LatLngTuple)
                 }
             }}
         >
             <Popup>
                 <form
-                    onSubmit={(e) => {
+                    onSubmit={async (e) => {
                         e.preventDefault()
                         console.log('Guardando parada con:', { name, position })
-                        alert('Parada creada (mock)')
+                        debugger
+                        await createStop({
+                            nombre: name,
+                            estado: 'HABILITADA',
+                            refugio: false,
+                            observacion: '',
+                            latitud: position[0],
+                            longitud: position[1]
+                        })
+
+                        debugger
+
                     }}
                 >
                     <div>
