@@ -9,13 +9,14 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      '/api': {
-        target: 'http://localhost:8081',
+      '/apiurl': {
+        target: 'http://backend:8080',
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path.replace(/^\/apiurl/, ''),
       },
       '/geoserver': {
-        target: 'http://localhost:8080/geoserver',
+        target: 'http://geoserver:8080/geoserver',
         changeOrigin: true,
         secure: false,
       },

@@ -9,13 +9,10 @@ import lombok.Data;
 @Builder
 @AllArgsConstructor
 public class ParadaDTO {
-
     private String nombre;
     private EstadoParada estado;
     private boolean refugio;
     private String observacion;
-
-    //El punto a crear
     private double latitud;
     private double longitud;
 }

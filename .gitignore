@@ -3,3 +3,24 @@
 /.vscode/
 /.env
 .DS_Store
+
+# GeoServer data directory ignores
+
+# Logs
+geoserver_data/logs/
+geoserver_data/geoserver.log
+
+# Temp and cache
+geoserver_data/temp/
+geoserver_data/tmp/
+geoserver_data/gwc/tmp/
+geoserver_data/gwc/diskquota_page_store_hsql/
+
+# Backups
+geoserver_data/gwc/*.bak
+
+# Monitoring (if contains runtime data)
+geoserver_data/monitoring/
+
+# User projections (often user-specific)
+geoserver_data/user_projections/

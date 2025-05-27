@@ -1,6 +1,5 @@
 package com.example.tsigback.entities;
 
-import com.example.tsigback.entities.dtos.ParadaDTO;
 import com.example.tsigback.entities.enums.EstadoParada;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -23,6 +22,7 @@ public class Parada {
     //4326 es el estandar de coordenadas GPS
     @Column(columnDefinition = "geometry(Point,4326)", nullable = false)
     private Point ubicacion;
+
     private String nombre;
     private EstadoParada estado;
     private boolean refugio;

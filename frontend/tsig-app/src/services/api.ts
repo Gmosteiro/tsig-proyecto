@@ -1,13 +1,20 @@
-// import axios from 'axios'
-import { Stop } from '../lib/types/types'
-// import { API_URL } from '../lib/contants'
+import axios from 'axios'
+// import { Stop } from '../lib/types/types'
 
-export async function getStops(): Promise<Stop[]> {
-    // const res = await axios.get(`${API_URL}/stops`)
+export type ParadaDTO = {
+    nombre: string
+    estado: EstadoParada
+    refugio: boolean
+    observacion: string
+    latitud: number
+    longitud: number
+}
 
-    let promise = Promise.resolve({
-        data: []
-    })
-    const result = await promise
-    return result.data
+export type EstadoParada = 'HABILITADA' | 'DESHABILITADA';
+
+export async function createStop(stopData: ParadaDTO) {
+    // Use the proxy path and pass the object directly
+    const res = await axios.post('/apiurl/api/parada/crear', stopData)
+    console.log('result from createStop:', res)
+    return res.data
 }
