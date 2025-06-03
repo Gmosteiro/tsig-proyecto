@@ -1,18 +1,21 @@
 package com.example.tsigback.service;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.locationtech.jts.geom.*;
-import org.locationtech.jts.io.geojson.GeoJsonWriter;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import com.example.tsigback.entities.Linea;
 import com.example.tsigback.entities.dtos.LineaDTO;
 import com.example.tsigback.entities.dtos.PuntoDTO;
 import com.example.tsigback.repository.LineaRepository;
 import com.example.tsigback.repository.RoutingRepository;
+import com.example.tsigback.utils.GeoUtils;
+
+import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.geom.MultiPoint;
+import org.locationtech.jts.io.geojson.GeoJsonWriter;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class LineaService {
@@ -25,30 +28,18 @@ public class LineaService {
 
     private static final double MAX_DIST = 100.0; // metros
 
-    private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
-
     public void crearLinea(LineaDTO linea) {
         try {
-            // Obtener la ruta como MultiLineString desde tu repositorio (debe ser de tipo JTS)
             MultiLineString recorrido = calculateRoute(linea.getPuntos());
-
-            // Crear los puntos como un MultiPoint
-            Coordinate[] coords = linea.getPuntos().stream()
-                    .map(p -> new Coordinate(p.getLon(), p.getLat()))
-                    .toArray(Coordinate[]::new);
-
-            MultiPoint multiPoint = geometryFactory.createMultiPointFromCoords(coords);
-
-            String origen = "Montevideo";
-            String destino = "Punta del Este";
+            MultiPoint puntos = GeoUtils.crearMultiPointDesdeDTOs(linea.getPuntos());
 
             Linea nuevaLinea = Linea.builder()
                     .descripcion(linea.getDescripcion())
                     .empresa(linea.getEmpresa())
-                    .origen(origen)
-                    .destino(destino)
+                    .origen("Montevideo")
+                    .destino("Punta del Este")
                     .observacion(linea.getObservacion())
-                    .puntos(multiPoint)
+                    .puntos(puntos)
                     .recorrido(recorrido)
                     .build();
 
@@ -86,7 +77,6 @@ public class LineaService {
     }
 
     public List<PuntoDTO> crearPuntoDTO(double lon, double lat) {
-        PuntoDTO punto = new PuntoDTO(lon, lat);
-        return List.of(punto);
+        return List.of(new PuntoDTO(lon, lat));
     }
 }
