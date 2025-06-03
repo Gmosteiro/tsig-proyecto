@@ -1,19 +1,10 @@
 export type LoginData = {
-    email: string;
+    user: string;
     password: string;
 };
-
-export type RegisterData = {
-    email: string;
-    password: string;
-    name: string;
-};
-
 
 export interface User {
-    email: string;
     name: string;
-    verified: boolean;
 }
 export interface Stop {
     id: string
