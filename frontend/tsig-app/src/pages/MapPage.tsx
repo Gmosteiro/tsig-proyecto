@@ -4,10 +4,13 @@ import StopMarker from '../components/map/StopMarker'
 import useMapData from '../hooks/useMapData'
 import NavigationBar from '../components/ui/NavigationBar'
 import Footer from '../components/ui/Footer'
-import StopForm from '../components/map/StopForm'
 import { useState } from 'react'
 import L from 'leaflet'
 import { getRouteGeoJSON } from '../services/api'
+import markerIcon from '../assets/marker-icon.png'
+import markerIconRed from '../assets/marker-icon-red.png'
+import markerShadow from '../assets/marker-shadow.png'
+
 
 function AddPointControl({ onAddPoint }: { onAddPoint: (latlng: [number, number]) => void }) {
     useMapEvents({
@@ -92,7 +95,6 @@ export default function MapPage() {
                     zoom={13}
                     style={{ height: '80vh', width: '100%' }}
                 >
-                    <StopForm />
                     <LayersControl position="bottomright">
                         <LayersControl.BaseLayer checked name="Mapa Base">
                             <TileLayer
@@ -140,13 +142,11 @@ export default function MapPage() {
                                 click: () => setSelectedIdx(idx)
                             }}
                             icon={L.icon({
-                                iconUrl: selectedIdx === idx
-                                    ? "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png"
-                                    : "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+                                iconUrl: selectedIdx === idx ? markerIconRed : markerIcon,
                                 iconSize: [25, 41],
                                 iconAnchor: [12, 41],
                                 popupAnchor: [1, -34],
-                                shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+                                shadowUrl: markerShadow,
                                 shadowSize: [41, 41]
                             })}
                         />
