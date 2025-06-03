@@ -21,17 +21,17 @@
   AUTHORITY[&quot;EPSG&quot;,&quot;4326&quot;]]</nativeCRS>
   <srs>EPSG:4326</srs>
   <nativeBoundingBox>
-    <minx>-56.21199117431642</minx>
-    <maxx>-56.21179117431641</maxx>
-    <miny>-34.875398908337594</miny>
-    <maxy>-34.87519890833759</maxy>
+    <minx>-56.14023671875001</minx>
+    <maxx>-56.140036718750004</maxx>
+    <miny>-34.83195859170734</miny>
+    <maxy>-34.831758591707334</maxy>
     <crs>EPSG:4326</crs>
   </nativeBoundingBox>
   <latLonBoundingBox>
-    <minx>-56.21199117431642</minx>
-    <maxx>-56.21179117431641</maxx>
-    <miny>-34.875398908337594</miny>
-    <maxy>-34.87519890833759</maxy>
+    <minx>-56.14023671875001</minx>
+    <maxx>-56.140036718750004</maxx>
+    <miny>-34.83195859170734</miny>
+    <maxy>-34.831758591707334</maxy>
     <crs>EPSG:4326</crs>
   </latLonBoundingBox>
   <projectionPolicy>FORCE_DECLARED</projectionPolicy>

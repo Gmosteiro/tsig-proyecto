@@ -10,6 +10,15 @@ export type ParadaDTO = {
     longitud: number
 }
 
+export type RoutingPointDTO = {
+    lat: number
+    lon: number
+}
+
+export type RoutingRequestDTO = {
+    points: RoutingPointDTO[]
+}
+
 export type EstadoParada = 'HABILITADA' | 'DESHABILITADA';
 
 export async function createStop(stopData: ParadaDTO) {
@@ -17,4 +26,10 @@ export async function createStop(stopData: ParadaDTO) {
     const res = await axios.post('/apiurl/api/parada/crear', stopData)
     console.log('result from createStop:', res)
     return res.data
+}
+
+export async function getRouteGeoJSON(request: RoutingRequestDTO) {
+    // Use the proxy path to your backend routing endpoint
+    const res = await axios.post('/apiurl/api/routing/shortest-path', request)
+    return res.data // Should be GeoJSON
 }
