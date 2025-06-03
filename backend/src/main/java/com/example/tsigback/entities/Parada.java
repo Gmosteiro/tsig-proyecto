@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import org.locationtech.jts.geom.Point;
 
 @AllArgsConstructor
@@ -19,7 +20,6 @@ public class Parada {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    //4326 es el estandar de coordenadas GPS
     @Column(columnDefinition = "geometry(Point,4326)", nullable = false)
     private Point ubicacion;
 
@@ -27,6 +27,4 @@ public class Parada {
     private EstadoParada estado;
     private boolean refugio;
     private String observacion;
-
-
 }

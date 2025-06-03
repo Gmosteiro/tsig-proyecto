@@ -17,6 +17,6 @@ public class AuthService {
         if (user == null ) {
             throw new UsuarioNoEncontradoException("User not found");
         }
-        return user.getRol().equals("admin");
+        return user.getRol().toLowerCase().equals("admin");
     }
 }

@@ -5,6 +5,8 @@ import com.example.tsigback.entities.dtos.ParadaDTO;
 import com.example.tsigback.exception.ParadaLejosDeRutaException;
 import com.example.tsigback.exception.ParadaNoEncontradaException;
 import com.example.tsigback.repository.ParadaRepository;
+import com.example.tsigback.utils.GeoUtils;
+
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -21,13 +23,14 @@ public class ParadaService {
     private ParadaRepository paradaRepository;
 
     public void altaParada(ParadaDTO paradaDTO) throws ParadaLejosDeRutaException {
-        Point ubicacion = crearUbicacion(paradaDTO.getLongitud(), paradaDTO.getLatitud());
+
+        Point ubicacion = GeoUtils.crearPunto(paradaDTO.getLongitud(), paradaDTO.getLatitud());
 
         if (ubicacion == null) {
             throw new RuntimeException("No se puede crear un ubicacion");
         }
 
-        if (!paradaRepository.isRutaCercana(ubicacion,DEFAULT_BUFFER)) {
+        if (!paradaRepository.isRutaCercana(paradaDTO.getLongitud(), paradaDTO.getLatitud(),DEFAULT_BUFFER)) {
             throw new ParadaLejosDeRutaException("Esta ingresando una parada a una distancia mayor de " + DEFAULT_BUFFER + "mt de una ruta nacional ");
         }
 
@@ -49,11 +52,11 @@ public class ParadaService {
             throw new ParadaNoEncontradaException("Parada con nombre " + paradaDTO.getNombre() + " no encontrada");
         }
 
-        Point ubicacion = crearUbicacion(paradaDTO.getLongitud(), paradaDTO.getLatitud());
-
-        if (!paradaRepository.isRutaCercana(ubicacion,DEFAULT_BUFFER)) {
+        if (!paradaRepository.isRutaCercana(paradaDTO.getLongitud(), paradaDTO.getLatitud(),DEFAULT_BUFFER)) {
             throw new ParadaLejosDeRutaException("Esta ingresando una parada a una distancia mayor de " + DEFAULT_BUFFER + "mt de una ruta nacional ");
         }
+
+        Point ubicacion = GeoUtils.crearPunto(paradaDTO.getLongitud(), paradaDTO.getLatitud());
 
         Parada paradaModificada = Parada.builder()
                 .ubicacion(ubicacion)
@@ -74,10 +77,5 @@ public class ParadaService {
         }
 
         paradaRepository.delete(parada);
-    }
-
-    private Point crearUbicacion(double longitud, double latitud) {
-        GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
-        return geometryFactory.createPoint(new Coordinate(longitud, latitud));
     }
 }

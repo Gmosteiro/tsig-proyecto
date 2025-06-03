@@ -9,16 +9,31 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.geom.MultiPoint;
+
+import jakarta.persistence.Column;
+
+@Entity
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
 @Builder
-@Entity
 public class Linea {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    private String descripcion;
+    private String empresa;
+    private String origen;
+    private String destino;
+    private String observacion;
 
+    @Column(columnDefinition = "geometry(MultiPoint, 4326)")
+    private MultiPoint puntos;
+
+    @Column(columnDefinition = "geometry(MultiLineString, 4326)")
+    private MultiLineString recorrido;
 }
