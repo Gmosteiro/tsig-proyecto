@@ -7,10 +7,7 @@ import com.example.tsigback.exception.ParadaNoEncontradaException;
 import com.example.tsigback.repository.ParadaRepository;
 import com.example.tsigback.utils.GeoUtils;
 
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
-import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
