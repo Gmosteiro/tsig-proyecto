@@ -23,7 +23,7 @@ export const loginUser = async (credentials: LoginData): Promise<SessionResponse
     }
 
     return {
-        token: "mocked-jwt-token",
+        token: "mocked-token-del-backend",
         user: {
             name: "Admin",
         }
