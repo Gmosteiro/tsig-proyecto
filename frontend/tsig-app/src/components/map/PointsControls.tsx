@@ -17,27 +17,32 @@ const PointControls: React.FC<PointControlsProps> = ({
     handleSubmit,
     pointsLength
 }) => (
-    <div className="flex gap-2 p-2">
+    <div className="flex justify-center gap-2 p-2">
         <button
             className={`px-3 py-1 rounded ${adding ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
             onClick={() => setAdding(a => !a)}
         >
-            {adding ? 'Adding: Click map' : 'Add Point'}
+            {adding ? 'Agregando: Clickea el mapa para agregar puntos a la ruta' : 'Crear Ruta'}
         </button>
-        <button
-            className="px-3 py-1 rounded bg-red-400 text-white"
-            onClick={handleDeleteSelected}
-            disabled={selectedIdx === null}
-        >
-            Delete Selected Point
-        </button>
-        <button
-            className="px-3 py-1 rounded bg-green-500 text-white"
-            onClick={handleSubmit}
-            disabled={pointsLength === 0}
-        >
-            Submit
-        </button>
+
+        {selectedIdx !== null && (
+            <button
+                className="px-3 py-1 rounded bg-red-400 text-white"
+                onClick={handleDeleteSelected}
+            >
+                Eliminar Punto Seleccionado
+            </button>
+        )}
+
+        {pointsLength > 1 && (
+            <button
+                className="px-3 py-1 rounded bg-green-500 text-white"
+                onClick={handleSubmit}
+                disabled={pointsLength === 0}
+            >
+                Guardar Ruta
+            </button>
+        )}
     </div>
 )
 

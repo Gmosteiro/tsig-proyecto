@@ -13,6 +13,7 @@ import markerShadow from '../assets/marker-shadow.png'
 import PointControls from '../components/map/PointsControls'
 import LayerController from '../components/map/LayerController'
 import { useAuth } from '../context/authContext'
+import RouteForm from '../components/ui/RouteForm'
 
 
 function AddPointControl({ onAddPoint }: { onAddPoint: (latlng: [number, number]) => void }) {
@@ -31,8 +32,10 @@ export default function MapPage() {
     const [points, setPoints] = useState<[number, number][]>([])
     const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
     const [routeGeoJSON, setRouteGeoJSON] = useState<any>(null)
+    const [showRouteForm, setShowRouteForm] = useState(false)
 
     const handleAddPoint = (latlng: [number, number]) => {
+        //TODO: Validate if the point is near a route
         setPoints((prev) => [...prev, latlng])
     }
 
@@ -55,6 +58,7 @@ export default function MapPage() {
         }
         try {
             const geojson = await getRouteGeoJSON(payload)
+
             setRouteGeoJSON(typeof geojson === 'string' ? JSON.parse(geojson) : geojson)
         } catch (err: any) {
             alert('Error: ' + (err?.response?.data || err.message))
@@ -65,16 +69,6 @@ export default function MapPage() {
         <div className="flex flex-col min-h-screen">
             <NavigationBar />
             <main className="flex-1">
-                {isAuthenticated && (
-                    <PointControls
-                        adding={adding}
-                        setAdding={setAdding}
-                        selectedIdx={selectedIdx}
-                        handleDeleteSelected={handleDeleteSelected}
-                        handleSubmit={handleSubmit}
-                        pointsLength={points.length}
-                    />
-                )}
                 <MapContainer
                     center={[-34.9011, -56.1645]}
                     zoom={13}
@@ -108,6 +102,38 @@ export default function MapPage() {
                         <GeoJSON data={routeGeoJSON} style={{ color: 'red', weight: 5, opacity: 0.9 }} />
                     )}
                 </MapContainer>
+
+
+                {isAuthenticated && (
+                    routeGeoJSON ? (
+                        showRouteForm ? (
+                            <RouteForm
+                                geoJSON={routeGeoJSON}
+                                points={points}
+                                onCancel={() => setShowRouteForm(false)}
+                            // Add any other props needed for RouteForm
+                            />
+                        ) : (
+                            <div className="flex justify-center mt-4">
+                                <button
+                                    className="bg-green-600 text-white px-4 py-2 rounded"
+                                    onClick={() => setShowRouteForm(true)}
+                                >
+                                    Guardar
+                                </button>
+                            </div>
+                        )
+                    ) : (
+                        <PointControls
+                            adding={adding}
+                            setAdding={setAdding}
+                            selectedIdx={selectedIdx}
+                            handleDeleteSelected={handleDeleteSelected}
+                            handleSubmit={handleSubmit}
+                            pointsLength={points.length}
+                        />
+                    )
+                )}
             </main>
             <Footer />
         </div>

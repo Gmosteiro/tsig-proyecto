@@ -6,8 +6,6 @@ const NavigationBar: React.FC = () => {
     const navigate = useNavigate();
     const { logout, isAuthenticated } = useAuth();
 
-
-
     return (
         <nav className="flex items-center justify-between px-8 py-4 bg-blue-700 text-white shadow-md">
             {isAuthenticated ? (
