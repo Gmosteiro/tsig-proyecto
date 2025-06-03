@@ -6,6 +6,8 @@ interface SessionResponse {
     user: User;
 }
 
+const API_URL = "http://localhost:8081";
+
 export const registerUser = async (formData: RegisterData) => {
     await new Promise((res) => setTimeout(res, 500));
     if (formData.email === "fail@example.com") {
@@ -18,20 +20,32 @@ export const registerUser = async (formData: RegisterData) => {
 };
 
 export const loginUser = async (credentials: LoginData): Promise<SessionResponse> => {
-    await new Promise((res) => setTimeout(res, 500));
-    if (credentials.email !== "test@test.com" || credentials.password !== "Test.1234") {
-        throw new Error("Mock: Invalid credentials");
+    const res = await fetch("http://localhost:8081/api/auth/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(credentials)
+    });
+
+    if (!res.ok) {
+        const message = await res.text();
+        throw new Error(message || "Login failed");
     }
 
+    // Como el backend solo devuelve texto, simulamos la respuesta
     return {
-        token: "mocked-jwt-token",
+        token: "mocked-token-del-backend",
         user: {
             email: credentials.email,
-            name: "Test User",
-            verified: false
-        }
+            name: "Usuario",
+            verified: true,
+        },
     };
 };
+
+
+
 
 export const loginWithGoogle = async (): Promise<SessionResponse> => {
     await new Promise((res) => setTimeout(res, 500));

@@ -51,9 +51,9 @@ export default function LoginPage() {
                 <form onSubmit={handleSubmit}>
                     <div className="mb-5">
                         <label className="font-medium text-gray-700 block">
-                            Email
+                            Nombre de Usuario
                             <input
-                                type="email"
+                                type="text"
                                 name="email"
                                 value={form.email}
                                 onChange={handleChange}
