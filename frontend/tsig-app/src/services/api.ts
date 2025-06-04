@@ -29,5 +29,25 @@ export async function createStop(stopData: ParadaDTO) {
 
 export async function getRouteGeoJSON(request: RoutingRequestDTO) {
     const res = await axios.post('/apiurl/api/routing/shortest-path', request)
-    return res.data // Should be GeoJSON
+    return res.data // 
+}
+
+export type CreateLineDTO = {
+    id?: number
+    nombre: string
+    descripcion: string
+    empresa: string
+    observacion?: string
+    puntos: PuntoDTO[]
+}
+
+export type PuntoDTO = {
+    latitud: number
+    longitud: number
+}
+
+// Update the function signature:
+export const createLine = async (lineData: CreateLineDTO) => {
+    const res = await axios.post('/apiurl/api/linea/crear', lineData)
+    return res.data
 }
