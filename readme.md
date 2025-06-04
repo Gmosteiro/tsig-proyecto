@@ -17,6 +17,7 @@ docker-compose up --build
 
 # Scripts para inicializar
 
+docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/scripts/postgis/ft_departamentos.sql
 docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/scripts/postgis/ft_caminera_nacional.sql
 docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/scripts/postgis/ft_caminera_nacional_edges.sql
 docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/scripts/postgis/ft_postes.sql
