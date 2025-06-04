@@ -13,4 +13,5 @@ public class Usuario {
     private String contrasenia;
     private String email;
     private String rol;
+    
 }
