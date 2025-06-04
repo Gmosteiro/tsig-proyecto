@@ -7,6 +7,7 @@ import com.example.tsigback.repository.LineaRepository;
 import com.example.tsigback.repository.RoutingRepository;
 import com.example.tsigback.utils.GeoUtils;
 
+import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.MultiLineString;
 import org.locationtech.jts.geom.MultiPoint;
 import org.locationtech.jts.io.geojson.GeoJsonWriter;

@@ -20,14 +20,13 @@ public class ParadaService {
     private ParadaRepository paradaRepository;
 
     public void altaParada(ParadaDTO paradaDTO) throws ParadaLejosDeRutaException {
-
         Point ubicacion = GeoUtils.crearPunto(paradaDTO.getLongitud(), paradaDTO.getLatitud());
 
         if (ubicacion == null) {
             throw new RuntimeException("No se puede crear un ubicacion");
         }
 
-        if (!paradaRepository.isRutaCercana(paradaDTO.getLongitud(), paradaDTO.getLatitud(),DEFAULT_BUFFER)) {
+        if (!paradaRepository.isRutaCercana(ubicacion,DEFAULT_BUFFER)) {
             throw new ParadaLejosDeRutaException("Esta ingresando una parada a una distancia mayor de " + DEFAULT_BUFFER + "mt de una ruta nacional ");
         }
 
@@ -49,11 +48,11 @@ public class ParadaService {
             throw new ParadaNoEncontradaException("Parada con nombre " + paradaDTO.getNombre() + " no encontrada");
         }
 
-        if (!paradaRepository.isRutaCercana(paradaDTO.getLongitud(), paradaDTO.getLatitud(),DEFAULT_BUFFER)) {
+        Point ubicacion = GeoUtils.crearPunto(paradaDTO.getLongitud(), paradaDTO.getLatitud());
+
+        if (!paradaRepository.isRutaCercana(ubicacion,DEFAULT_BUFFER)) {
             throw new ParadaLejosDeRutaException("Esta ingresando una parada a una distancia mayor de " + DEFAULT_BUFFER + "mt de una ruta nacional ");
         }
-
-        Point ubicacion = GeoUtils.crearPunto(paradaDTO.getLongitud(), paradaDTO.getLatitud());
 
         Parada paradaModificada = Parada.builder()
                 .ubicacion(ubicacion)

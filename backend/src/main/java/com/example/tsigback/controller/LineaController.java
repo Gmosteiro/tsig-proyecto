@@ -1,8 +1,8 @@
 package com.example.tsigback.controller;
 
 import com.example.tsigback.entities.dtos.LineaDTO;
+import com.example.tsigback.entities.dtos.ListaPuntosDTO;
 import com.example.tsigback.entities.dtos.PuntoDTO;
-import com.example.tsigback.entities.dtos.RoutingRequestDTO;
 import com.example.tsigback.service.LineaService;
 
 import java.util.ArrayList;
@@ -30,7 +30,7 @@ public class LineaController {
     }
 
     @PostMapping("/shortest-path")
-    public ResponseEntity<?> getShortestPath(@RequestBody RoutingRequestDTO request) {
+    public ResponseEntity<?> getShortestPath(@RequestBody ListaPuntosDTO request) {
         try {
             List<PuntoDTO> puntosDTO = new ArrayList<>();
             request.getPoints().forEach(punto -> {
@@ -41,7 +41,7 @@ public class LineaController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Internal error");
+            return ResponseEntity.internalServerError().body("Internal error: " + e.getMessage());
         }
     }
 

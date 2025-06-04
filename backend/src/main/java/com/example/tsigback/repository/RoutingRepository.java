@@ -1,6 +1,8 @@
 package com.example.tsigback.repository;
 
+import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.MultiLineString;
 import org.locationtech.jts.io.WKTReader;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,7 +62,16 @@ public class RoutingRepository {
 
         try {
             WKTReader reader = new WKTReader(geometryFactory);
-            return (MultiLineString) reader.read(wkt);
+            Geometry geom = reader.read(wkt);
+
+            if (geom instanceof MultiLineString) {
+                return (MultiLineString) geom;
+
+            } else if (geom instanceof LineString) {
+                return geometryFactory.createMultiLineString(new LineString[]{(LineString) geom});
+            } else {
+                throw new RuntimeException("Tipo de geometría no compatible: " + geom.getGeometryType());
+            }
         } catch (Exception e) {
             throw new RuntimeException("Error parsing WKT to MultiLineString: " + e.getMessage(), e);
         }
