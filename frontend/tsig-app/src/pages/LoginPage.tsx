@@ -4,13 +4,13 @@ import { loginUser } from "../services/auth/authService";
 import { useAuth } from "../context/authContext";
 
 interface LoginFormData {
-    email: string;
+    user: string;
     password: string;
 }
 
 export default function LoginPage() {
     const [form, setForm] = useState<LoginFormData>({
-        email: "",
+        user: "",
         password: "",
     });
     const [error, setError] = useState<string | null>(null);
@@ -28,7 +28,7 @@ export default function LoginPage() {
         setSuccess(false);
         try {
             const response = await loginUser({
-                email: form.email,
+                user: form.user,
                 password: form.password,
             });
 
@@ -36,7 +36,7 @@ export default function LoginPage() {
 
             setSuccess(true);
             setForm({
-                email: "",
+                user: "",
                 password: "",
             });
         } catch (err: any) {
@@ -51,11 +51,11 @@ export default function LoginPage() {
                 <form onSubmit={handleSubmit}>
                     <div className="mb-5">
                         <label className="font-medium text-gray-700 block">
-                            Email
+                            Usuario
                             <input
-                                type="email"
-                                name="email"
-                                value={form.email}
+                                type="text"
+                                name="user"
+                                value={form.user}
                                 onChange={handleChange}
                                 required
                                 className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md text-base outline-none box-border mb-1 focus:ring-2 focus:ring-blue-200"
