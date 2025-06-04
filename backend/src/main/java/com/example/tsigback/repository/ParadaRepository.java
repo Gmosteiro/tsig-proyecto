@@ -20,6 +20,5 @@ public interface ParadaRepository extends JpaRepository<Parada, Integer> {
     """, nativeQuery = true)
     boolean isRutaCercana(@Param("punto") Point ubicacion,@Param("distancia") Double buffer);
 
-
     Parada findByNombre(String nombre);
 }
