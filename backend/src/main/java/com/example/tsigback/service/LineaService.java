@@ -31,7 +31,7 @@ public class LineaService {
 
     public void crearLinea(LineaDTO linea) {
         try {
-            LineString recorrido = calculateRoute(linea.getPuntos());
+            MultiLineString recorrido = calculateRoute(linea.getPuntos());
             MultiPoint puntos = GeoUtils.crearMultiPointDesdeDTOs(linea.getPuntos());
 
             Linea nuevaLinea = Linea.builder()
@@ -50,7 +50,7 @@ public class LineaService {
         }
     }
 
-    private LineString calculateRoute(List<PuntoDTO> puntos) {
+    private MultiLineString calculateRoute(List<PuntoDTO> puntos) {
         if (puntos == null || puntos.size() < 2) {
             throw new IllegalArgumentException("Se requieren al menos dos puntos.");
         }
@@ -72,9 +72,9 @@ public class LineaService {
     }
 
     public String calculateRouteGeoJSON(List<PuntoDTO> puntos) {
-        LineString lineString = calculateRoute(puntos);
+        MultiLineString multiLineString = calculateRoute(puntos);
         GeoJsonWriter writer = new GeoJsonWriter();
-        return writer.write(lineString);
+        return writer.write(multiLineString);
     }
 
     public List<PuntoDTO> crearPuntoDTO(double lon, double lat) {

@@ -41,7 +41,7 @@ public class LineaController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Internal error");
+            return ResponseEntity.internalServerError().body("Internal error: " + e.getMessage());
         }
     }
 

@@ -35,6 +35,7 @@ public class ParadaController {
     @PutMapping("/modificar")
     public ResponseEntity<String> modificarParada(@RequestBody ParadaDTO paradaDTO) {
         try {
+            
             if (paradaDTO == null) {
                 return new ResponseEntity<>("Parada nula", HttpStatus.BAD_REQUEST);
             }
