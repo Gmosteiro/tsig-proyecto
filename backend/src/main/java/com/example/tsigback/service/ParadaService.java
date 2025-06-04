@@ -74,4 +74,12 @@ public class ParadaService {
 
         paradaRepository.delete(parada);
     }
+
+    public boolean existeParada(int paradaId) {
+        return paradaRepository.existsById(paradaId);
+    }
+
+    public Parada buscarParadaPorId(int paradaId) {
+        return paradaRepository.findById(paradaId).orElse(null);
+    }
 }
