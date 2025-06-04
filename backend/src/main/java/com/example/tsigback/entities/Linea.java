@@ -9,7 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.MultiPoint;
 
 import jakarta.persistence.Column;
@@ -34,6 +34,6 @@ public class Linea {
     @Column(columnDefinition = "geometry(MultiPoint, 4326)")
     private MultiPoint puntos;
 
-    @Column(columnDefinition = "geometry(MultiLineString, 4326)")
-    private MultiLineString recorrido;
+    @Column(columnDefinition = "geometry(LineString, 4326)")
+    private LineString recorrido;
 }

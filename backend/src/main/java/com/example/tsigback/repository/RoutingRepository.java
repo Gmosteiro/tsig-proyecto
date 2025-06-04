@@ -1,6 +1,8 @@
 package com.example.tsigback.repository;
 
+import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.MultiLineString;
 import org.locationtech.jts.io.WKTReader;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +39,7 @@ public class RoutingRepository {
         );
     }
 
-    public MultiLineString calculateRouteMultiLineString(List<Long> nodeIds) {
+    public LineString calculateRouteMultiLineString(List<Long> nodeIds) {
         StringBuilder viaNodes = new StringBuilder();
         for (Long id : nodeIds) {
             if (viaNodes.length() > 0) viaNodes.append(", ");
@@ -45,7 +47,7 @@ public class RoutingRepository {
         }
 
         String sql =
-            "SELECT ST_AsText(ST_LineMerge(ST_Union(geom))) AS wkt " +
+            "SELECT ST_AsText(ST_Multi(ST_LineMerge(ST_Union(geom)))) AS wkt " +
             "FROM ft_caminera_nacional_edges " +
             "WHERE id IN (" +
             "  SELECT edge " +
@@ -55,14 +57,32 @@ public class RoutingRepository {
             "    directed := true " +
             "  )" +
             ")";
+            
 
         String wkt = jdbcTemplate.queryForObject(sql, String.class);
 
         try {
-            WKTReader reader = new WKTReader(geometryFactory);
-            return (MultiLineString) reader.read(wkt);
+        WKTReader reader = new WKTReader(geometryFactory);
+        Geometry geom = reader.read(wkt);
+
+        if (geom instanceof LineString) {
+            return (LineString) geom;
+        } else if (geom instanceof MultiLineString) {
+
+            Geometry merged = geom.union();
+
+            if (merged instanceof LineString) {
+                return (LineString) merged;
+                
+            } else {
+                throw new RuntimeException("No se pudo convertir MultiLineString a LineString");
+            }
+        } else {
+            throw new RuntimeException("Tipo de geometría no compatible: " + geom.getGeometryType());
+        }
+
         } catch (Exception e) {
-            throw new RuntimeException("Error parsing WKT to MultiLineString: " + e.getMessage(), e);
+            throw new RuntimeException("Error parsing WKT to LineString: " + e.getMessage(), e);
         }
     }
 }

@@ -7,6 +7,7 @@ import com.example.tsigback.repository.LineaRepository;
 import com.example.tsigback.repository.RoutingRepository;
 import com.example.tsigback.utils.GeoUtils;
 
+import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.MultiLineString;
 import org.locationtech.jts.geom.MultiPoint;
 import org.locationtech.jts.io.geojson.GeoJsonWriter;
@@ -30,7 +31,7 @@ public class LineaService {
 
     public void crearLinea(LineaDTO linea) {
         try {
-            MultiLineString recorrido = calculateRoute(linea.getPuntos());
+            LineString recorrido = calculateRoute(linea.getPuntos());
             MultiPoint puntos = GeoUtils.crearMultiPointDesdeDTOs(linea.getPuntos());
 
             Linea nuevaLinea = Linea.builder()
@@ -49,7 +50,7 @@ public class LineaService {
         }
     }
 
-    private MultiLineString calculateRoute(List<PuntoDTO> puntos) {
+    private LineString calculateRoute(List<PuntoDTO> puntos) {
         if (puntos == null || puntos.size() < 2) {
             throw new IllegalArgumentException("Se requieren al menos dos puntos.");
         }
@@ -71,9 +72,9 @@ public class LineaService {
     }
 
     public String calculateRouteGeoJSON(List<PuntoDTO> puntos) {
-        MultiLineString multiLineString = calculateRoute(puntos);
+        LineString lineString = calculateRoute(puntos);
         GeoJsonWriter writer = new GeoJsonWriter();
-        return writer.write(multiLineString);
+        return writer.write(lineString);
     }
 
     public List<PuntoDTO> crearPuntoDTO(double lon, double lat) {
