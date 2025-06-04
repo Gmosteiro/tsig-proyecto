@@ -14,11 +14,15 @@ public interface ParadaRepository extends JpaRepository<Parada, Integer> {
     FROM ft_caminera_nacional
     WHERE ST_DWithin(
         ST_Transform(geom, 3857),
-        ST_Transform(:punto , 3857),
+        ST_Transform(ST_SetSRID(ST_MakePoint(:lon, :lat), 4326), 3857),
         :distancia
     )
     """, nativeQuery = true)
-    boolean isRutaCercana(@Param("punto") Point ubicacion,@Param("distancia") Double buffer);
+    boolean isRutaCercana(
+        @Param("lon") double lon,
+        @Param("lat") double lat,
+        @Param("distancia") Double buffer
+    );
 
 
     Parada findByNombre(String nombre);

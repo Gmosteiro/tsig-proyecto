@@ -1,5 +1,8 @@
 package com.example.tsigback.repository;
 
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.io.WKTReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -11,6 +14,8 @@ public class RoutingRepository {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    private final GeometryFactory geometryFactory = new GeometryFactory();
 
     public Long findNearestSourceNode(double lon, double lat) {
         return jdbcTemplate.queryForObject(
@@ -32,7 +37,7 @@ public class RoutingRepository {
         );
     }
 
-    public String calculateRouteGeoJSON(List<Long> nodeIds) {
+    public MultiLineString calculateRouteMultiLineString(List<Long> nodeIds) {
         StringBuilder viaNodes = new StringBuilder();
         for (Long id : nodeIds) {
             if (viaNodes.length() > 0) viaNodes.append(", ");
@@ -40,7 +45,7 @@ public class RoutingRepository {
         }
 
         String sql =
-            "SELECT ST_AsGeoJSON(ST_LineMerge(ST_Union(geom))) AS geojson " +
+            "SELECT ST_AsText(ST_LineMerge(ST_Union(geom))) AS wkt " +
             "FROM ft_caminera_nacional_edges " +
             "WHERE id IN (" +
             "  SELECT edge " +
@@ -51,6 +56,13 @@ public class RoutingRepository {
             "  )" +
             ")";
 
-        return jdbcTemplate.queryForObject(sql, String.class);
+        String wkt = jdbcTemplate.queryForObject(sql, String.class);
+
+        try {
+            WKTReader reader = new WKTReader(geometryFactory);
+            return (MultiLineString) reader.read(wkt);
+        } catch (Exception e) {
+            throw new RuntimeException("Error parsing WKT to MultiLineString: " + e.getMessage(), e);
+        }
     }
 }
