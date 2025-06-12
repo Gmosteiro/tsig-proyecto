@@ -40,7 +40,7 @@ const PointControls: React.FC<PointControlsProps> = ({
                 onClick={handleSubmit}
                 disabled={pointsLength === 0}
             >
-                Guardar Ruta
+                Visualizar Ruta
             </button>
         )}
     </div>

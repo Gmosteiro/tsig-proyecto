@@ -1,17 +1,15 @@
 import { useState } from 'react'
+import { createLine } from '../../services/api'
 
 interface RouteFormProps {
-    geoJSON: any
     points: [number, number][]
     onCancel: () => void
 }
 
-export default function RouteForm({ geoJSON, points, onCancel }: RouteFormProps) {
+export default function RouteForm({ points, onCancel }: RouteFormProps) {
     const [name, setName] = useState('')
-    const [schedule, setSchedule] = useState('')
+    const [description, setDescription] = useState('')
     const [company, setCompany] = useState('')
-    const [origin, setOrigin] = useState('')
-    const [destination, setDestination] = useState('')
     const [observations, setObservations] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -23,22 +21,19 @@ export default function RouteForm({ geoJSON, points, onCancel }: RouteFormProps)
         setError(null)
         setSuccess(false)
         try {
-            const response = await fetch('/api/routes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name,
-                    schedule,
-                    company,
-                    origin,
-                    destination,
-                    observations,
-                    geojson: geoJSON,
-                    points
-                })
-            })
-            if (!response.ok) throw new Error('Error guardando la línea')
+            const response = await createLine({
+                nombre: name,
+                descripcion: description,
+                empresa: company,
+                observacion: observations,
+                puntos: points.map(point => ({
+                    lat: point[0],
+                    lon: point[1]
+                }))
+            });
+            if (typeof response != 'string') throw new Error('Error guardando la línea')
             setSuccess(true)
+            window.location.href = '/'
         } catch (err: any) {
             setError(err.message)
         } finally {
@@ -50,7 +45,7 @@ export default function RouteForm({ geoJSON, points, onCancel }: RouteFormProps)
         <form className="max-w-md mx-auto bg-white p-6 rounded shadow" onSubmit={handleSubmit}>
             <h2 className="text-xl font-bold mb-4">Registrar Línea de Transporte</h2>
             <div className="mb-4">
-                <label className="block mb-1 font-medium">Descripción de línea</label>
+                <label className="block mb-1 font-medium">Nombre de línea</label>
                 <input
                     type="text"
                     className="w-full border px-3 py-2 rounded"
@@ -60,12 +55,12 @@ export default function RouteForm({ geoJSON, points, onCancel }: RouteFormProps)
                 />
             </div>
             <div className="mb-4">
-                <label className="block mb-1 font-medium">Horario</label>
+                <label className="block mb-1 font-medium">Descripción</label>
                 <input
                     type="text"
                     className="w-full border px-3 py-2 rounded"
-                    value={schedule}
-                    onChange={e => setSchedule(e.target.value)}
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
                     required
                 />
             </div>
@@ -76,26 +71,6 @@ export default function RouteForm({ geoJSON, points, onCancel }: RouteFormProps)
                     className="w-full border px-3 py-2 rounded"
                     value={company}
                     onChange={e => setCompany(e.target.value)}
-                    required
-                />
-            </div>
-            <div className="mb-4">
-                <label className="block mb-1 font-medium">Origen</label>
-                <input
-                    type="text"
-                    className="w-full border px-3 py-2 rounded"
-                    value={origin}
-                    onChange={e => setOrigin(e.target.value)}
-                    required
-                />
-            </div>
-            <div className="mb-4">
-                <label className="block mb-1 font-medium">Destino</label>
-                <input
-                    type="text"
-                    className="w-full border px-3 py-2 rounded"
-                    value={destination}
-                    onChange={e => setDestination(e.target.value)}
                     required
                 />
             </div>

@@ -53,6 +53,7 @@ export default function MapPage() {
 
     const handleSubmit = async () => {
         setRouteGeoJSON(null)
+        setAdding(false)
         const payload = {
             points: points.map(([lat, lon]) => ({ lat, lon }))
         }
@@ -108,20 +109,32 @@ export default function MapPage() {
                     routeGeoJSON ? (
                         showRouteForm ? (
                             <RouteForm
-                                geoJSON={routeGeoJSON}
                                 points={points}
                                 onCancel={() => setShowRouteForm(false)}
                             // Add any other props needed for RouteForm
                             />
                         ) : (
-                            <div className="flex justify-center mt-4">
-                                <button
-                                    className="bg-green-600 text-white px-4 py-2 rounded"
-                                    onClick={() => setShowRouteForm(true)}
-                                >
-                                    Guardar
-                                </button>
-                            </div>
+                            <>
+                                <div className="flex justify-center mt-4">
+                                    <button
+                                        className="bg-green-600 text-white px-4 py-2 rounded"
+                                        onClick={() => setShowRouteForm(true)}
+                                    >
+                                        Continuar
+                                    </button>
+                                </div>
+                                <div className="flex justify-center mt-2">
+                                    <button
+                                        className="bg-gray-400 text-white px-4 py-2 rounded"
+                                        onClick={() => {
+                                            setRouteGeoJSON(null)
+                                            setShowRouteForm(false)
+                                        }}
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </>
                         )
                     ) : (
                         <PointControls

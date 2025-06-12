@@ -25,6 +25,7 @@ public class LineaController {
         if (lineaDTO == null || lineaDTO.getPuntos() == null || lineaDTO.getPuntos().isEmpty()) {
             return ResponseEntity.badRequest().body("No se puede crear una línea nula o sin puntos.");
         }
+
         lineaService.crearLinea(lineaDTO);
         return ResponseEntity.ok("Linea creada correctamente");
     }
@@ -44,6 +45,5 @@ public class LineaController {
             return ResponseEntity.internalServerError().body("Internal error: " + e.getMessage());
         }
     }
-
 
 }

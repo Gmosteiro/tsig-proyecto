@@ -23,19 +23,14 @@ export default function StopForm() {
                 <form
                     onSubmit={async (e) => {
                         e.preventDefault()
-                        console.log('Guardando parada con:', { name, position })
-                        debugger
                         await createStop({
                             nombre: name,
                             estado: 'HABILITADA',
                             refugio: false,
                             observacion: '',
-                            latitud: position[0],
-                            longitud: position[1]
+                            lat: position[0],
+                            lon: position[1]
                         })
-
-                        debugger
-
                     }}
                 >
                     <div>

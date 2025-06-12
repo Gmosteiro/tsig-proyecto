@@ -15,6 +15,7 @@ import org.locationtech.jts.io.geojson.GeoJsonWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.Console;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +56,8 @@ public class LineaService {
             throw new IllegalArgumentException("Se requieren al menos dos puntos.");
         }
 
+        System.out.println("Calculando ruta para los puntos: " + puntos.toString());
+
         List<Long> nodeIds = new ArrayList<>();
         for (PuntoDTO pt : puntos) {
             Long nodeId = routingRepository.findNearestSourceNode(pt.getLon(), pt.getLat());
@@ -63,7 +66,8 @@ public class LineaService {
                 throw new IllegalArgumentException("Uno o más puntos están a más de 100 metros del nodo más cercano.");
             }
             if (nodeId == null) {
-                throw new IllegalArgumentException("No se encontró nodo cercano para el punto (" + pt.getLat() + ", " + pt.getLon() + ").");
+                throw new IllegalArgumentException(
+                        "No se encontró nodo cercano para el punto (" + pt.getLat() + ", " + pt.getLon() + ").");
             }
             nodeIds.add(nodeId);
         }

@@ -6,8 +6,8 @@ export type ParadaDTO = {
     estado: EstadoParada
     refugio: boolean
     observacion: string
-    latitud: number
-    longitud: number
+    lat: number
+    lon: number
 }
 
 export type RoutingPointDTO = {
@@ -42,12 +42,12 @@ export type CreateLineDTO = {
 }
 
 export type PuntoDTO = {
-    latitud: number
-    longitud: number
+    lat: number
+    lon: number
 }
 
 // Update the function signature:
 export const createLine = async (lineData: CreateLineDTO) => {
-    const res = await axios.post('/apiurl/api/linea/crear', lineData)
+    const res = await axios.post('/apiurl/api/lineas', lineData)
     return res.data
 }
