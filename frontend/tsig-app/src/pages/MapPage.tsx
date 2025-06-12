@@ -110,14 +110,19 @@ export default function MapPage() {
                         showRouteForm ? (
                             <RouteForm
                                 points={points}
-                                onCancel={() => setShowRouteForm(false)}
-                            // Add any other props needed for RouteForm
+                                onCancel={() => {
+                                    setShowRouteForm(false)
+                                    setRouteGeoJSON(null)
+                                    setPoints([])
+                                    setSelectedIdx(null)
+                                    setAdding(false)
+                                }}
                             />
                         ) : (
                             <>
                                 <div className="flex justify-center mt-4">
                                     <button
-                                        className="bg-green-600 text-white px-4 py-2 rounded"
+                                        className="bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-400 transition-colors duration-150 text-white px-6 py-2 rounded-lg font-semibold shadow-md"
                                         onClick={() => setShowRouteForm(true)}
                                     >
                                         Continuar
@@ -125,7 +130,7 @@ export default function MapPage() {
                                 </div>
                                 <div className="flex justify-center mt-2">
                                     <button
-                                        className="bg-gray-400 text-white px-4 py-2 rounded"
+                                        className="bg-gray-400 hover:bg-gray-500 focus:ring-2 focus:ring-gray-300 transition-colors duration-150 text-white px-6 py-2 rounded-lg font-semibold shadow-md"
                                         onClick={() => {
                                             setRouteGeoJSON(null)
                                             setShowRouteForm(false)
