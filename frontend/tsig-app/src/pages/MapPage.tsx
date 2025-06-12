@@ -145,6 +145,7 @@ export default function MapPage() {
                         <PointControls
                             adding={adding}
                             setAdding={setAdding}
+                            setPoints={setPoints} // <--- agrega esto
                             selectedIdx={selectedIdx}
                             handleDeleteSelected={handleDeleteSelected}
                             handleSubmit={handleSubmit}
