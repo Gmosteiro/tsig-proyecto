@@ -7,13 +7,17 @@ import com.example.tsigback.entities.ParadaLinea;
 import com.example.tsigback.entities.dtos.ParadaDTO;
 import com.example.tsigback.entities.dtos.ParadaLineaDTO;
 import com.example.tsigback.entities.enums.EstadoParada;
+import com.example.tsigback.exception.EntidadYaExistenteException;
+import com.example.tsigback.exception.LineaNoEncontradaException;
 import com.example.tsigback.exception.ParadaLejosDeRutaException;
+import com.example.tsigback.exception.ParadaLineaNoEncontradaException;
 import com.example.tsigback.exception.ParadaNoEncontradaException;
 import com.example.tsigback.repository.LineaRepository;
 import com.example.tsigback.repository.ParadaLineaRepository;
 import com.example.tsigback.repository.ParadaRepository;
 import com.example.tsigback.utils.GeoUtils;
 
+import java.util.List;
 import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -90,33 +94,52 @@ public class ParadaService {
         paradaRepository.save(parada);
     }
 
-     public void agregarLineaAParada(ParadaLineaDTO dto) {
+     public void agregarLineaAParada(ParadaLineaDTO dto) throws ParadaNoEncontradaException, LineaNoEncontradaException, EntidadYaExistenteException {
         Parada parada = paradaRepository.findById(dto.getIdParada())
-            .orElseThrow(() -> new RuntimeException("Parada no encontrada con id " + dto.getIdParada()));
+            .orElseThrow(() -> new ParadaNoEncontradaException("Parada no encontrada con id " + dto.getIdParada()));
 
         Linea linea = lineaRepository.findById(dto.getIdLinea())
-            .orElseThrow(() -> new RuntimeException("Linea no encontrada con id " + dto.getIdLinea()));
+            .orElseThrow(() -> new LineaNoEncontradaException("Linea no encontrada con id " + dto.getIdLinea()));
 
-        // 2. Verificar si ya existe la relación (opcional, para evitar duplicados)
-        ParadaLinea existente = paradaLineaRepository
-            .findByParadaIdAndLineaId(dto.getIdParada(), dto.getIdLinea())
-            .orElse(null);
+            
+        ParadaLinea paradaLinea = paradaLineaRepository
+            .findByParadaIdAndLineaId(dto.getIdParada(), dto.getIdLinea()).get();
 
-        ParadaLinea paradaLinea;
-        if (existente != null) {
-            paradaLinea = existente;
-            paradaLinea.setEstaHabilitada(true);
-            paradaLinea.getHorarios().clear(); // limpiar horarios anteriores si se va a actualizar
-        } else {
-            paradaLinea = ParadaLinea.builder()
+
+        if (paradaLinea != null) {
+            throw new LineaNoEncontradaException("Linea no encontrada con id " + dto.getIdLinea());
+        }
+        
+        ParadaLinea nuevaParadaLinea = ParadaLinea.builder()
                 .parada(parada)
                 .linea(linea)
                 .estaHabilitada(true)
                 .build();
-        }
 
-        // 3. Crear los horarios
         List<HorarioParadaLinea> horarios = dto.getHorario().stream()
+            .map(horarioDto -> HorarioParadaLinea.builder()
+                .horario(horarioDto.getHora())
+                .paradaLinea(nuevaParadaLinea)
+                .build())
+            .toList();
+
+        nuevaParadaLinea.setHorarios(horarios);
+
+        paradaLineaRepository.save(nuevaParadaLinea);
+    }
+
+     public void agregarHorario(ParadaLineaDTO paradaLineaDTO) throws ParadaNoEncontradaException, LineaNoEncontradaException, ParadaLineaNoEncontradaException {
+        paradaRepository.findById(paradaLineaDTO.getIdParada())
+            .orElseThrow(() -> new ParadaNoEncontradaException("Parada no encontrada con id " + paradaLineaDTO.getIdParada()));
+
+        lineaRepository.findById(paradaLineaDTO.getIdLinea())
+            .orElseThrow(() -> new LineaNoEncontradaException("Linea no encontrada con id " + paradaLineaDTO.getIdLinea()));
+            
+        ParadaLinea paradaLinea = paradaLineaRepository.findById(paradaLineaDTO.getIdLinea())
+            .orElseThrow(() -> new ParadaLineaNoEncontradaException("Asociasion entre parada con id " + paradaLineaDTO.getIdParada()
+             +  "y linea " + paradaLineaDTO.getIdLinea() + "no existente"));
+
+        List<HorarioParadaLinea> horarios = paradaLineaDTO.getHorario().stream()
             .map(horarioDto -> HorarioParadaLinea.builder()
                 .horario(horarioDto.getHora())
                 .paradaLinea(paradaLinea)
@@ -125,9 +148,9 @@ public class ParadaService {
 
         paradaLinea.setHorarios(horarios);
 
-        // 4. Guardar la relación (y los horarios en cascada)
-        paradaLineaRepository.save(paradaLinea);
-    }
+        paradaLineaRepository.save(paradaLinea);     
+        
+     }
 
 
 }
