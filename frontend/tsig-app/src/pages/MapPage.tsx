@@ -14,6 +14,7 @@ import PointControls from '../components/map/PointsControls'
 import LayerController from '../components/map/LayerController'
 import { useAuth } from '../context/authContext'
 import RouteForm from '../components/ui/RouteForm'
+import StopForm from '../components/map/StopForm'
 
 
 function AddPointControl({ onAddPoint }: { onAddPoint: (latlng: [number, number]) => void }) {
@@ -33,6 +34,7 @@ export default function MapPage() {
     const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
     const [routeGeoJSON, setRouteGeoJSON] = useState<any>(null)
     const [showRouteForm, setShowRouteForm] = useState(false)
+    const [showStopForm, setShowStopForm] = useState(false)
 
     const handleAddPoint = (latlng: [number, number]) => {
         //TODO: Validate if the point is near a route
@@ -77,6 +79,7 @@ export default function MapPage() {
                 >
                     <LayerController />
                     {isAuthenticated && adding && <AddPointControl onAddPoint={handleAddPoint} />}
+                    {showStopForm && <StopForm />}
                     {points.map((latlng, idx) => (
                         <Marker
                             key={idx}
@@ -104,20 +107,46 @@ export default function MapPage() {
                     )}
                 </MapContainer>
 
+                {isAuthenticated && !adding && !routeGeoJSON && !showStopForm && (
+                    <div className="flex justify-center mt-4">
+                        <button
+                            className="bg-yellow-500 hover:bg-yellow-600 focus:ring-2 focus:ring-yellow-300 transition-colors duration-150 text-white px-6 py-2 rounded-lg font-semibold shadow-md"
+                            onClick={() => setShowStopForm(true)}
+                        >
+                            Crear Parada
+                        </button>
+                    </div>
+                )}
+
+                {showStopForm && (
+                    <div className="flex justify-center mt-2">
+                        <button
+                            className="bg-gray-400 hover:bg-gray-500 focus:ring-2 focus:ring-gray-300 transition-colors duration-150 text-white px-6 py-2 rounded-lg font-semibold shadow-md"
+                            onClick={() => setShowStopForm(false)}
+                        >
+                            Cancelar creación de parada
+                        </button>
+                    </div>
+                )}
 
                 {isAuthenticated && (
                     routeGeoJSON ? (
                         showRouteForm ? (
                             <RouteForm
                                 points={points}
-                                onCancel={() => setShowRouteForm(false)}
-                            // Add any other props needed for RouteForm
+                                onCancel={() => {
+                                    setShowRouteForm(false)
+                                    setRouteGeoJSON(null)
+                                    setPoints([])
+                                    setSelectedIdx(null)
+                                    setAdding(false)
+                                }}
                             />
                         ) : (
                             <>
                                 <div className="flex justify-center mt-4">
                                     <button
-                                        className="bg-green-600 text-white px-4 py-2 rounded"
+                                        className="bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-400 transition-colors duration-150 text-white px-6 py-2 rounded-lg font-semibold shadow-md"
                                         onClick={() => setShowRouteForm(true)}
                                     >
                                         Continuar
@@ -125,7 +154,7 @@ export default function MapPage() {
                                 </div>
                                 <div className="flex justify-center mt-2">
                                     <button
-                                        className="bg-gray-400 text-white px-4 py-2 rounded"
+                                        className="bg-gray-400 hover:bg-gray-500 focus:ring-2 focus:ring-gray-300 transition-colors duration-150 text-white px-6 py-2 rounded-lg font-semibold shadow-md"
                                         onClick={() => {
                                             setRouteGeoJSON(null)
                                             setShowRouteForm(false)
@@ -140,6 +169,7 @@ export default function MapPage() {
                         <PointControls
                             adding={adding}
                             setAdding={setAdding}
+                            setPoints={setPoints}
                             selectedIdx={selectedIdx}
                             handleDeleteSelected={handleDeleteSelected}
                             handleSubmit={handleSubmit}

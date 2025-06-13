@@ -22,6 +22,7 @@ export type RoutingRequestDTO = {
 export type EstadoParada = 'HABILITADA' | 'DESHABILITADA';
 
 export async function createStop(stopData: ParadaDTO) {
+    debugger
     const res = await axios.post('/apiurl/api/parada/crear', stopData)
     console.log('result from createStop:', res)
     return res.data

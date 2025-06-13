@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createLine } from '../../services/api'
 
 interface RouteFormProps {
@@ -14,6 +14,15 @@ export default function RouteForm({ points, onCancel }: RouteFormProps) {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState(false)
+
+    useEffect(() => {
+        if (success) {
+            const timeout = setTimeout(() => {
+                onCancel()
+            }, 2000) // Espera 1 segundo para mostrar el mensaje de éxito
+            return () => clearTimeout(timeout)
+        }
+    }, [success, onCancel])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -33,7 +42,6 @@ export default function RouteForm({ points, onCancel }: RouteFormProps) {
             });
             if (typeof response != 'string') throw new Error('Error guardando la línea')
             setSuccess(true)
-            window.location.href = '/'
         } catch (err: any) {
             setError(err.message)
         } finally {
