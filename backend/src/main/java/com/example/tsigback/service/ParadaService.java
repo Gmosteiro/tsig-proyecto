@@ -110,6 +110,7 @@ public class ParadaService {
             throw new LineaNoEncontradaException("Linea no encontrada con id " + dto.getIdLinea());
         }
         
+        
         ParadaLinea nuevaParadaLinea = ParadaLinea.builder()
                 .parada(parada)
                 .linea(linea)
@@ -124,6 +125,10 @@ public class ParadaService {
             .toList();
 
         nuevaParadaLinea.setHorarios(horarios);
+
+        if (parada.getEstado() == EstadoParada.DESHABILITADA) {
+            parada.setEstado(EstadoParada.HABILITADA);
+        }
 
         paradaLineaRepository.save(nuevaParadaLinea);
     }
@@ -149,7 +154,7 @@ public class ParadaService {
         paradaLinea.setHorarios(horarios);
 
         paradaLineaRepository.save(paradaLinea);     
-        
+
      }
 
 
