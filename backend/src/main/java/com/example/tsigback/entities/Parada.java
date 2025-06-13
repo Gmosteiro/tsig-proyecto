@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 import org.locationtech.jts.geom.Point;
 
 @AllArgsConstructor
@@ -27,4 +29,7 @@ public class Parada {
     private EstadoParada estado;
     private boolean refugio;
     private String observacion;
+
+    @OneToMany(mappedBy = "linea", cascade = CascadeType.ALL)
+    private List<ParadaLinea> lineas;
 }

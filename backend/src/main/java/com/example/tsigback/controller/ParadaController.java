@@ -1,6 +1,9 @@
 package com.example.tsigback.controller;
 
 import com.example.tsigback.entities.dtos.ParadaDTO;
+import com.example.tsigback.entities.dtos.ParadaLineaDTO;
+import com.example.tsigback.exception.EntidadYaExistenteException;
+import com.example.tsigback.exception.LineaNoEncontradaException;
 import com.example.tsigback.exception.ParadaLejosDeRutaException;
 import com.example.tsigback.exception.ParadaNoEncontradaException;
 import com.example.tsigback.service.ParadaService;
@@ -51,7 +54,7 @@ public class ParadaController {
         }
     }
 
-    @PutMapping("/borrar/{nombre}")
+    @DeleteMapping("/nombre/{nombre}")
     public ResponseEntity<String> modificarParada(@PathParam("nombre") String nombre) {
         try {
             if (nombre != null && nombre.isEmpty()) {
@@ -67,5 +70,24 @@ public class ParadaController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
+    }
+
+    @PostMapping("/asociar/linea")
+    public ResponseEntity<String> asociarParadaConLinea(@RequestBody ParadaLineaDTO paradaLineaDTO) {
+        try {
+            if (paradaLineaDTO == null || paradaLineaDTO.getIdLinea() == 0 || paradaLineaDTO.getIdParada() == 0) {
+                return ResponseEntity.badRequest().body("El DTO vino con datos erroneos");
+            }
+            paradaService.agregarLineaAParada(paradaLineaDTO);
+            return ResponseEntity.ok("Se ha asignado la parada con id " + paradaLineaDTO.getIdParada() + " con la linea id " + paradaLineaDTO.getIdLinea());
+        } catch (ParadaNoEncontradaException | LineaNoEncontradaException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); 
+        } catch (EntidadYaExistenteException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage()); 
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); 
+        }
+
+
     }
 }
