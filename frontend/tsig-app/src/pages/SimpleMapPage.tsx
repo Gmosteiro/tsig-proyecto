@@ -5,7 +5,6 @@ import NavigationBar from '../components/ui/NavigationBar';
 import Footer from '../components/ui/Footer';
 import 'leaflet/dist/leaflet.css';
 
-// Icono personalizado (necesario porque el default no carga bien a veces)
 const customIcon = new L.Icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png',
   iconSize: [25, 41],
@@ -14,6 +13,7 @@ const customIcon = new L.Icon({
 
 export default function SimpleMapPage() {
   const [position, setPosition] = useState<[number, number] | null>(null);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
@@ -27,16 +27,89 @@ export default function SimpleMapPage() {
     );
   }, []);
 
+  const renderForm = () => {
+    return (
+      <div className="flex flex-col gap-4 p-4 bg-white shadow rounded-md w-full max-w-md mx-auto">
+        {selectedOption === 'Origen-Destino' && (
+          <>
+            <label>Origen:</label>
+            <input type="text" placeholder="Ej: Montevideo" className="border p-2 rounded" />
+            <label>Destino:</label>
+            <input type="text" placeholder="Ej: Maldonado" className="border p-2 rounded" />
+          </>
+        )}
+        {selectedOption === 'Por Horario' && (
+          <>
+            <label>Desde:</label>
+            <input type="time" className="border p-2 rounded" />
+            <label>Hasta:</label>
+            <input type="time" className="border p-2 rounded" />
+          </>
+        )}
+        {selectedOption === 'Por Ruta/KM' && (
+          <>
+            <label>Ruta o KM:</label>
+            <input type="text" placeholder="Ej: Ruta 8 km 29" className="border p-2 rounded" />
+          </>
+        )}
+        {selectedOption === 'Por Empresa' && (
+          <>
+            <label>Empresa:</label>
+            <input type="text" placeholder="Ej: CUTCSA" className="border p-2 rounded" />
+          </>
+        )}
+        {selectedOption === 'Corte Polígono' && (
+          <p>Dibuje un polígono en el mapa (funcionalidad futura).</p>
+        )}
+
+        <div className="flex justify-between mt-4">
+          <button
+            onClick={() => setSelectedOption(null)}
+            className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
+          >
+            Volver
+          </button>
+          <button
+            onClick={() => alert('Confirmado (sin funcionalidad)')}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Confirmar
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen">
       <NavigationBar />
 
+      {/* Selector o formulario */}
+      <div className="flex justify-center p-4 bg-gray-100 shadow">
+        {!selectedOption ? (
+          <div className="flex flex-wrap gap-4">
+            {['Origen-Destino', 'Por Horario', 'Por Ruta/KM', 'Por Empresa', 'Corte Polígono'].map((label) => (
+              <button
+                key={label}
+                onClick={() => setSelectedOption(label)}
+                className="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow hover:bg-gray-50 transition"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          renderForm()
+        )}
+      </div>
+
+      {/* Mapa */}
       {position ? (
         <MapContainer
           center={position}
           zoom={15}
           scrollWheelZoom={true}
-          style={{ height: '100vh', width: '100%' }}
+          style={{ height: '75vh', width: '100%' }}
         >
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
