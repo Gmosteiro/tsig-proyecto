@@ -32,14 +32,19 @@ public class LineaService {
 
     public void crearLinea(LineaDTO linea) {
         try {
-            MultiLineString recorrido = calculateRoute(linea.getPuntos());
+            System.out.println("DEBUG puntos recibidos: " + linea.getPuntos());
+            System.out.println("DEBUG rutaGeoJSON recibido: " + linea.getRutaGeoJSON());
+            if (linea.getRutaGeoJSON() == null || linea.getRutaGeoJSON().trim().isEmpty() || linea.getRutaGeoJSON().equals("null")) {
+                throw new IllegalArgumentException("El campo rutaGeoJSON no puede ser nulo, vacío ni 'null'.");
+            }
+            MultiLineString recorrido = GeoUtils.geoJsonToMultiLineString(linea.getRutaGeoJSON());
             MultiPoint puntos = GeoUtils.crearMultiPointDesdeDTOs(linea.getPuntos());
 
             Point puntoOrigen = getPuntoDeOrigen(linea.getPuntos());
             Point puntoDestino = getPuntoDestino(linea.getPuntos());
             String origen = lineaRepository.obtenerDepartamentoOrigen(puntoOrigen);
             String destino = lineaRepository.obtenerDepartamentoDestino(puntoDestino);
-        
+
             Linea nuevaLinea = Linea.builder()
                     .descripcion(linea.getDescripcion())
                     .empresa(linea.getEmpresa())
@@ -58,42 +63,30 @@ public class LineaService {
 
     private Point getPuntoDeOrigen(List<PuntoDTO> puntos) {
         PuntoDTO primerPuntoDTO = puntos.get(0);
-        return GeoUtils.crearPunto(primerPuntoDTO.getLon(), primerPuntoDTO.getLat());
+        return GeoUtils.crearPunto(primerPuntoDTO.getLongitud(), primerPuntoDTO.getLatitud());
     }
 
     private Point getPuntoDestino(List<PuntoDTO> puntos) {
         PuntoDTO ultimoPuntoDTO = puntos.get(puntos.size() - 1);
-        return GeoUtils.crearPunto(ultimoPuntoDTO.getLon(), ultimoPuntoDTO.getLat());
-    }
-
-    public String calculateRouteGeoJSON(List<PuntoDTO> puntos) {
-        MultiLineString multiLineString = calculateRoute(puntos);
-        GeoJsonWriter writer = new GeoJsonWriter();
-        return writer.write(multiLineString);
+        return GeoUtils.crearPunto(ultimoPuntoDTO.getLongitud(), ultimoPuntoDTO.getLatitud());
     }
 
     public List<PuntoDTO> crearPuntoDTO(double lon, double lat) {
         return List.of(new PuntoDTO(lon, lat));
     }
 
-    private MultiLineString calculateRoute(List<PuntoDTO> puntos) {
-        if (puntos == null || puntos.size() < 2) {
-            throw new IllegalArgumentException("Se requieren al menos dos puntos.");
+    public void validarDistanciaPuntosARed(List<PuntoDTO> puntos) {
+        if (puntos == null || puntos.isEmpty()) {
+            throw new IllegalArgumentException("Debe enviar al menos un punto.");
         }
-
-        List<Long> nodeIds = new ArrayList<>();
         for (PuntoDTO pt : puntos) {
-            Long nodeId = routingRepository.findNearestSourceNode(pt.getLon(), pt.getLat());
-            Double dist = routingRepository.findNearestDistance(pt.getLon(), pt.getLat());
+            Double dist = routingRepository.findNearestDistance(pt.getLongitud(), pt.getLatitud());
+            if (dist == null) {
+                throw new IllegalArgumentException("No se pudo calcular la distancia para el punto (" + pt.getLatitud() + ", " + pt.getLongitud() + ").");
+            }
             if (dist > MAX_DIST) {
-                throw new IllegalArgumentException("Uno o más puntos están a más de 100 metros del nodo más cercano.");
+                throw new IllegalArgumentException("El punto (" + pt.getLatitud() + ", " + pt.getLongitud() + ") está a más de 100 metros de la red.");
             }
-            if (nodeId == null) {
-                throw new IllegalArgumentException("No se encontró nodo cercano para el punto (" + pt.getLat() + ", " + pt.getLon() + ").");
-            }
-            nodeIds.add(nodeId);
         }
-
-        return routingRepository.calculateRouteMultiLineString(nodeIds);
     }
 }

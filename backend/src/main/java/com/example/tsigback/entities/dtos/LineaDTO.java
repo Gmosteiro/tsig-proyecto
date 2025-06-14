@@ -20,4 +20,5 @@ public class LineaDTO {
     private String empresa;
     private String observacion;
     private List<PuntoDTO> puntos;
+    private String rutaGeoJSON;
 }

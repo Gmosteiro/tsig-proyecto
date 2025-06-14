@@ -23,11 +23,15 @@ public class LineaController {
     // Base implementation for route validation
     @PostMapping("/validar")
     public ResponseEntity<?> validarRuta(@RequestBody ListaPuntosDTO request) {
-        // TODO: Implement route validation logic and return GeoJSON
-        return ResponseEntity.ok("{\"type\":\"FeatureCollection\",\"features\":[]}");
+        try {
+            lineaService.validarDistanciaPuntosARed(request.getPoints());
+            return ResponseEntity.ok("OK");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
-    @PostMapping
+    @PostMapping("/guardar")
     public ResponseEntity<String> guardarLinea(@RequestBody LineaDTO lineaDTO) {
         if (lineaDTO == null || lineaDTO.getPuntos() == null || lineaDTO.getPuntos().isEmpty()) {
             return ResponseEntity.badRequest().body("No se puede crear una línea nula o sin puntos.");

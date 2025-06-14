@@ -6,9 +6,10 @@ import 'leaflet-routing-machine';
 interface RoutingControlProps {
   waypoints: [number, number][];
   serviceUrl?: string;
+  onRouteGeoJSON?: (geojson: any) => void;
 }
 
-export default function RoutingControl({ waypoints, serviceUrl }: RoutingControlProps) {
+export default function RoutingControl({ waypoints, serviceUrl, onRouteGeoJSON }: RoutingControlProps) {
   const map = useMap();
   const controlRef = useRef<any>(null);
 
@@ -31,8 +32,20 @@ export default function RoutingControl({ waypoints, serviceUrl }: RoutingControl
           styles: [{ color: 'red', weight: 7, opacity: 0.9 }],
           interactive: false
         },
-        createMarker: () => null // <--- Prevents routing control from rendering its own markers
+        createMarker: () => null
       }).addTo(map);
+
+      controlRef.current.on('routesfound', function(e: any) {
+        if (onRouteGeoJSON && e.routes && e.routes[0]) {
+          const geojson = e.routes[0].coordinates
+            ? {
+                type: "LineString",
+                coordinates: e.routes[0].coordinates.map((c: any) => [c.lng, c.lat])
+              }
+            : null;
+          if (geojson) onRouteGeoJSON(geojson);
+        }
+      });
     }
 
     return () => {
@@ -41,11 +54,9 @@ export default function RoutingControl({ waypoints, serviceUrl }: RoutingControl
         controlRef.current = null;
       }
     };
-    // Only run on mount/unmount
-    // eslint-disable-next-line
-  }, [map, serviceUrl]);
 
-  // Update waypoints when they change
+  }, [map, serviceUrl, onRouteGeoJSON]);
+
   useEffect(() => {
     if (controlRef.current) {
       controlRef.current.setWaypoints(waypoints.map(([lat, lng]) => L.latLng(lat, lng)));

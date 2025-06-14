@@ -6,13 +6,13 @@ export type ParadaDTO = {
     estado: EstadoParada
     refugio: boolean
     observacion: string
-    lat: number
-    lon: number
+    latitud: number
+    longitud: number
 }
 
 export type RoutingPointDTO = {
-    lat: number
-    lon: number
+    latitud: number
+    longitud: number
 }
 
 export type RoutingRequestDTO = {
@@ -48,6 +48,5 @@ export const saveLine = async (lineData: LineaDTO) => {
 
 export async function createStop(stopData: ParadaDTO) {
     const res = await axios.post('/apiurl/api/parada/crear', stopData)
-    console.log('result from createStop:', res)
     return res.data
 }

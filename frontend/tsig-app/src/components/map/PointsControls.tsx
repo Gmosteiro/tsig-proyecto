@@ -3,7 +3,6 @@ import React from 'react'
 interface PointControlsProps {
     adding: boolean
     setAdding: React.Dispatch<React.SetStateAction<boolean>>
-    setPoints: React.Dispatch<React.SetStateAction<[number, number][]>>
     selectedIdx: number | null
     handleDeleteSelected: () => void
     handleVerifyRoute: () => void
@@ -17,7 +16,6 @@ interface PointControlsProps {
 const PointControls: React.FC<PointControlsProps> = ({
     adding,
     setAdding,
-    setPoints,
     selectedIdx,
     handleDeleteSelected,
     handleVerifyRoute,
@@ -28,7 +26,6 @@ const PointControls: React.FC<PointControlsProps> = ({
     handleCancelValidation
 }) => (
     <div className="flex justify-center gap-2 p-2">
-
         {!adding ? (
             <button
                 className="px-3 py-1 rounded bg-gray-200"
@@ -63,7 +60,9 @@ const PointControls: React.FC<PointControlsProps> = ({
         {!isValidated && pointsLength > 1 && (
             <button
                 className="px-3 py-1 rounded bg-yellow-500 text-white"
-                onClick={handleVerifyRoute}
+                onClick={() => {
+                    handleVerifyRoute();
+                }}
                 disabled={pointsLength === 0}
             >
                 Verificar Ruta
