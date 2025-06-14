@@ -117,7 +117,7 @@ public class LineaService {
         if (puntosDtos != null && puntosDtos.size() > 1) {
             MultiLineString nuevoRecorrido = calculateRoute(lineaDTO.getPuntos());
 
-            List<ParadaLinea> paradas = linea.getParadas();
+            List<ParadaLinea> paradas = linea.getParadasLineas();
             //Itero por todas las paradas que estan asociadas en la lineas
             for (ParadaLinea parada : paradas) {
                 procesamientoDeParadaLinea(parada, linea, nuevoRecorrido);

@@ -103,13 +103,12 @@ public class ParadaService {
 
             
         ParadaLinea paradaLinea = paradaLineaRepository
-            .findByParadaIdAndLineaId(dto.getIdParada(), dto.getIdLinea()).get();
+            .findByParadaIdAndLineaId(dto.getIdParada(), dto.getIdLinea());
 
 
         if (paradaLinea != null) {
             throw new LineaNoEncontradaException("Linea no encontrada con id " + dto.getIdLinea());
         }
-        
         
         ParadaLinea nuevaParadaLinea = ParadaLinea.builder()
                 .parada(parada)

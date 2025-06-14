@@ -1,6 +1,7 @@
 package com.example.tsigback.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -25,4 +26,6 @@ public interface ParadaLineaRepository extends JpaRepository<ParadaLinea, Intege
     List<ParadaLinea> findByParadaIdAndEstaHabilitadaTrue(int paradaId);
 
     List<ParadaLinea> findByParadaIdOrderByIdAsc(int paradaId);
+
+    ParadaLinea findByParadaIdAndLineaId(int paradaId, int lineaId);
 }

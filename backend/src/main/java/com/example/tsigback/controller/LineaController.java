@@ -3,6 +3,7 @@ package com.example.tsigback.controller;
 import com.example.tsigback.entities.dtos.LineaDTO;
 import com.example.tsigback.entities.dtos.ListaPuntosDTO;
 import com.example.tsigback.entities.dtos.PuntoDTO;
+import com.example.tsigback.exception.LineaNoEncontradaException;
 import com.example.tsigback.service.LineaService;
 
 import jakarta.websocket.server.PathParam;
@@ -56,9 +57,10 @@ public class LineaController {
             lineaService.modificarLinea(lineaDTO);
             return ResponseEntity.ok("El id linea " + lineaDTO.getId() + " ha sido modificado con exito");
         } catch (LineaNoEncontradaException e) {
-            return ResponseEntity.notFound().body("El id linea " + lineaDTO.getId() + " no existe en la base de datos");
+            //Devuelvo un badRequest porque el notFound no me deja agregarle body
+            return ResponseEntity.badRequest().body("El id linea " + lineaDTO.getId() + " no existe en la base de datos");
         } catch (IllegalArgumentException e) {
-
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Internal error: " + e.getMessage());
         }
