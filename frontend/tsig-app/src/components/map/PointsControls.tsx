@@ -6,8 +6,12 @@ interface PointControlsProps {
     setPoints: React.Dispatch<React.SetStateAction<[number, number][]>>
     selectedIdx: number | null
     handleDeleteSelected: () => void
-    handleSubmit: () => void
+    handleVerifyRoute: () => void
+    handleSaveRoute: () => void
     pointsLength: number
+    handleCancelAdd: () => void
+    isValidated: boolean
+    handleCancelValidation: () => void
 }
 
 const PointControls: React.FC<PointControlsProps> = ({
@@ -16,40 +20,71 @@ const PointControls: React.FC<PointControlsProps> = ({
     setPoints,
     selectedIdx,
     handleDeleteSelected,
-    handleSubmit,
-    pointsLength
+    handleVerifyRoute,
+    handleSaveRoute,
+    pointsLength,
+    handleCancelAdd,
+    isValidated,
+    handleCancelValidation
 }) => (
     <div className="flex justify-center gap-2 p-2">
-        <button
-            className={`min-h-[50px] min-w-[200px] px-3 py-1 rounded-lg font-semibold shadow-md transition-colors duration-150 ${adding
-                    ? 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-400'
-                    : 'bg-gradient-to-r from-cyan-400 via-blue-300 to-blue-500 text-white hover:from-cyan-500 hover:to-blue-600 focus:ring-2 focus:ring-blue-300'
-                }`}
-            onClick={() => {
-                if (!adding) setPoints([])
-                setAdding(a => !a)
-            }}
-        >
-            {adding ? 'Agregando: Clickea el mapa para agregar puntos a la ruta' : 'Crear Ruta'}
-        </button>
 
-        {selectedIdx !== null && (
+        {!adding ? (
+            <button
+                className="px-3 py-1 rounded bg-gray-200"
+                onClick={() => setAdding(true)}
+            >
+                Crear Ruta
+            </button>
+        ) : (
+            <>
+                <span className="px-3 py-1 rounded bg-blue-600 text-white">
+                    Agregando: Clickea el mapa para agregar puntos a la ruta
+                </span>
+                <button
+                    className="px-3 py-1 rounded bg-red-600 text-white"
+                    onClick={handleCancelAdd}
+                >
+                    Cancelar
+                </button>
+            </>
+        )}
+
+        {!isValidated && selectedIdx !== null && (
             <button
                 className="px-3 py-1 rounded bg-red-400 text-white"
                 onClick={handleDeleteSelected}
+                disabled={isValidated}
             >
                 Eliminar Punto Seleccionado
             </button>
         )}
 
-        {pointsLength > 1 && (
+        {!isValidated && pointsLength > 1 && (
             <button
-                className="px-3 py-1 rounded bg-green-500 text-white"
-                onClick={handleSubmit}
+                className="px-3 py-1 rounded bg-yellow-500 text-white"
+                onClick={handleVerifyRoute}
                 disabled={pointsLength === 0}
             >
-                Visualizar Ruta
+                Verificar Ruta
             </button>
+        )}
+
+        {isValidated && (
+            <>
+                <button
+                    className="px-3 py-1 rounded bg-green-500 text-white"
+                    onClick={handleSaveRoute}
+                >
+                    Guardar Ruta
+                </button>
+                <button
+                    className="px-3 py-1 rounded bg-gray-400 text-white"
+                    onClick={handleCancelValidation}
+                >
+                    Cancelar Validación
+                </button>
+            </>
         )}
     </div>
 )

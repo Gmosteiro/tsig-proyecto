@@ -20,8 +20,15 @@ public class LineaController {
     @Autowired
     private LineaService lineaService;
 
+    // Base implementation for route validation
+    @PostMapping("/validar")
+    public ResponseEntity<?> validarRuta(@RequestBody ListaPuntosDTO request) {
+        // TODO: Implement route validation logic and return GeoJSON
+        return ResponseEntity.ok("{\"type\":\"FeatureCollection\",\"features\":[]}");
+    }
+
     @PostMapping
-    public ResponseEntity<String> altaLinea(@RequestBody LineaDTO lineaDTO) {
+    public ResponseEntity<String> guardarLinea(@RequestBody LineaDTO lineaDTO) {
         if (lineaDTO == null || lineaDTO.getPuntos() == null || lineaDTO.getPuntos().isEmpty()) {
             return ResponseEntity.badRequest().body("No se puede crear una línea nula o sin puntos.");
         }
@@ -29,21 +36,4 @@ public class LineaController {
         lineaService.crearLinea(lineaDTO);
         return ResponseEntity.ok("Linea creada correctamente");
     }
-
-    @PostMapping("/shortest-path")
-    public ResponseEntity<?> getShortestPath(@RequestBody ListaPuntosDTO request) {
-        try {
-            List<PuntoDTO> puntosDTO = new ArrayList<>();
-            request.getPoints().forEach(punto -> {
-                puntosDTO.add(punto);
-            });
-            String geojson = lineaService.calculateRouteGeoJSON(puntosDTO);
-            return ResponseEntity.ok(geojson);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Internal error: " + e.getMessage());
-        }
-    }
-
 }
