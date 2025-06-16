@@ -11,11 +11,11 @@ import java.util.List;
 
 import org.locationtech.jts.geom.Point;
 
+@Entity
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
 @Builder
-@Entity
 public class Parada {
 
     @Id
@@ -30,6 +30,8 @@ public class Parada {
     private boolean refugio;
     private String observacion;
 
-    @OneToMany(mappedBy = "linea", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "parada",          // ← aquí va "parada"
+               cascade = CascadeType.ALL,
+               orphanRemoval = true)
     private List<ParadaLinea> lineas;
 }

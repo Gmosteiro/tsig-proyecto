@@ -28,6 +28,8 @@ public class ParadaLinea {
     @Column(nullable = false)
     private boolean estaHabilitada = true;
 
-    @OneToMany(mappedBy = "paradaLinea", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "paradaLinea",
+               cascade = CascadeType.ALL,
+               orphanRemoval = true)
     private List<HorarioParadaLinea> horarios;
 }
