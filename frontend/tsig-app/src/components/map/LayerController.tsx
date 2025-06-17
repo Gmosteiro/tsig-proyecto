@@ -1,70 +1,15 @@
-import { TileLayer, WMSTileLayer, LayersControl, useMapEvent, useMap } from 'react-leaflet'
+import { TileLayer, WMSTileLayer, LayersControl } from 'react-leaflet'
 import { useState } from 'react'
-import { getWMSFeatureInfo, ParadaDTO } from '../../services/api'
-import EditStopPopup from './EditStopPopup';
-import { WMS_URL, DEFAULT_TILE_SIZE } from '../../lib/contants';
-
-function WMSFeatureInfoHandler({
-    visible,
-    layerName,
-    infoFormat = "application/json",
-    tolerance = 5,
-    onFeatureInfo
-}: {
-    visible: boolean,
-    layerName: string,
-    infoFormat?: string,
-    tolerance?: number,
-    onFeatureInfo: (data: any) => void
-}) {
-    const map = useMap();
-
-    useMapEvent('click', async (e) => {
-        const popup = document.querySelector('.edit-stop-popup');
-        if (popup && e.originalEvent && popup.contains(e.originalEvent.target as Node)) {
-            return;
-        }
-
-        if (!visible) return;
-
-        const size = map.getSize();
-        const bounds = map.getBounds();
-        const crs = map.options.crs;
-        if (!crs) {
-            onFeatureInfo(null);
-            return;
-        }
-        const point = map.latLngToContainerPoint(e.latlng);
-
-        // Construir bbox
-        const sw = crs.project(bounds.getSouthWest());
-        const ne = crs.project(bounds.getNorthEast());
-        const bbox = [sw.x, sw.y, ne.x, ne.y].join(',');
-
-        try {
-            const data = await getWMSFeatureInfo({
-                layerName,
-                crsCode: crs.code ?? "",
-                bbox,
-                size,
-                point,
-                infoFormat,
-                tolerance
-            });
-            onFeatureInfo(data);
-        } catch (err) {
-            onFeatureInfo(null);
-        }
-    });
-
-    return null;
-}
+import { ParadaDTO } from '../../services/api'
+import WMSFeatureInfoHandler from './WMSFeatureInfoHandler'
+import StopInfoPopupContainer from './StopInfoPopupContainer'
+import { WMS_URL, DEFAULT_TILE_SIZE } from '../../lib/contants'
 
 export default function LayerController() {
-    const [camineraVisible, setCamineraVisible] = useState(true);
-    const [paradaVisible, setParadaVisible] = useState(false);
-    const [lineaVisible, setLineaVisible] = useState(false);
-    const [info, setInfo] = useState<ParadaDTO | null>(null);
+    const [camineraVisible, setCamineraVisible] = useState(true)
+    const [paradaVisible, setParadaVisible] = useState(false)
+    const [lineaVisible, setLineaVisible] = useState(false)
+    const [selectedParada, setSelectedParada] = useState<ParadaDTO | null>(null)
 
     return (
         <>
@@ -119,9 +64,10 @@ export default function LayerController() {
                 layerName="tsig:parada"
                 tolerance={12}
                 onFeatureInfo={data => {
+                    console.log('Feature info for paradas:', data)
                     if (data && data.features && data.features.length > 0) {
-                        const props = data.features[0].properties;
-                        const parada: ParadaDTO = {
+                        const props = data.features[0].properties
+                        setSelectedParada({
                             id: props.id,
                             nombre: props.nombre,
                             estado: props.estado,
@@ -129,21 +75,23 @@ export default function LayerController() {
                             observacion: props.observacion,
                             latitud: props.latitud,
                             longitud: props.longitud,
-                        };
-                        setInfo(parada);
+                        })
                     } else {
-                        setInfo(null);
+                        setSelectedParada(null)
                     }
                 }}
             />
+
             <WMSFeatureInfoHandler
                 visible={lineaVisible}
                 layerName="tsig:linea"
                 tolerance={8}
-                onFeatureInfo={data => setInfo(data)}
+                onFeatureInfo={(data) => {
+                    console.log('Feature info for lineas:', data)
+                }}
             />
 
-            <EditStopPopup stop={info} onClose={() => setInfo(null)} />
+            <StopInfoPopupContainer parada={selectedParada} onClose={() => setSelectedParada(null)} />
         </>
     )
 }
