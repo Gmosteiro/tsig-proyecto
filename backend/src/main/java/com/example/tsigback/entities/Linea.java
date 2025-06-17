@@ -41,7 +41,7 @@ public class Linea {
     @Column(columnDefinition = "geometry(MultiLineString, 4326)")
     private MultiLineString recorrido;
 
-    @OneToMany(mappedBy = "linea",           // ← aquí va "linea"
+    @OneToMany(mappedBy = "linea",       
                cascade = CascadeType.ALL,
                orphanRemoval = true)
     private List<ParadaLinea> paradasLineas;

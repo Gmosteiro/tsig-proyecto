@@ -59,7 +59,7 @@ public class ParadaService {
     }
 
     public void modificarParada(ParadaDTO paradaDTO) throws ParadaNoEncontradaException, ParadaLejosDeRutaException {
-        Parada parada = paradaRepository.findByNombre(paradaDTO.getNombre());
+        Parada parada = paradaRepository.findById(paradaDTO.getId());
 
         if (parada == null) {
             throw new ParadaNoEncontradaException("Parada con nombre " + paradaDTO.getNombre() + " no encontrada");
