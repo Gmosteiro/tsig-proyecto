@@ -66,8 +66,9 @@ export default function LayerController() {
                 onFeatureInfo={data => {
                     if (data && data.features && data.features.length > 0) {
                         const props = data.features[0].properties
+                        const paradaId = data.features[0].id.split('.')[1]
                         setSelectedParada({
-                            id: props.id,
+                            id: paradaId,
                             nombre: props.nombre,
                             estado: props.estado,
                             refugio: props.refugio,
