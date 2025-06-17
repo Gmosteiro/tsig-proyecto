@@ -24,6 +24,8 @@ docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/script
 docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/scripts/postgis/usuario.sql
 bash backend/scripts/geoserver/geoserver-setup.sh
 
+((Para la capa de lineas, hay que modificar la configuración en GeoServer directamente))
+
 # Servicio | URL | User | Password
 
 Frontend http://localhost:3000

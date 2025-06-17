@@ -1,14 +1,47 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Marker, Popup } from 'react-leaflet'
 import { LatLngTuple } from 'leaflet'
-import { createStop, EstadoParada } from '../../services/api'
+import { EstadoParada } from '../../services/api'
 
-export default function StopForm() {
-    const [position, setPosition] = useState<LatLngTuple>([-34.9011, -56.1645])
-    const [name, setName] = useState('Nueva Parada')
-    const [estado, setEstado] = useState<EstadoParada>('HABILITADA')
-    const [refugio, setRefugio] = useState(false)
-    const [observacion, setObservacion] = useState('')
+interface StopFormProps {
+    onCancel: () => void
+    onSubmit: (stopData: {
+        nombre: string
+        estado: EstadoParada
+        refugio: boolean
+        observacion: string
+        latitud: number
+        longitud: number
+    }) => void
+    initialData?: {
+        nombre: string
+        estado: EstadoParada
+        refugio: boolean
+        observacion: string
+        latitud: number
+        longitud: number
+    }
+}
+
+export default function StopForm({ onCancel, onSubmit, initialData }: StopFormProps) {
+    const [position, setPosition] = useState<LatLngTuple>(
+        initialData ? [initialData.latitud, initialData.longitud] : [-34.9011, -56.1645]
+    )
+    const [name, setName] = useState(initialData?.nombre ?? 'Nueva Parada')
+    const [estado, setEstado] = useState<EstadoParada>(initialData?.estado ?? 'HABILITADA')
+    const [refugio, setRefugio] = useState(initialData?.refugio ?? false)
+    const [observacion, setObservacion] = useState(initialData?.observacion ?? '')
+
+    // Si initialData cambia (por ejemplo, al editar otra parada), actualiza el estado
+    useEffect(() => {
+        if (initialData) {
+            setPosition([initialData.latitud, initialData.longitud])
+            setName(initialData.nombre)
+            setEstado(initialData.estado)
+            setRefugio(initialData.refugio)
+            setObservacion(initialData.observacion)
+        }
+    }, [initialData])
 
     return (
         <Marker
@@ -27,13 +60,13 @@ export default function StopForm() {
                     className="flex flex-col gap-3 p-2"
                     onSubmit={async (e) => {
                         e.preventDefault()
-                        await createStop({
+                        await onSubmit({
                             nombre: name,
                             estado,
                             refugio,
                             observacion,
-                            lat: position[0],
-                            lon: position[1]
+                            latitud: position[0],
+                            longitud: position[1]
                         })
                     }}
                 >
@@ -86,12 +119,21 @@ export default function StopForm() {
                             onChange={e => setObservacion(e.target.value)}
                         />
                     </div>
-                    <button
-                        type="submit"
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded shadow transition-colors duration-150"
-                    >
-                        Crear parada
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            type="submit"
+                            className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded shadow transition-colors duration-150"
+                        >
+                            {initialData ? 'Guardar cambios' : 'Crear parada'}
+                        </button>
+                        <button
+                            type="button"
+                            className="bg-gray-400 text-white font-semibold px-4 py-2 rounded shadow transition-colors duration-150"
+                            onClick={onCancel}
+                        >
+                            Cancelar
+                        </button>
+                    </div>
                 </form>
             </Popup>
         </Marker>

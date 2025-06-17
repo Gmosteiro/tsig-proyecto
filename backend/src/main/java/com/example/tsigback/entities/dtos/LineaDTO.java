@@ -14,7 +14,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 public class LineaDTO {
-    private int id;
+    private Long id;
     private String nombre;
     private String descripcion;
     private String empresa;
@@ -22,6 +22,7 @@ public class LineaDTO {
     private String origen;
     private String destino;
     private List<PuntoDTO> puntos;
+    private String rutaGeoJSON;
     private String recorrido;
     private List<Integer> paradaLineaIds;
 }
