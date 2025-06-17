@@ -196,8 +196,8 @@ public class LineaService {
                 .destino(linea.getDestino())
                 .observacion(linea.getObservacion())
                 //.puntos(listaPuntos)
-                .recorridoWkt(wkt)
-                .paradasLineaIds(paradaLineaIds)
+                //.recorridoWkt(wkt)
+                //.paradasLineaIds(paradaLineaIds)
                 .build();
     }
 }
