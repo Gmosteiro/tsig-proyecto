@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
-import { createLine } from '../../services/api'
 
 interface RouteFormProps {
     points: [number, number][]
     onCancel: () => void
+    onSave: (formData: { nombre: string, descripcion: string, empresa: string, observacion?: string }) => void
 }
 
-export default function RouteForm({ points, onCancel }: RouteFormProps) {
+export default function RouteForm({ onCancel, onSave }: RouteFormProps) {
     const [name, setName] = useState('')
     const [description, setDescription] = useState('')
     const [company, setCompany] = useState('')
@@ -19,7 +19,7 @@ export default function RouteForm({ points, onCancel }: RouteFormProps) {
         if (success) {
             const timeout = setTimeout(() => {
                 onCancel()
-            }, 2000) // Espera 1 segundo para mostrar el mensaje de éxito
+            }, 2000)
             return () => clearTimeout(timeout)
         }
     }, [success, onCancel])
@@ -30,17 +30,12 @@ export default function RouteForm({ points, onCancel }: RouteFormProps) {
         setError(null)
         setSuccess(false)
         try {
-            const response = await createLine({
+            await onSave({
                 nombre: name,
                 descripcion: description,
                 empresa: company,
-                observacion: observations,
-                puntos: points.map(point => ({
-                    lat: point[0],
-                    lon: point[1]
-                }))
-            });
-            if (typeof response != 'string') throw new Error('Error guardando la línea')
+                observacion: observations
+            })
             setSuccess(true)
         } catch (err: any) {
             setError(err.message)

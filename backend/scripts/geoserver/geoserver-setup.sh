@@ -33,3 +33,17 @@ if ! curl -s -u $USER:$PASS -o /dev/null -w "%{http_code}" "$GEOSERVER_URL/layer
     -d "<featureType><name>ft_caminera_nacional</name></featureType>" \
     "$GEOSERVER_URL/workspaces/tsig/datastores/tsig_postgis/featuretypes"
 fi
+
+# 4. Publicar capa "parada" si no existe
+if ! curl -s -u $USER:$PASS -o /dev/null -w "%{http_code}" "$GEOSERVER_URL/layers/tsig:parada.xml" | grep -q "200"; then
+  curl -u $USER:$PASS -XPOST -H "Content-type: text/xml" \
+    -d "<featureType><name>parada</name></featureType>" \
+    "$GEOSERVER_URL/workspaces/tsig/datastores/tsig_postgis/featuretypes"
+fi
+
+# 4. Publicar capa "linea" si no existe
+if ! curl -s -u $USER:$PASS -o /dev/null -w "%{http_code}" "$GEOSERVER_URL/layers/tsig:linea.xml" | grep -q "200"; then
+  curl -u $USER:$PASS -XPOST -H "Content-type: text/xml" \
+    -d "<featureType><name>linea</name></featureType>" \
+    "$GEOSERVER_URL/workspaces/tsig/datastores/tsig_postgis/featuretypes"
+fi

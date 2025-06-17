@@ -1,0 +1,17 @@
+<layer>
+  <name>linea</name>
+  <id>LayerInfoImpl--5d1364e8:1977b808c91:-7fff</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--363c17c2:1970f6f8c80:-7fff</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl--5d1364e8:1977b808c91:-8000</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-06-17 01:28:31.726 UTC</dateCreated>
+  <dateModified>2025-06-17 01:32:49.676 UTC</dateModified>
+</layer>
