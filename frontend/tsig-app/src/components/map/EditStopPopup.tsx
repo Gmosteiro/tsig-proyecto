@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import StopTimes from './StopTimes'; // Importa el componente
 
 type EditStopPopupProps = {
     info: any;
@@ -33,6 +34,9 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ info, onClose, onSave }) 
         refugio: stop.properties.refugio,
         estado: stop.properties.estado,
     });
+
+    // Estado para mostrar/ocultar StopTimes
+    const [showStopTimes, setShowStopTimes] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
@@ -156,6 +160,30 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ info, onClose, onSave }) 
                         </select>
                     </label>
                 </div>
+                {/* Botón para mostrar StopTimes */}
+                <button
+                    type="button"
+                    onClick={() => setShowStopTimes(v => !v)}
+                    style={{
+                        background: '#43a047',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 4,
+                        padding: '8px 18px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontSize: 15,
+                        marginBottom: 10,
+                        marginRight: 10,
+                    }}
+                >
+                    {showStopTimes ? 'Ocultar Horarios' : 'Ver Horarios'}
+                </button>
+                {showStopTimes && (
+                    <div style={{ marginBottom: 12 }}>
+                        <StopTimes /* id={idParadaLinea} si tienes el id */ />
+                    </div>
+                )}
                 <button
                     type="submit"
                     style={{

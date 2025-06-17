@@ -1,5 +1,6 @@
 package com.example.tsigback.entities;
 
+import com.example.tsigback.entities.dtos.ParadaDTO;
 import com.example.tsigback.entities.enums.EstadoParada;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -7,13 +8,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 import org.locationtech.jts.geom.Point;
 
+@Entity
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
 @Builder
-@Entity
 public class Parada {
 
     @Id
@@ -27,4 +30,9 @@ public class Parada {
     private EstadoParada estado;
     private boolean refugio;
     private String observacion;
+
+    @OneToMany(mappedBy = "parada",         
+               cascade = CascadeType.ALL,
+               orphanRemoval = true)
+    private List<ParadaLinea> lineas;
 }

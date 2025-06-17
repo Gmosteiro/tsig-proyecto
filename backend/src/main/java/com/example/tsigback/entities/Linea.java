@@ -4,14 +4,18 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 import org.locationtech.jts.geom.MultiLineString;
 import org.locationtech.jts.geom.MultiPoint;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 
 @Entity
@@ -36,4 +40,9 @@ public class Linea {
 
     @Column(columnDefinition = "geometry(MultiLineString, 4326)")
     private MultiLineString recorrido;
+
+    @OneToMany(mappedBy = "linea",       
+               cascade = CascadeType.ALL,
+               orphanRemoval = true)
+    private List<ParadaLinea> paradasLineas;
 }

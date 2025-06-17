@@ -52,7 +52,7 @@ public class ParadaController {
     }
 
     @PutMapping("/borrar/{nombre}")
-    public ResponseEntity<String> modificarParada(@PathParam("nombre") String nombre) {
+    public ResponseEntity<String> modificarParada(@PathVariable String nombre) {
         try {
             if (nombre != null && nombre.isEmpty()) {
                 paradaService.eliminarParada(nombre);

@@ -67,7 +67,7 @@ public class ParadaService {
 
     public void eliminarParada(String nombre) throws ParadaNoEncontradaException {
         Parada parada = paradaRepository.findByNombre(nombre);
-
+        System.out.println("Parada Nombre: " + nombre);
         if (parada == null) {
             throw new ParadaNoEncontradaException("Parada con nombre " + nombre + " no encontrada");
         }
