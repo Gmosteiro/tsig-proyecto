@@ -50,3 +50,54 @@ export async function createStop(stopData: ParadaDTO) {
     const res = await axios.post('/apiurl/api/parada/crear', stopData)
     return res.data
 }
+
+export type WMSFeatureInfoParams = {
+    layerName: string,
+    crsCode: string,
+    bbox: string,
+    size: { x: number, y: number },
+    point: { x: number, y: number },
+    infoFormat?: string,
+    tolerance?: number
+}
+
+// Puedes ajustar este tipo según la estructura real de la respuesta del WMS
+export type WMSFeatureInfoResponse = {
+    type: string
+    features: any[]
+    [key: string]: any
+}
+
+export async function getWMSFeatureInfo({
+    layerName,
+    crsCode,
+    bbox,
+    size,
+    point,
+    infoFormat = "application/json",
+    tolerance = 5
+}: WMSFeatureInfoParams): Promise<WMSFeatureInfoResponse> {
+    const url = new URL('http://localhost:8080/geoserver/wms');
+    url.search = new URLSearchParams({
+        SERVICE: 'WMS',
+        VERSION: '1.1.1',
+        REQUEST: 'GetFeatureInfo',
+        FORMAT: 'image/png',
+        TRANSPARENT: 'true',
+        QUERY_LAYERS: layerName,
+        LAYERS: layerName,
+        STYLES: '',
+        SRS: crsCode,
+        BBOX: bbox,
+        WIDTH: size.x.toString(),
+        HEIGHT: size.y.toString(),
+        INFO_FORMAT: infoFormat,
+        X: Math.round(point.x).toString(),
+        Y: Math.round(point.y).toString(),
+        FEATURE_COUNT: '5',
+        BUFFER: tolerance.toString()
+    } as Record<string, string>).toString();
+
+    const resp = await axios.get(url.toString());
+    return resp.data;
+}

@@ -1,5 +1,7 @@
 import { TileLayer, WMSTileLayer, LayersControl, useMapEvent, useMap } from 'react-leaflet'
 import { useState } from 'react'
+import { getWMSFeatureInfo } from '../../services/api'
+import EditStopPopup from './EditStopPopup';
 
 function WMSFeatureInfoHandler({
     visible,
@@ -33,31 +35,16 @@ function WMSFeatureInfoHandler({
         const ne = crs.project(bounds.getNorthEast());
         const bbox = [sw.x, sw.y, ne.x, ne.y].join(',');
 
-        // Construir URL GetFeatureInfo
-        const url = new URL('http://localhost:8080/geoserver/wms');
-        url.search = new URLSearchParams({
-            SERVICE: 'WMS',
-            VERSION: '1.1.1',
-            REQUEST: 'GetFeatureInfo',
-            FORMAT: 'image/png',
-            TRANSPARENT: 'true',
-            QUERY_LAYERS: layerName,
-            LAYERS: layerName,
-            STYLES: '',
-            SRS: crs.code,
-            BBOX: bbox,
-            WIDTH: size.x.toString(),
-            HEIGHT: size.y.toString(),
-            INFO_FORMAT: infoFormat,
-            X: Math.round(point.x).toString(),
-            Y: Math.round(point.y).toString(),
-            FEATURE_COUNT: '5',
-            BUFFER: tolerance.toString()
-        } as Record<string, string>).toString();
-
         try {
-            const resp = await fetch(url.toString());
-            const data = await resp.json();
+            const data = await getWMSFeatureInfo({
+                layerName,
+                crsCode: crs.code ?? "",
+                bbox,
+                size,
+                point,
+                infoFormat,
+                tolerance
+            });
             onFeatureInfo(data);
         } catch (err) {
             onFeatureInfo(null);
@@ -123,12 +110,7 @@ export default function LayerController() {
                 onFeatureInfo={data => setInfo(data)}
             />
 
-            {/* Mostrar información */}
-            {info && (
-                <div style={{ position: 'absolute', bottom: 10, left: 10, background: 'white', zIndex: 1000, maxWidth: 400 }}>
-                    <pre>{JSON.stringify(info, null, 2)}</pre>
-                </div>
-            )}
+            <EditStopPopup info={info} onClose={() => setInfo(null)} />
         </>
     )
 }
