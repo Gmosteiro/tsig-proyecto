@@ -1,38 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { updateStop, ParadaDTO } from '../../services/api';
+import styles from '../../styles/EditStopPopup.module.css';
 
-type EditStopPopupProps = {
-    info: any;
-    onClose?: () => void;
-    onSave?: (updatedStop: any) => void;
-};
-
-type Stop = {
-    properties: {
-        estado: number;
-        nombre: string;
-        observacion: string;
-        refugio: boolean;
-    }
+interface EditStopPopupProps {
+    parada: ParadaDTO;
+    onSave: (parada: ParadaDTO) => void;
+    onClose: () => void;
 }
 
-const editStop = (stop: Stop) => {
-    // Aquí iría la lógica para enviar los datos actualizados al servidor
-    // Por ejemplo, una llamada a una API REST o GraphQL
-    console.log('Guardando parada:', stop);
-}
-
-const EditStopPopup: React.FC<EditStopPopupProps> = ({ info, onClose, onSave }) => {
-    if (!info) return null;
-
-    const stop: Stop = info.features[0];
-    if (!stop || !stop.properties) return null;
+const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave }) => {
+    if (!parada) return null;
 
     const [form, setForm] = useState({
-        nombre: stop.properties.nombre,
-        observacion: stop.properties.observacion,
-        refugio: stop.properties.refugio,
-        estado: stop.properties.estado,
+        nombre: parada.nombre,
+        observacion: parada.observacion,
+        refugio: parada.refugio,
+        estado: parada.estado,
     });
+
+    useEffect(() => {
+        if (parada) {
+            setForm({
+                nombre: parada.nombre,
+                observacion: parada.observacion,
+                refugio: parada.refugio,
+                estado: parada.estado,
+            });
+        }
+    }, [parada]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
@@ -46,59 +41,31 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ info, onClose, onSave }) 
         }));
     };
 
-    const handleSave = () => {
-        const updatedStop = { ...stop, properties: { ...stop.properties, ...form } };
-        editStop(updatedStop); // Llama a editStop aquí
-        if (onSave) {
-            onSave(updatedStop);
+    const handleSave = async () => {
+        try {
+            await updateStop({ ...parada, ...form });
+            if (onSave) onSave({ ...parada, ...form });
+            if (onClose) onClose();
+        } catch (err) {
+            alert("Error al guardar los cambios");
         }
-        if (onClose) onClose();
     };
 
     return (
         <div
-            className="edit-stop-popup"
-            style={{
-                position: 'absolute',
-                bottom: 20,
-                left: 20,
-                background: 'white',
-                zIndex: 1000,
-                maxWidth: 420,
-                minWidth: 260,
-                border: '1px solid #bbb',
-                borderRadius: 8,
-                padding: '16px 20px 12px 16px',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
-                fontFamily: 'system-ui, sans-serif',
-                fontSize: 15,
-                color: '#222',
-                lineHeight: 1.5,
-            }}
+            className={styles.popupContainer}
             onClick={e => e.stopPropagation()}
         >
             {onClose && (
                 <button
                     onClick={onClose}
                     aria-label="Cerrar"
-                    style={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        background: 'transparent',
-                        border: 'none',
-                        fontSize: 20,
-                        cursor: 'pointer',
-                        color: '#888',
-                        transition: 'color 0.2s',
-                    }}
-                    onMouseOver={e => (e.currentTarget.style.color = '#d00')}
-                    onMouseOut={e => (e.currentTarget.style.color = '#888')}
+                    className={styles.closeButton}
                 >
                     ×
                 </button>
             )}
-            <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 16 }}>
+            <div className={styles.title}>
                 Editar parada
             </div>
             <form
@@ -107,7 +74,7 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ info, onClose, onSave }) 
                     handleSave();
                 }}
             >
-                <div style={{ marginBottom: 10 }}>
+                <div className={styles.inputGroup}>
                     <label>
                         Nombre:<br />
                         <input
@@ -115,22 +82,22 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ info, onClose, onSave }) 
                             name="nombre"
                             value={form.nombre}
                             onChange={handleChange}
-                            style={{ width: '100%' }}
+                            className={styles.textInput}
                         />
                     </label>
                 </div>
-                <div style={{ marginBottom: 10 }}>
+                <div className={styles.inputGroup}>
                     <label>
                         Observación:<br />
                         <textarea
                             name="observacion"
                             value={form.observacion}
                             onChange={handleChange}
-                            style={{ width: '100%', minHeight: 40 }}
+                            className={styles.textAreaInput}
                         />
                     </label>
                 </div>
-                <div style={{ marginBottom: 10 }}>
+                <div className={styles.inputGroup}>
                     <label>
                         Refugio:
                         <input
@@ -138,39 +105,32 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ info, onClose, onSave }) 
                             name="refugio"
                             checked={form.refugio}
                             onChange={handleChange}
-                            style={{ marginLeft: 8 }}
+                            className={styles.checkboxInput}
                         />
                     </label>
                 </div>
-                <div style={{ marginBottom: 16 }}>
+                <div className={styles.inputGroup}>
                     <label>
                         Estado:
                         <select
                             name="estado"
                             value={form.estado}
                             onChange={handleChange}
-                            style={{ marginLeft: 8 }}
+                            className={styles.selectInput}
                         >
-                            <option value={0}>Inactivo</option>
-                            <option value={1}>Activo</option>
+                            <option value="HABILITADA">Habilitada</option>
+                            <option value="DESHABILITADA">Deshabilitada</option>
                         </select>
                     </label>
                 </div>
-                <button
-                    type="submit"
-                    style={{
-                        background: '#1976d2',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: 4,
-                        padding: '8px 18px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        fontSize: 15,
-                    }}
-                >
-                    Guardar
-                </button>
+                <div className={styles.buttonGroup}>
+                    <button
+                        type="submit"
+                        className={styles.saveButton}
+                    >
+                        Guardar
+                    </button>
+                </div>
             </form>
         </div>
     );

@@ -16,6 +16,7 @@ import markerShadow from '../assets/marker-shadow.png'
 import LayerController from '../components/map/LayerController'
 import RouteForm from '../components/ui/RouteForm'
 import StopForm from '../components/map/StopForm'
+import { CrearParadaDTO } from '../services/api'
 
 export default function MapPage() {
   const { stops } = useMapData()
@@ -31,7 +32,7 @@ export default function MapPage() {
   const [editingStop, setEditingStop] = useState<any | null>(null);
   const latestRouteGeoJSON = useRef<any>(null);
 
-  const handleCreateStop = async (stopData: any) => {
+  const handleCreateStop = async (stopData: CrearParadaDTO) => {
     await createStop(stopData)
     setCreatingStop(false)
   }

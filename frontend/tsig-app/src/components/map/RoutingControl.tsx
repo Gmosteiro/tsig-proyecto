@@ -25,23 +25,21 @@ export default function RoutingControl({ waypoints, serviceUrl, onRouteGeoJSON }
         show: false,
         addWaypoints: false,
         routeWhileDragging: false,
-        draggableWaypoints: false,
         fitSelectedRoutes: false,
         showAlternatives: false,
         lineOptions: {
-          styles: [{ color: 'red', weight: 7, opacity: 0.9 }],
-          interactive: false
+          styles: [{ color: 'red', weight: 7, opacity: 0.9 }]
         },
         createMarker: () => null
-      }).addTo(map);
+      } as any).addTo(map);
 
-      controlRef.current.on('routesfound', function(e: any) {
+      controlRef.current.on('routesfound', function (e: any) {
         if (onRouteGeoJSON && e.routes && e.routes[0]) {
           const geojson = e.routes[0].coordinates
             ? {
-                type: "LineString",
-                coordinates: e.routes[0].coordinates.map((c: any) => [c.lng, c.lat])
-              }
+              type: "LineString",
+              coordinates: e.routes[0].coordinates.map((c: any) => [c.lng, c.lat])
+            }
             : null;
           if (geojson) onRouteGeoJSON(geojson);
         }
