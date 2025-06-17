@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { updateStop, ParadaDTO } from '../../services/api';
 
 type EditStopPopupProps = {
@@ -19,6 +19,17 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ stop, onClose, onSave }) 
         estado: stop.estado,
     });
 
+    useEffect(() => {
+        if (stop) {
+            setForm({
+                nombre: stop.nombre,
+                observacion: stop.observacion,
+                refugio: stop.refugio,
+                estado: stop.estado,
+            });
+        }
+    }, [stop]);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
         let newValue: string | boolean = value;
@@ -31,14 +42,14 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ stop, onClose, onSave }) 
         }));
     };
 
-    const handleSave = () => {
-        const updatedStop = { ...stop, ...form };
-
-        updateStop(updatedStop);
-        if (onSave) {
-            onSave(updatedStop);
+    const handleSave = async () => {
+        try {
+            await updateStop({ ...stop, ...form });
+            if (onSave) onSave({ ...stop, ...form });
+            if (onClose) onClose();
+        } catch (err) {
+            alert("Error al guardar los cambios");
         }
-        if (onClose) onClose();
     };
 
     return (
@@ -137,8 +148,8 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ stop, onClose, onSave }) 
                             onChange={handleChange}
                             style={{ marginLeft: 8 }}
                         >
-                            <option value={0}>Inactivo</option>
-                            <option value={1}>Activo</option>
+                            <option value="HABILITADA">Habilitada</option>
+                            <option value="DESHABILITADA">Deshabilitada</option>
                         </select>
                     </label>
                 </div>
