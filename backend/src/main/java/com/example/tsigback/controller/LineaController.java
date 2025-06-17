@@ -3,6 +3,7 @@ package com.example.tsigback.controller;
 import com.example.tsigback.entities.dtos.LineaDTO;
 import com.example.tsigback.entities.dtos.ListaPuntosDTO;
 import com.example.tsigback.entities.dtos.PuntoDTO;
+import com.example.tsigback.exception.LineaNoEncontradaException;
 import com.example.tsigback.service.LineaService;
 
 import java.util.ArrayList;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,4 +42,32 @@ public class LineaController {
         lineaService.crearLinea(lineaDTO);
         return ResponseEntity.ok("Linea creada correctamente");
     }
+
+    /*@PutMapping
+    public ResponseEntity<String> modificarLinea(@RequestBody LineaDTO lineaDTO) {
+        try {
+            if (lineaDTO == null) {
+                return ResponseEntity.badRequest().body("La linea que quieres modificar es nula");
+            }
+            lineaService.modificarLinea(lineaDTO);
+            return ResponseEntity.ok("El id linea " + lineaDTO.getId() + " ha sido modificado con exito");
+        } catch (LineaNoEncontradaException e) {
+            return ResponseEntity.badRequest().body("El id linea " + lineaDTO.getId() + " no existe en la base de datos");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Internal error: " + e.getMessage());
+        }
+    }
+
+    //Estos metodos de aca abajo son para testing
+    @GetMapping("/todas")
+    public ResponseEntity<List<LineaDTO>> mostrarTodas() {
+        return ResponseEntity.status(HttpStatus.OK).body(lineaService.obtenerTodas());
+    }
+
+    @GetMapping("/todas/sin_recorrido")
+    public ResponseEntity<List<LineaDTO>> mostrarTodasSinRecorrido() {
+        return ResponseEntity.status(HttpStatus.OK).body(lineaService.obtenerTodasSinRecorrido());
+    }*/
 }

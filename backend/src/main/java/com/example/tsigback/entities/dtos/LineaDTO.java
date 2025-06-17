@@ -23,5 +23,6 @@ public class LineaDTO {
     private String destino;
     private List<PuntoDTO> puntos;
     private String rutaGeoJSON;
+    private String recorrido;
     private List<Integer> paradaLineaIds;
 }

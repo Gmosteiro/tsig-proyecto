@@ -18,6 +18,7 @@ import RouteForm from '../components/ui/RouteForm'
 import StopForm from '../components/map/StopForm'
 import { deleteStop } from '../services/api'
 import axios from 'axios'
+import { CrearParadaDTO } from '../services/api'
 
 export default function MapPage() {
   const { stops } = useMapData()
@@ -34,7 +35,7 @@ export default function MapPage() {
   const [deleteStopMode, setDeleteStopMode] = useState(false);
   const latestRouteGeoJSON = useRef<any>(null);
 
-  const handleCreateStop = async (stopData: any) => {
+  const handleCreateStop = async (stopData: CrearParadaDTO) => {
     await createStop(stopData)
     setCreatingStop(false)
   }
