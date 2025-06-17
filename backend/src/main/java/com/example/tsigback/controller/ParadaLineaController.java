@@ -1,8 +1,11 @@
 package com.example.tsigback.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,15 +43,22 @@ public class ParadaLineaController {
         }
     }
 
+    //Usa el paradalineaId
     @PostMapping("/horario")
     public ResponseEntity<String> agregarHorario(@RequestBody ParadaLineaDTO paradaLineaDTO) {
         try {
-             if (paradaLineaDTO == null || paradaLineaDTO.getIdLinea() == 0 || paradaLineaDTO.getIdParada() == 0 || paradaLineaDTO.getHorario().size() == 0) {
-                return ResponseEntity.badRequest().body("El DTO vino con datos erroneos");
-            }
+            //if (paradaLineaDTO == null || paradaLineaDTO.getIdLinea() == 0 || paradaLineaDTO.getIdParada() == 0 || paradaLineaDTO.getHorarios().size() == 0) {
+            //    return ResponseEntity.badRequest().body("El DTO vino con datos erroneos");
+            //}
+            paradaService.agregarHorario(paradaLineaDTO);
             return ResponseEntity.ok("Se han cargado los horarios correctamente");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); 
         }
+    }
+
+    @GetMapping("/todas")
+    public ResponseEntity<List<ParadaLineaDTO>> obtenerTodosLosHorarios() {
+        return ResponseEntity.ok(paradaService.obtenerTodasLasParadasLineas());
     }
 }

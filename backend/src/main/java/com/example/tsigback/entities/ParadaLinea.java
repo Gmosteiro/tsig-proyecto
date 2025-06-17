@@ -25,8 +25,8 @@ public class ParadaLinea {
     @ManyToOne(optional = false)
     private Parada parada;
 
-    @Column(nullable = false)
-    private boolean estaHabilitada;
+    @Builder.Default
+    private boolean estaHabilitada = true;
 
     @OneToMany(mappedBy = "paradaLinea", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HorarioParadaLinea> horarios;

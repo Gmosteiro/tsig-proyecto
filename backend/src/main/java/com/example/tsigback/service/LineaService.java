@@ -162,11 +162,17 @@ public class LineaService {
 
     public List<LineaDTO> obtenerTodas() {
         return lineaRepository.findAll()
-        .stream().map(l -> toDTO(l))
+        .stream().map(l -> toDTO(l, true))
         .collect(Collectors.toList()); 
     }
 
-    private LineaDTO toDTO(Linea linea) {
+    public List<LineaDTO> obtenerTodasSinRecorrido() {
+        return lineaRepository.findAll()
+        .stream().map(l -> toDTO(l, false))
+        .collect(Collectors.toList()); 
+    }
+
+    private LineaDTO toDTO(Linea linea, boolean conRecorrido) {
 
         // 1. Convertir MultiPoint a lista de [lon, lat]
         List<PuntoDTO> listaPuntos = null;
@@ -178,8 +184,11 @@ public class LineaService {
             }
         }
 
-        // 2. Recorrido a WKT
-        String wkt = (linea.getRecorrido() != null) ? linea.getRecorrido().toText() : null;
+        String wkt = null;
+        if (conRecorrido) {
+            // Recorrido a WKT
+            wkt = (linea.getRecorrido() != null) ? linea.getRecorrido().toText() : null;
+        }    
 
         // 3. Ids de ParadaLinea habilitadas
         List<Integer> paradaLineaIds = null;
@@ -197,7 +206,7 @@ public class LineaService {
                 .destino(linea.getDestino())
                 .observacion(linea.getObservacion())
                 .puntos(listaPuntos)
-                .recorrido(wkt)
+                .recorrido(conRecorrido ? wkt : null)
                 .paradaLineaIds(paradaLineaIds)
                 .build();
     }

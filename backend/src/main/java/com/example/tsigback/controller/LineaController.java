@@ -6,8 +6,6 @@ import com.example.tsigback.entities.dtos.PuntoDTO;
 import com.example.tsigback.exception.LineaNoEncontradaException;
 import com.example.tsigback.service.LineaService;
 
-import jakarta.websocket.server.PathParam;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,6 +56,7 @@ public class LineaController {
             lineaService.modificarLinea(lineaDTO);
             return ResponseEntity.ok("El id linea " + lineaDTO.getId() + " ha sido modificado con exito");
         } catch (LineaNoEncontradaException e) {
+            //Devuelvo un badRequest porque el notFound no me deja agregarle body
             return ResponseEntity.badRequest().body("El id linea " + lineaDTO.getId() + " no existe en la base de datos");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -66,8 +65,13 @@ public class LineaController {
         }
     }
 
-    @GetMapping
+    @GetMapping("/todas")
     public ResponseEntity<List<LineaDTO>> mostrarTodas() {
         return ResponseEntity.status(HttpStatus.OK).body(lineaService.obtenerTodas());
+    }
+
+    @GetMapping("/todas/sin_recorrido")
+    public ResponseEntity<List<LineaDTO>> mostrarTodasSinRecorrido() {
+        return ResponseEntity.status(HttpStatus.OK).body(lineaService.obtenerTodasSinRecorrido());
     }
 }

@@ -1,5 +1,6 @@
 package com.example.tsigback.entities;
 
+import com.example.tsigback.entities.dtos.ParadaDTO;
 import com.example.tsigback.entities.enums.EstadoParada;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -30,7 +31,7 @@ public class Parada {
     private boolean refugio;
     private String observacion;
 
-    @OneToMany(mappedBy = "parada",          // ← aquí va "parada"
+    @OneToMany(mappedBy = "parada",         
                cascade = CascadeType.ALL,
                orphanRemoval = true)
     private List<ParadaLinea> lineas;
