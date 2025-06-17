@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -57,7 +58,6 @@ public class LineaController {
             lineaService.modificarLinea(lineaDTO);
             return ResponseEntity.ok("El id linea " + lineaDTO.getId() + " ha sido modificado con exito");
         } catch (LineaNoEncontradaException e) {
-            //Devuelvo un badRequest porque el notFound no me deja agregarle body
             return ResponseEntity.badRequest().body("El id linea " + lineaDTO.getId() + " no existe en la base de datos");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -66,6 +66,8 @@ public class LineaController {
         }
     }
 
-
-
+    @GetMapping
+    public ResponseEntity<List<LineaDTO>> mostrarTodas() {
+        return ResponseEntity.status(HttpStatus.OK).body(lineaService.obtenerTodas());
+    }
 }

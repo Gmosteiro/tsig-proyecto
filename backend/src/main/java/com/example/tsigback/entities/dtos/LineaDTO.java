@@ -22,4 +22,6 @@ public class LineaDTO {
     private String origen;
     private String destino;
     private List<PuntoDTO> puntos;
+    private String recorrido;
+    private List<Integer> paradaLineaIds;
 }

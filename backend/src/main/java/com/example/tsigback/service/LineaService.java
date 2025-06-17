@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class LineaService {
@@ -106,7 +107,7 @@ public class LineaService {
     }
 
     public void modificarLinea(LineaDTO lineaDTO) throws LineaNoEncontradaException {
-        Linea linea = lineaRepository.findById(lineaDTO.getId().intValue())
+        Linea linea = lineaRepository.findById(lineaDTO.getId())
             .orElseThrow(() -> new LineaNoEncontradaException("La linea con id " + lineaDTO.getId() + " no ha sido encontrada"));
         
         linea.setDescripcion(lineaDTO.getDescripcion() != null ? lineaDTO.getDescripcion() : linea.getDescripcion());
@@ -160,19 +161,20 @@ public class LineaService {
     }
 
     public List<LineaDTO> obtenerTodas() {
-        return null;
-       // return lineaRepository.findAll();
+        return lineaRepository.findAll()
+        .stream().map(l -> toDTO(l))
+        .collect(Collectors.toList()); 
     }
 
     private LineaDTO toDTO(Linea linea) {
 
         // 1. Convertir MultiPoint a lista de [lon, lat]
-        List<ParadaDTO> listaPuntos = null;
+        List<PuntoDTO> listaPuntos = null;
         if (linea.getPuntos() != null) {
             listaPuntos = new ArrayList<>();
             for (int i = 0; i < linea.getPuntos().getNumGeometries(); i++) {
                 var p = (org.locationtech.jts.geom.Point) linea.getPuntos().getGeometryN(i);
-                listaPuntos.add(ParadaDTO.builder().longitud(p.getX()).latitud(p.getY()).build());
+                listaPuntos.add(PuntoDTO.builder().lon(p.getX()).lat(p.getY()).build());
             }
         }
 
@@ -183,7 +185,6 @@ public class LineaService {
         List<Integer> paradaLineaIds = null;
         if (linea.getParadasLineas() != null) {
             paradaLineaIds = linea.getParadasLineas().stream()
-                    .filter(ParadaLinea::isEstaHabilitada)
                     .map(ParadaLinea::getId)
                     .toList();
         }
@@ -195,9 +196,9 @@ public class LineaService {
                 .origen(linea.getOrigen())
                 .destino(linea.getDestino())
                 .observacion(linea.getObservacion())
-                //.puntos(listaPuntos)
-                //.recorridoWkt(wkt)
-                //.paradasLineaIds(paradaLineaIds)
+                .puntos(listaPuntos)
+                .recorrido(wkt)
+                .paradaLineaIds(paradaLineaIds)
                 .build();
     }
 }
