@@ -28,6 +28,7 @@ export default function MapPage() {
   const [points, setPoints] = useState<{ id: string, lat: number, lng: number }[]>([])
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
   const [routeGeoJSON, setRouteGeoJSON] = useState<any>(null)
+  const [editingStop, setEditingStop] = useState<any | null>(null);
   const latestRouteGeoJSON = useRef<any>(null);
 
   const handleCreateStop = async (stopData: any) => {
@@ -125,6 +126,15 @@ export default function MapPage() {
     setShowRouteForm(false)
   }
 
+  // Handler para guardar cambios de parada
+  const handleEditStop = async (stopData: any) => {
+    // Aquí deberías llamar a tu API para actualizar la parada
+    // await updateStop(stopData)
+    console.log("Parada editada:", stopData);
+    debugger
+    setEditingStop(null);
+  };
+
   function AddPointControl({ onAddPoint }: { onAddPoint: (latlng: [number, number]) => void }) {
     useMapEvents({
       click(e) {
@@ -138,7 +148,6 @@ export default function MapPage() {
     <div className="flex flex-col min-h-screen">
       <NavigationBar />
       <main className="flex-1">
-        {/* Main menu: show only if not creating stop or route */}
         {!creatingStop && !addingRoute && (
           <div className="flex gap-2 justify-center my-4">
             <button className="bg-yellow-600 text-white px-4 py-2 rounded" onClick={() => setCreatingStop(true)}>Crear Parada</button>
@@ -146,7 +155,6 @@ export default function MapPage() {
           </div>
         )}
 
-        {/* Route creation/validation menu */}
         {addingRoute && !showRouteForm && (
           <PointControls
             adding={addingRoute}
@@ -154,15 +162,13 @@ export default function MapPage() {
             selectedIdx={selectedIdx}
             handleDeleteSelected={handleDeleteSelected}
             handleVerifyRoute={handleVerifyRoute}
-            handleSaveRoute={() => setShowRouteForm(true)} // <-- Mostrar RouteForm al guardar
+            handleSaveRoute={() => setShowRouteForm(true)}
             pointsLength={points.length}
             handleCancelAdd={handleCancelAddRoute}
             isValidated={isValidated}
             handleCancelValidation={handleCancelValidation}
           />
         )}
-
-        {/* Route save form */}
         {addingRoute && isValidated && showRouteForm && (
           <RouteForm
             points={points.map(pt => [pt.lat, pt.lng])}
@@ -171,7 +177,6 @@ export default function MapPage() {
           />
         )}
 
-        {/* Map and other components */}
         <MapContainer
           center={[-34.9, -56.2]}
           zoom={13}
@@ -214,8 +219,15 @@ export default function MapPage() {
               }}
             />
           )}
+          {editingStop && (
+            <StopForm
+              initialData={editingStop}
+              onCancel={() => setEditingStop(null)}
+              onSubmit={handleEditStop}
+            />
+          )}
           {stops && stops.map(stop => (
-            <StopMarker key={stop.id} stop={stop} />
+            <StopMarker key={stop.id} stop={stop} onClick={setEditingStop} />
           ))}
           {routeGeoJSON && (
             <GeoJSON data={routeGeoJSON} style={{ color: 'red', weight: 5, opacity: 0.9 }} />

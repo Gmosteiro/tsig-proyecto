@@ -1,5 +1,4 @@
 import { Marker, Popup } from 'react-leaflet'
-import { Stop } from '../../lib/types/types'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -11,10 +10,14 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'images/marker-shadow.png',
 })
 
-export default function StopMarker({ stop }: { stop: Stop }) {
+export default function StopMarker({ stop, onClick }: { stop: any, onClick?: (stop: any) => void }) {
     return (
-
-        <Marker position={[stop.location.coordinates[1], stop.location.coordinates[0]]}>
+        <Marker
+            position={[stop.latitud, stop.longitud]}
+            eventHandlers={{
+                click: () => onClick && onClick(stop)
+            }}
+        >
             <Popup>
                 <strong>{stop.name}</strong><br />
                 {stop.route} - {stop.direction}
