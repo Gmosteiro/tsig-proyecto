@@ -22,9 +22,13 @@ export default function WMSFeatureInfoHandler({
         const size = map.getSize()
         const bounds = map.getBounds()
         const crs = map.options.crs
-        const point = map.latLngToContainerPoint(e.latlng, map.getZoom())
+     
+        const point = map.latLngToContainerPoint(e.latlng);
 
-        const bbox = bounds.toBBoxString()
+        const sw = crs.project(bounds.getSouthWest()); 
+        const ne = crs.project(bounds.getNorthEast());
+        const bbox = [sw.x, sw.y, ne.x, ne.y].join(',');
+
         const infoFormat = "application/json"
 
         try {
