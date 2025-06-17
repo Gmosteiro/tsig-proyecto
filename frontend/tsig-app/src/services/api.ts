@@ -1,7 +1,8 @@
 import axios from 'axios'
 // import { Stop } from '../lib/types/types'
-
+import { WMS_URL } from '../lib/contants'
 export type ParadaDTO = {
+    id: number
     nombre: string
     estado: EstadoParada
     refugio: boolean
@@ -9,6 +10,8 @@ export type ParadaDTO = {
     latitud: number
     longitud: number
 }
+
+export type CrearParadaDTO = Omit<ParadaDTO, 'id'>
 
 export type RoutingPointDTO = {
     latitud: number
@@ -46,13 +49,13 @@ export const saveLine = async (lineData: LineaDTO) => {
     return res.data
 }
 
-export async function createStop(stopData: ParadaDTO) {
+export async function createStop(stopData: CrearParadaDTO) {
     const res = await axios.post('/apiurl/api/parada/crear', stopData)
     return res.data
 }
 
-export async function updateStop(id: number, stopData: ParadaDTO) {
-    const res = await axios.put(`/apiurl/api/parada/actualizar/${id}`, stopData);
+export async function updateStop(stopData: ParadaDTO) {
+    const res = await axios.put(`/apiurl/api/parada/actualizar/`, stopData);
     return res.data;
 }
 
@@ -82,7 +85,7 @@ export async function getWMSFeatureInfo({
     infoFormat = "application/json",
     tolerance = 5
 }: WMSFeatureInfoParams): Promise<WMSFeatureInfoResponse> {
-    const url = new URL('http://localhost:8080/geoserver/wms');
+    const url = new URL(WMS_URL);
     url.search = new URLSearchParams({
         SERVICE: 'WMS',
         VERSION: '1.1.1',

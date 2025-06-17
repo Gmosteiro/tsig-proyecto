@@ -1,13 +1,14 @@
 import { TileLayer, WMSTileLayer, LayersControl, useMapEvent, useMap } from 'react-leaflet'
 import { useState } from 'react'
-import { getWMSFeatureInfo } from '../../services/api'
+import { getWMSFeatureInfo, ParadaDTO } from '../../services/api'
 import EditStopPopup from './EditStopPopup';
+import { WMS_URL, DEFAULT_TILE_SIZE } from '../../lib/contants';
 
 function WMSFeatureInfoHandler({
     visible,
     layerName,
     infoFormat = "application/json",
-    tolerance = 5, // margen en pixeles
+    tolerance = 5,
     onFeatureInfo
 }: {
     visible: boolean,
@@ -19,7 +20,6 @@ function WMSFeatureInfoHandler({
     const map = useMap();
 
     useMapEvent('click', async (e) => {
-        // Ignorar clicks si el popup está abierto y el click fue sobre el popup
         const popup = document.querySelector('.edit-stop-popup');
         if (popup && e.originalEvent && popup.contains(e.originalEvent.target as Node)) {
             return;
@@ -64,7 +64,7 @@ export default function LayerController() {
     const [camineraVisible, setCamineraVisible] = useState(true);
     const [paradaVisible, setParadaVisible] = useState(false);
     const [lineaVisible, setLineaVisible] = useState(false);
-    const [info, setInfo] = useState<any>(null);
+    const [info, setInfo] = useState<ParadaDTO | null>(null);
 
     return (
         <>
@@ -84,42 +84,57 @@ export default function LayerController() {
                 <LayersControl.Overlay name="Caminera Nacional" checked={camineraVisible}>
                     <WMSTileLayer
                         eventHandlers={{ add: () => setCamineraVisible(true), remove: () => setCamineraVisible(false) }}
-                        url='http://localhost:8080/geoserver/wms'
+                        url={WMS_URL}
                         layers="tsig:ft_caminera_nacional"
                         format="image/png"
                         transparent={true}
-                        tileSize={256}
+                        tileSize={DEFAULT_TILE_SIZE}
                     />
                 </LayersControl.Overlay>
                 <LayersControl.Overlay name="Paradas" checked={paradaVisible}>
                     <WMSTileLayer
                         eventHandlers={{ add: () => setParadaVisible(true), remove: () => setParadaVisible(false) }}
-                        url='http://localhost:8080/geoserver/wms'
+                        url={WMS_URL}
                         layers="tsig:parada"
                         styles="Parada"
                         format="image/png"
                         transparent={true}
-                        tileSize={256}
+                        tileSize={DEFAULT_TILE_SIZE}
                     />
                 </LayersControl.Overlay>
                 <LayersControl.Overlay name="Líneas" checked={lineaVisible}>
                     <WMSTileLayer
                         eventHandlers={{ add: () => setLineaVisible(true), remove: () => setLineaVisible(false) }}
-                        url='http://localhost:8080/geoserver/wms'
+                        url={WMS_URL}
                         layers="tsig:linea"
                         format="image/png"
                         transparent={true}
-                        tileSize={256}
+                        tileSize={DEFAULT_TILE_SIZE}
                     />
                 </LayersControl.Overlay>
             </LayersControl>
 
-            {/* Handlers para GetFeatureInfo */}
             <WMSFeatureInfoHandler
                 visible={paradaVisible}
                 layerName="tsig:parada"
                 tolerance={12}
-                onFeatureInfo={data => setInfo(data)}
+                onFeatureInfo={data => {
+                    if (data && data.features && data.features.length > 0) {
+                        const props = data.features[0].properties;
+                        const parada: ParadaDTO = {
+                            id: props.id,
+                            nombre: props.nombre,
+                            estado: props.estado,
+                            refugio: props.refugio,
+                            observacion: props.observacion,
+                            latitud: props.latitud,
+                            longitud: props.longitud,
+                        };
+                        setInfo(parada);
+                    } else {
+                        setInfo(null);
+                    }
+                }}
             />
             <WMSFeatureInfoHandler
                 visible={lineaVisible}
@@ -128,7 +143,7 @@ export default function LayerController() {
                 onFeatureInfo={data => setInfo(data)}
             />
 
-            <EditStopPopup info={info} onClose={() => setInfo(null)} />
+            <EditStopPopup stop={info} onClose={() => setInfo(null)} />
         </>
     )
 }

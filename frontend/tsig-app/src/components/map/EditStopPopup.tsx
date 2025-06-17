@@ -1,37 +1,22 @@
 import React, { useState } from 'react';
+import { updateStop, ParadaDTO } from '../../services/api';
 
 type EditStopPopupProps = {
-    info: any;
+    stop: ParadaDTO | null;
     onClose?: () => void;
     onSave?: (updatedStop: any) => void;
 };
 
-type Stop = {
-    properties: {
-        estado: number;
-        nombre: string;
-        observacion: string;
-        refugio: boolean;
-    }
-}
 
-const editStop = (stop: Stop) => {
-    // Aquí iría la lógica para enviar los datos actualizados al servidor
-    // Por ejemplo, una llamada a una API REST o GraphQL
-    console.log('Guardando parada:', stop);
-}
+const EditStopPopup: React.FC<EditStopPopupProps> = ({ stop, onClose, onSave }) => {
 
-const EditStopPopup: React.FC<EditStopPopupProps> = ({ info, onClose, onSave }) => {
-    if (!info) return null;
-
-    const stop: Stop = info.features[0];
-    if (!stop || !stop.properties) return null;
+    if (!stop) return null;
 
     const [form, setForm] = useState({
-        nombre: stop.properties.nombre,
-        observacion: stop.properties.observacion,
-        refugio: stop.properties.refugio,
-        estado: stop.properties.estado,
+        nombre: stop.nombre,
+        observacion: stop.observacion,
+        refugio: stop.refugio,
+        estado: stop.estado,
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -47,8 +32,9 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ info, onClose, onSave }) 
     };
 
     const handleSave = () => {
-        const updatedStop = { ...stop, properties: { ...stop.properties, ...form } };
-        editStop(updatedStop); // Llama a editStop aquí
+        const updatedStop = { ...stop, ...form };
+
+        updateStop(updatedStop);
         if (onSave) {
             onSave(updatedStop);
         }
