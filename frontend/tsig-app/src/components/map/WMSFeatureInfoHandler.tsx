@@ -16,16 +16,18 @@ export default function WMSFeatureInfoHandler({
     onFeatureInfo,
 }: WMSFeatureInfoHandlerProps) {
     useMapEvent('click', async (e) => {
+
+
         if (!visible) return
 
         const map = e.target
         const size = map.getSize()
         const bounds = map.getBounds()
         const crs = map.options.crs
-     
+
         const point = map.latLngToContainerPoint(e.latlng);
 
-        const sw = crs.project(bounds.getSouthWest()); 
+        const sw = crs.project(bounds.getSouthWest());
         const ne = crs.project(bounds.getNorthEast());
         const bbox = [sw.x, sw.y, ne.x, ne.y].join(',');
 
@@ -41,7 +43,9 @@ export default function WMSFeatureInfoHandler({
                 infoFormat,
                 tolerance
             })
-            onFeatureInfo(data)
+            if (data.features && data.features.length > 0) {
+                onFeatureInfo(data)
+            }
         } catch (err) {
             onFeatureInfo(null)
         }

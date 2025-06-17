@@ -64,7 +64,6 @@ export default function LayerController() {
                 layerName="tsig:parada"
                 tolerance={12}
                 onFeatureInfo={data => {
-                    console.log('Feature info for paradas:', data)
                     if (data && data.features && data.features.length > 0) {
                         const props = data.features[0].properties
                         setSelectedParada({
@@ -82,14 +81,14 @@ export default function LayerController() {
                 }}
             />
 
-            <WMSFeatureInfoHandler
+            {/* <WMSFeatureInfoHandler
                 visible={lineaVisible}
                 layerName="tsig:linea"
                 tolerance={8}
                 onFeatureInfo={(data) => {
                     console.log('Feature info for lineas:', data)
                 }}
-            />
+            /> */}
 
             <StopInfoPopupContainer parada={selectedParada} onClose={() => setSelectedParada(null)} />
         </>
