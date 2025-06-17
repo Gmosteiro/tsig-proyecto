@@ -4,6 +4,9 @@ import L from 'leaflet';
 import NavigationBar from '../components/ui/NavigationBar';
 import Footer from '../components/ui/Footer';
 import 'leaflet/dist/leaflet.css';
+import { FeatureGroup, Polygon } from 'react-leaflet';
+import { EditControl } from 'react-leaflet-draw';
+import 'leaflet-draw/dist/leaflet.draw.css';
 
 const customIcon = new L.Icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png',
@@ -14,6 +17,7 @@ const customIcon = new L.Icon({
 export default function SimpleMapPage() {
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [polygon, setPolygon] = useState<any>(null); // Guardar el polígono dibujado
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
@@ -26,6 +30,18 @@ export default function SimpleMapPage() {
       }
     );
   }, []);
+
+  const handleCreated = (e: any) => {
+    if (e.layerType === 'polygon') {
+      const layer = e.layer;
+      const geojson = layer.toGeoJSON();
+      setPolygon(geojson);
+    }
+  };
+
+  const handleDeleted = () => {
+    setPolygon(null);
+  };
 
   const renderForm = () => {
     return (
@@ -59,18 +75,33 @@ export default function SimpleMapPage() {
           </>
         )}
         {selectedOption === 'Corte Polígono' && (
-          <p>Dibuje un polígono en el mapa (funcionalidad futura).</p>
+          <>
+            <p>Dibuje un polígono en el mapa.</p>
+          </>
         )}
 
         <div className="flex justify-between mt-4">
           <button
-            onClick={() => setSelectedOption(null)}
+            onClick={() => {
+              setSelectedOption(null);
+              setPolygon(null);
+            }}
             className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
           >
             Volver
           </button>
           <button
-            onClick={() => alert('Confirmado (sin funcionalidad)')}
+            onClick={() => {
+              if (selectedOption === 'Corte Polígono') {
+                if (polygon) {
+                  alert('GeoJSON generado:\n' + JSON.stringify(polygon, null, 2));
+                } else {
+                  alert('Dibuje un polígono primero.');
+                }
+              } else {
+                alert('Confirmado (sin funcionalidad)');
+              }
+            }}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             Confirmar
@@ -118,6 +149,28 @@ export default function SimpleMapPage() {
           <Marker position={position} icon={customIcon}>
             <Popup>¡Estás aquí!</Popup>
           </Marker>
+          {/* Solo mostrar el control de dibujo si está activa la opción */}
+          {selectedOption === 'Corte Polígono' && (
+            <FeatureGroup>
+              <EditControl
+                position="topright"
+                onCreated={handleCreated}
+                onDeleted={handleDeleted}
+                draw={{
+                  rectangle: false,
+                  circle: false,
+                  circlemarker: false,
+                  marker: false,
+                  polyline: false,
+                  polygon: true,
+                }}
+              />
+              {/* Mostrar el polígono si existe */}
+              {polygon && (
+                <Polygon positions={polygon.geometry.coordinates[0].map((coord: [number, number]) => [coord[1], coord[0]])} />
+              )}
+            </FeatureGroup>
+          )}
         </MapContainer>
       ) : (
         <div className="text-center text-gray-600 mt-10">Cargando ubicación...</div>
