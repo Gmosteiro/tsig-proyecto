@@ -51,6 +51,11 @@ export async function createStop(stopData: ParadaDTO) {
     return res.data
 }
 
+export async function updateStop(id: number, stopData: ParadaDTO) {
+    const res = await axios.put(`/apiurl/api/parada/actualizar/${id}`, stopData);
+    return res.data;
+}
+
 export type WMSFeatureInfoParams = {
     layerName: string,
     crsCode: string,

@@ -19,6 +19,12 @@ function WMSFeatureInfoHandler({
     const map = useMap();
 
     useMapEvent('click', async (e) => {
+        // Ignorar clicks si el popup está abierto y el click fue sobre el popup
+        const popup = document.querySelector('.edit-stop-popup');
+        if (popup && e.originalEvent && popup.contains(e.originalEvent.target as Node)) {
+            return;
+        }
+
         if (!visible) return;
 
         const size = map.getSize();

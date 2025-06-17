@@ -15,6 +15,12 @@ type Stop = {
     }
 }
 
+const editStop = (stop: Stop) => {
+    // Aquí iría la lógica para enviar los datos actualizados al servidor
+    // Por ejemplo, una llamada a una API REST o GraphQL
+    console.log('Guardando parada:', stop);
+}
+
 const EditStopPopup: React.FC<EditStopPopupProps> = ({ info, onClose, onSave }) => {
     if (!info) return null;
 
@@ -41,14 +47,17 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ info, onClose, onSave }) 
     };
 
     const handleSave = () => {
+        const updatedStop = { ...stop, properties: { ...stop.properties, ...form } };
+        editStop(updatedStop); // Llama a editStop aquí
         if (onSave) {
-            onSave({ ...stop, properties: { ...stop.properties, ...form } });
+            onSave(updatedStop);
         }
         if (onClose) onClose();
     };
 
     return (
         <div
+            className="edit-stop-popup"
             style={{
                 position: 'absolute',
                 bottom: 20,
@@ -66,6 +75,7 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ info, onClose, onSave }) 
                 color: '#222',
                 lineHeight: 1.5,
             }}
+            onClick={e => e.stopPropagation()}
         >
             {onClose && (
                 <button
