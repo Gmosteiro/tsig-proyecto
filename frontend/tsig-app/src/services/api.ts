@@ -1,6 +1,6 @@
 import axios from 'axios'
 // import { Stop } from '../lib/types/types'
-import { WMS_URL } from '../lib/contants'
+import { WMS_URL } from '../lib/constants'
 export type ParadaDTO = {
     id: number
     nombre: string

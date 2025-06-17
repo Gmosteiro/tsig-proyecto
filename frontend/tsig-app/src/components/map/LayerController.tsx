@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { ParadaDTO } from '../../services/api'
 import WMSFeatureInfoHandler from './WMSFeatureInfoHandler'
 import StopInfoPopupContainer from './StopInfoPopupContainer'
-import { WMS_URL, DEFAULT_TILE_SIZE } from '../../lib/contants'
+import { WMS_URL, DEFAULT_TILE_SIZE } from '../../lib/constants'
 
 export default function LayerController() {
     const [camineraVisible, setCamineraVisible] = useState(true)
