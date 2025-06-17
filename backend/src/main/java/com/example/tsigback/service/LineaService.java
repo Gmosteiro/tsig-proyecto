@@ -4,6 +4,7 @@ import com.example.tsigback.entities.Linea;
 import com.example.tsigback.entities.Parada;
 import com.example.tsigback.entities.ParadaLinea;
 import com.example.tsigback.entities.dtos.LineaDTO;
+import com.example.tsigback.entities.dtos.ParadaDTO;
 import com.example.tsigback.entities.dtos.PuntoDTO;
 import com.example.tsigback.entities.enums.EstadoParada;
 import com.example.tsigback.exception.LineaNoEncontradaException;
@@ -156,5 +157,47 @@ public class LineaService {
                 .stream()
                 .filter(paradaLinea -> paradaLinea.isEstaHabilitada())
                 .count() == 1;
+    }
+
+    public List<LineaDTO> obtenerTodas() {
+        return null;
+       // return lineaRepository.findAll();
+    }
+
+    private LineaDTO toDTO(Linea linea) {
+
+        // 1. Convertir MultiPoint a lista de [lon, lat]
+        List<ParadaDTO> listaPuntos = null;
+        if (linea.getPuntos() != null) {
+            listaPuntos = new ArrayList<>();
+            for (int i = 0; i < linea.getPuntos().getNumGeometries(); i++) {
+                var p = (org.locationtech.jts.geom.Point) linea.getPuntos().getGeometryN(i);
+                listaPuntos.add(ParadaDTO.builder().longitud(p.getX()).latitud(p.getY()).build());
+            }
+        }
+
+        // 2. Recorrido a WKT
+        String wkt = (linea.getRecorrido() != null) ? linea.getRecorrido().toText() : null;
+
+        // 3. Ids de ParadaLinea habilitadas
+        List<Integer> paradaLineaIds = null;
+        if (linea.getParadasLineas() != null) {
+            paradaLineaIds = linea.getParadasLineas().stream()
+                    .filter(ParadaLinea::isEstaHabilitada)
+                    .map(ParadaLinea::getId)
+                    .toList();
+        }
+
+        return LineaDTO.builder()
+                .id(linea.getId())
+                .descripcion(linea.getDescripcion())
+                .empresa(linea.getEmpresa())
+                .origen(linea.getOrigen())
+                .destino(linea.getDestino())
+                .observacion(linea.getObservacion())
+                //.puntos(listaPuntos)
+                .recorridoWkt(wkt)
+                .paradasLineaIds(paradaLineaIds)
+                .build();
     }
 }

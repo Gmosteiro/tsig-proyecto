@@ -14,10 +14,12 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 public class LineaDTO {
-    private Long id;
+    private int id;
     private String nombre;
     private String descripcion;
     private String empresa;
     private String observacion;
+    private String origen;
+    private String destino;
     private List<PuntoDTO> puntos;
 }
