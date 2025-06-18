@@ -39,6 +39,10 @@ export type LineaDTO = {
     rutaGeoJSON: any
 }
 
+export type HorarioDTO = {
+    hora: string // formato "HH:mm", solo hora y minutos
+}
+
 export async function validateRoute(request: RoutingRequestDTO) {
     const res = await axios.post('/apiurl/api/lineas/validar', request)
     return res.data
@@ -58,6 +62,11 @@ export async function updateStop(stopData: ParadaDTO) {
     console.log('Updating stop:', stopData)
 
     const res = await axios.put(`/apiurl/api/parada/modificar`, stopData);
+    return res.data;
+}
+
+export async function deleteStop(nombre: string) {
+    const res = await axios.delete(`/apiurl/api/parada/borrar/${nombre}`);
     return res.data;
 }
 

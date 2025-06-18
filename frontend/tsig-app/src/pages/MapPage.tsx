@@ -5,7 +5,7 @@ import L from 'leaflet'
 import RoutingControl from '../components/map/RoutingControl'
 import PointControls from '../components/map/PointsControls'
 import { v4 as uuidv4 } from 'uuid'
-import { validateRoute, saveLine, createStop } from '../services/api'
+import { validateRoute, saveLine, createStop, getWMSFeatureInfo } from '../services/api'
 import StopMarker from '../components/map/StopMarker'
 import useMapData from '../hooks/useMapData'
 import NavigationBar from '../components/ui/NavigationBar'
@@ -16,6 +16,8 @@ import markerShadow from '../assets/marker-shadow.png'
 import LayerController from '../components/map/LayerController'
 import RouteForm from '../components/ui/RouteForm'
 import StopForm from '../components/map/StopForm'
+import { deleteStop } from '../services/api'
+import axios from 'axios'
 import { CrearParadaDTO } from '../services/api'
 
 export default function MapPage() {
@@ -30,6 +32,7 @@ export default function MapPage() {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
   const [routeGeoJSON, setRouteGeoJSON] = useState<any>(null)
   const [editingStop, setEditingStop] = useState<any | null>(null);
+  const [deleteStopMode, setDeleteStopMode] = useState(false);
   const latestRouteGeoJSON = useRef<any>(null);
 
   const handleCreateStop = async (stopData: CrearParadaDTO) => {
@@ -135,6 +138,59 @@ export default function MapPage() {
     setEditingStop(null);
   };
 
+  // Handler para borrar parada
+  const handleDeleteStopClick = () => {
+    setDeleteStopMode(true);
+  };
+
+  function DeleteStopControl() {
+    useMapEvents({
+      click: async (e) => {
+        if (!deleteStopMode) return;
+
+        try {
+          const map = e.target;
+          const size = map.getSize();
+          const bounds = map.getBounds();
+          const crs = map.options.crs;
+          const point = map.latLngToContainerPoint(e.latlng);
+          const sw = crs.project(bounds.getSouthWest());
+          const ne = crs.project(bounds.getNorthEast());
+          const bbox = [sw.x, sw.y, ne.x, ne.y].join(',');
+
+          const data = await getWMSFeatureInfo({
+            layerName: "tsig:parada",
+            crsCode: crs.code ?? "",
+            bbox,
+            size,
+            point,
+            infoFormat: "application/json",
+            tolerance: 12
+          });
+
+          if (data && data.features && data.features.length > 0) {
+            const parada = data.features[0];
+            const nombre = parada.properties?.nombre;
+            if (nombre) {
+              // Llama a la API para borrar la parada
+              await deleteStop(nombre);
+              alert(`Parada "${nombre}" eliminada correctamente.`);
+            } else {
+              alert("No se encontró el nombre de la parada.");
+            }
+          } else {
+            alert("No se encontró una parada en el lugar seleccionado.");
+          }
+        } catch (err: any) {
+          alert("Error al intentar borrar la parada: " + (err?.response?.data || err.message));
+        } finally {
+          setDeleteStopMode(false);
+        }
+      }
+    });
+    return null;
+  }
+
   function AddPointControl({ onAddPoint }: { onAddPoint: (latlng: [number, number]) => void }) {
     useMapEvents({
       click(e) {
@@ -151,6 +207,7 @@ export default function MapPage() {
         {!creatingStop && !addingRoute && (
           <div className="flex gap-2 justify-center my-4">
             <button className="bg-yellow-600 text-white px-4 py-2 rounded" onClick={() => setCreatingStop(true)}>Crear Parada</button>
+            <button className="bg-red-600 text-white px-4 py-2 rounded" onClick={handleDeleteStopClick}>Borrar Parada</button>
             <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={() => setAddingRoute(true)}>Crear Ruta</button>
           </div>
         )}
@@ -232,6 +289,7 @@ export default function MapPage() {
           {routeGeoJSON && (
             <GeoJSON data={routeGeoJSON} style={{ color: 'red', weight: 5, opacity: 0.9 }} />
           )}
+          {deleteStopMode && <DeleteStopControl />}
         </MapContainer>
       </main>
       <Footer />
