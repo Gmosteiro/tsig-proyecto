@@ -1,5 +1,7 @@
 package com.example.tsigback.controller;
 
+import com.example.tsigback.entities.request.RutaKilometroRequest;
+import com.example.tsigback.entities.request.OrigenDestinoRequest;
 import com.example.tsigback.entities.dtos.LineaDTO;
 import com.example.tsigback.entities.dtos.ListaPuntosDTO;
 import com.example.tsigback.entities.dtos.PuntoDTO;
@@ -42,6 +44,48 @@ public class LineaController {
         lineaService.crearLinea(lineaDTO);
         return ResponseEntity.ok("Linea creada correctamente");
     }
+
+    @PostMapping("/origendestino")
+    public ResponseEntity<?> obtenerLineasPorOrigenDestino(@RequestBody OrigenDestinoRequest request) {
+        if (request == null || request.getIdDepartamentoOrigen() == 0 || request.getIdDepartamentoDestino() == 0) {
+            return ResponseEntity.badRequest().body("Request inválido: Origen y destino deben ser especificados.");
+        }
+
+        try {
+            List<LineaDTO> lineas = lineaService.obtenerLineasPorOrigenDestino(request.getIdDepartamentoOrigen(), request.getIdDepartamentoDestino());
+            if (lineas.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No se encontraron líneas para el origen y destino especificados.");
+            }
+            return ResponseEntity.status(HttpStatus.OK).body(lineas);
+        } catch (LineaNoEncontradaException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/rutakm")
+    public ResponseEntity<?> obtenerLineasPorRutaKilometro(@RequestBody RutaKilometroRequest request) {
+        if (request == null || request.getRuta() == 0 || request.getKilometro() == 0) {
+            return ResponseEntity.badRequest().body("Request inválido: Ruta y kilómetros deben ser especificados.");
+        }
+
+        try {
+            List<LineaDTO> lineas = lineaService.obtenerLineasPorRutaKilometro(request.getRuta(), request.getKilometro());
+            if (lineas.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No se encontraron líneas para la ruta y kilómetros especificados.");
+            }
+            return ResponseEntity.status(HttpStatus.OK).body(lineas);
+        } catch (LineaNoEncontradaException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno: " + e.getMessage());
+        }
+    }
+
+
+
+
 
     /*@PutMapping
     public ResponseEntity<String> modificarLinea(@RequestBody LineaDTO lineaDTO) {

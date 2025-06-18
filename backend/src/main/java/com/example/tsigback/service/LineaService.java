@@ -98,6 +98,71 @@ public class LineaService {
             }
         }
     }
+    
+    public List<LineaDTO> obtenerLineasPorOrigenDestino(int idDepartamentoOrigen, int idDepartamentoDestino) throws LineaNoEncontradaException {
+        List<Linea> lineas = lineaRepository.findByOrigenAndDestino(idDepartamentoOrigen, idDepartamentoDestino);
+        if (lineas.isEmpty()) {
+            throw new LineaNoEncontradaException("No se encontraron líneas para el origen y destino especificados.");
+        }
+        return lineas.stream().map(this::toDTO).collect(Collectors.toList());
+    }
+
+    public List<LineaDTO> obtenerLineasPorRutaKilometro(int ruta, int kilometro) throws LineaNoEncontradaException {
+        List<Linea> lineas = lineaRepository.findByRutaAndKilometro(ruta, kilometro);
+        if (lineas.isEmpty()) {
+            throw new LineaNoEncontradaException("No se encontraron líneas para la ruta y kilómetros especificados.");
+        }
+        return lineas.stream().map(this::toDTO).collect(Collectors.toList());
+    }
+
+    private LineaDTO toDTO(Linea linea) {
+        if (linea == null) return null;
+
+        // Convertir MultiPoint a lista de PuntoDTO
+        List<PuntoDTO> listaPuntos = null;
+        if (linea.getPuntos() != null) {
+            listaPuntos = new ArrayList<>();
+            for (int i = 0; i < linea.getPuntos().getNumGeometries(); i++) {
+                var p = (org.locationtech.jts.geom.Point) linea.getPuntos().getGeometryN(i);
+                listaPuntos.add(PuntoDTO.builder()
+                    .longitud(p.getX())
+                    .latitud(p.getY())
+                    .build());
+            }
+        }
+
+        // Convertir MultiLineString a GeoJSON
+        String rutaGeoJSON = null;
+        if (linea.getRecorrido() != null) {
+            GeoJsonWriter writer = new GeoJsonWriter();
+            rutaGeoJSON = writer.write(linea.getRecorrido());
+        }
+
+        // Convertir MultiLineString a WKT
+        String recorridoWKT = (linea.getRecorrido() != null) ? linea.getRecorrido().toText() : null;
+
+        // Obtener IDs de ParadaLinea
+        List<Integer> paradaLineaIds = null;
+        if (linea.getParadasLineas() != null) {
+            paradaLineaIds = linea.getParadasLineas().stream()
+                .map(ParadaLinea::getId)
+                .toList();
+        }
+
+        return LineaDTO.builder()
+                .id((long) linea.getId())
+                .nombre(linea.getDescripcion())
+                .descripcion(linea.getObservacion())
+                .empresa(linea.getEmpresa())
+                .observacion(linea.getObservacion())
+                .origen(linea.getOrigen())
+                .destino(linea.getDestino())
+                .puntos(listaPuntos)
+                .rutaGeoJSON(rutaGeoJSON)
+                .recorrido(recorridoWKT)
+                .paradaLineaIds(paradaLineaIds)
+                .build();
+    }
 
     /*public void modificarLinea(LineaDTO lineaDTO) throws LineaNoEncontradaException {
         Linea linea = lineaRepository.findById(lineaDTO.getId())
@@ -163,44 +228,5 @@ public class LineaService {
         return lineaRepository.findAll()
         .stream().map(l -> toDTO(l, false))
         .collect(Collectors.toList()); 
-    }
-
-    private LineaDTO toDTO(Linea linea, boolean conRecorrido) {
-
-        // 1. Convertir MultiPoint a lista de [lon, lat]
-        List<PuntoDTO> listaPuntos = null;
-        if (linea.getPuntos() != null) {
-            listaPuntos = new ArrayList<>();
-            for (int i = 0; i < linea.getPuntos().getNumGeometries(); i++) {
-                var p = (org.locationtech.jts.geom.Point) linea.getPuntos().getGeometryN(i);
-                listaPuntos.add(PuntoDTO.builder().lon(p.getX()).lat(p.getY()).build());
-            }
-        }
-
-        String wkt = null;
-        if (conRecorrido) {
-            // Recorrido a WKT
-            wkt = (linea.getRecorrido() != null) ? linea.getRecorrido().toText() : null;
-        }    
-
-        // 3. Ids de ParadaLinea habilitadas
-        List<Integer> paradaLineaIds = null;
-        if (linea.getParadasLineas() != null) {
-            paradaLineaIds = linea.getParadasLineas().stream()
-                    .map(ParadaLinea::getId)
-                    .toList();
-        }
-
-        return LineaDTO.builder()
-                .id(linea.getId())
-                .descripcion(linea.getDescripcion())
-                .empresa(linea.getEmpresa())
-                .origen(linea.getOrigen())
-                .destino(linea.getDestino())
-                .observacion(linea.getObservacion())
-                .puntos(listaPuntos)
-                .recorrido(conRecorrido ? wkt : null)
-                .paradaLineaIds(paradaLineaIds)
-                .build();
     }*/
 }
