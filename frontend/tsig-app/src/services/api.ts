@@ -59,7 +59,9 @@ export async function createStop(stopData: CrearParadaDTO) {
 }
 
 export async function updateStop(stopData: ParadaDTO) {
-    const res = await axios.put(`/apiurl/api/parada/actualizar/`, stopData);
+    console.log('Updating stop:', stopData)
+
+    const res = await axios.put(`/apiurl/api/parada/modificar`, stopData);
     return res.data;
 }
 

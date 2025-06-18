@@ -135,7 +135,6 @@ export default function MapPage() {
     // Aquí deberías llamar a tu API para actualizar la parada
     // await updateStop(stopData)
     console.log("Parada editada:", stopData);
-    debugger
     setEditingStop(null);
   };
 
