@@ -6,9 +6,10 @@ interface EditStopPopupProps {
     parada: ParadaDTO;
     onSave: (parada: ParadaDTO) => void;
     onClose: () => void;
+    onMove?: (parada: ParadaDTO) => void; // Nuevo prop opcional
 }
 
-const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave }) => {
+const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, onMove }) => {
     if (!parada) return null;
 
     const [form, setForm] = useState({
@@ -129,6 +130,16 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave }
                         className={styles.saveButton}
                     >
                         Guardar
+                    </button>
+                    <button
+                        type="button"
+                        className={styles.moveButton}
+                        style={{ marginLeft: 8 }}
+                        onClick={() => {
+                            if (onMove) onMove({ ...parada, ...form });
+                        }}
+                    >
+                        Mover
                     </button>
                 </div>
             </form>

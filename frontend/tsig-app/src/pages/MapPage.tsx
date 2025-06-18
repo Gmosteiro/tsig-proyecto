@@ -16,9 +16,10 @@ import markerShadow from '../assets/marker-shadow.png'
 import LayerController from '../components/map/LayerController'
 import RouteForm from '../components/ui/RouteForm'
 import StopForm from '../components/map/StopForm'
-import { deleteStop } from '../services/api'
+import { deleteStop, updateStop } from '../services/api'
 import axios from 'axios'
 import { CrearParadaDTO } from '../services/api'
+import EditStopPopup from '../components/map/EditStopPopup'
 
 export default function MapPage() {
   const { stops } = useMapData()
@@ -32,6 +33,7 @@ export default function MapPage() {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
   const [routeGeoJSON, setRouteGeoJSON] = useState<any>(null)
   const [editingStop, setEditingStop] = useState<any | null>(null);
+  const [movingStop, setMovingStop] = useState<any | null>(null);
   const [deleteStopMode, setDeleteStopMode] = useState(false);
   const latestRouteGeoJSON = useRef<any>(null);
 
@@ -132,10 +134,26 @@ export default function MapPage() {
 
   // Handler para guardar cambios de parada
   const handleEditStop = async (stopData: any) => {
-    // Aquí deberías llamar a tu API para actualizar la parada
-    // await updateStop(stopData)
     console.log("Parada editada:", stopData);
     setEditingStop(null);
+  };
+
+  // Handler para mover parada
+  const handleMoveStop = (stopData: any) => {
+    setMovingStop(stopData);
+    setEditingStop(null);
+  };
+
+  // Handler para actualizar la parada con la nueva posición
+  const handleMoveStopSubmit = async (stopData: any) => {
+    try {
+      debugger
+      await updateStop(stopData);
+      alert("Parada movida correctamente.");
+    } catch (err: any) {
+      alert("Error al mover la parada: " + (err?.response?.data || err.message));
+    }
+    setMovingStop(null);
   };
 
   // Handler para borrar parada
@@ -239,7 +257,7 @@ export default function MapPage() {
           zoom={13}
           style={{ height: '80vh', width: '100%' }}
         >
-          <LayerController />
+          <LayerController onMoveStop={handleMoveStop} />
           {creatingStop && (
             <StopForm
               onCancel={() => setCreatingStop(false)}
@@ -277,10 +295,18 @@ export default function MapPage() {
             />
           )}
           {editingStop && (
+            <EditStopPopup
+              parada={editingStop}
+              onSave={handleEditStop}
+              onClose={() => setEditingStop(null)}
+              onMove={handleMoveStop}
+            />
+          )}
+          {movingStop && (
             <StopForm
-              initialData={editingStop}
-              onCancel={() => setEditingStop(null)}
-              onSubmit={handleEditStop}
+              initialData={movingStop}
+              onCancel={() => setMovingStop(null)}
+              onSubmit={handleMoveStopSubmit}
             />
           )}
           {stops && stops.map(stop => (
