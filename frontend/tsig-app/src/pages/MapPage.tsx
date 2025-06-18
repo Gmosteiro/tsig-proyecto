@@ -147,7 +147,6 @@ export default function MapPage() {
   // Handler para actualizar la parada con la nueva posición
   const handleMoveStopSubmit = async (stopData: any) => {
     try {
-      debugger
       await updateStop(stopData);
       alert("Parada movida correctamente.");
     } catch (err: any) {

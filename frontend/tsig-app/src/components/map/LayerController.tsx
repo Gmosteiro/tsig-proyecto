@@ -99,7 +99,10 @@ export default function LayerController({ onMoveStop }: { onMoveStop?: (parada: 
             <StopInfoPopupContainer
                 parada={selectedParada}
                 onClose={() => setSelectedParada(null)}
-                onMove={onMoveStop}
+                onMove={parada => {
+                    if (onMoveStop) onMoveStop(parada)
+                    setSelectedParada(null) // Oculta el popup al mover
+                }}
             />
         </>
     )
