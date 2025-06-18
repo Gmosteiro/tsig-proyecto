@@ -14,6 +14,7 @@ interface StopFormProps {
         longitud: number
     }) => void
     initialData?: {
+        id?: number | string // <--- agregar esto
         nombre: string
         estado: EstadoParada
         refugio: boolean
@@ -66,7 +67,8 @@ export default function StopForm({ onCancel, onSubmit, initialData }: StopFormPr
                             refugio,
                             observacion,
                             latitud: position[0],
-                            longitud: position[1]
+                            longitud: position[1],
+                            ...(initialData?.id ? { id: initialData.id } : {})
                         })
                     }}
                 >
