@@ -17,7 +17,6 @@ import LayerController from '../components/map/LayerController'
 import RouteForm from '../components/ui/RouteForm'
 import StopForm from '../components/map/StopForm'
 import { deleteStop, updateStop } from '../services/api'
-import axios from 'axios'
 import { CrearParadaDTO } from '../services/api'
 import EditStopPopup from '../components/map/EditStopPopup'
 
