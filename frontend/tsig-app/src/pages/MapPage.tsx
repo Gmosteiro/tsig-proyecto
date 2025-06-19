@@ -219,6 +219,7 @@ export default function MapPage() {
       const geoJson = e.layer.toGeoJSON();
 
       console.log("Polígono creado:", geoJson);
+      //TODO
 
       if (featureGroupRef.current) {
         featureGroupRef.current.clearLayers();
@@ -250,6 +251,17 @@ export default function MapPage() {
             >
               {showSearcher ? "Ocultar Buscador" : "Buscar Rutas"}
             </button>
+            {(showSearcher || selectedLinea) && (
+              <button
+                className="bg-gray-500 text-white px-4 py-2 rounded"
+                onClick={() => {
+                  setShowSearcher(false);
+                  setSelectedLinea(null);
+                }}
+              >
+                Cancelar
+              </button>
+            )}
           </div>
         )}
 
