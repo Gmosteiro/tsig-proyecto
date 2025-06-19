@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap} from 'react-leaflet';
 import { useEffect, useState } from 'react';
 import L from 'leaflet';
 import NavigationBar from '../components/ui/NavigationBar';
@@ -7,6 +7,9 @@ import 'leaflet/dist/leaflet.css';
 import { FeatureGroup, Polygon } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
+import { getWMSFeatureInfo } from '../services/api';
+//import { useMap } from 'react-leaflet';
+
 
 const customIcon = new L.Icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png',
@@ -14,19 +17,60 @@ const customIcon = new L.Icon({
   iconAnchor: [12, 41],
 });
 
+const stopIcon = new L.Icon({
+  iconUrl: '/images/marker-bus.png',
+  iconSize: [25, 25],
+  iconAnchor: [12, 41],
+});
+
+function RecenterMap({ center }: { center: [number, number] }) {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(center);
+  }, [center, map]);
+
+  return null;
+}
+
 export default function SimpleMapPage() {
-  const [position, setPosition] = useState<[number, number] | null>(null);
+  const [position, setPosition] = useState<[number, number]>([-34.9, -56.2]);
+  const [nearbyStops, setNearbyStops] = useState<any[]>([]);
+  const [polygon, setPolygon] = useState<any>(null);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [polygon, setPolygon] = useState<any>(null); // Guardar el polígono dibujado
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setPosition([latitude, longitude]);
+      async (pos) => {
+        const latlng: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        setPosition(latlng);
+
+        // Hacemos consulta WMS de paradas cercanas
+        const mapSize = { x: 1024, y: 768 }; // Tamaño "simulado" para la query
+        const tolerance = 4000; // METROS DE VISUALIZACION DE PARADAS Y LINES ALREDEDOR DE TU UBICACION
+        const featureCount = 200;
+
+        const data = await getWMSFeatureInfo({
+          layerName: "tsig:parada",
+          crsCode: "EPSG:4326",
+          bbox: `${latlng[1] - 0.01},${latlng[0] - 0.01},${latlng[1] + 0.01},${latlng[0] + 0.01}`,
+          size: mapSize,
+          point: { x: mapSize.x / 2, y: mapSize.y / 2 },
+          infoFormat: "application/json",
+          tolerance,
+          featureCount
+        });
+
+        console.log("WMS paradas:", data);
+
+        if (data && data.features) {
+          setNearbyStops(data.features);
+        } else {
+          setNearbyStops([]);
+        }
       },
-      (error) => {
-        console.error('Error al obtener la ubicación:', error);
+      (err) => {
+        console.error("Error obteniendo geolocalización:", err);
       }
     );
   }, []);
@@ -130,8 +174,8 @@ export default function SimpleMapPage() {
             ))}
           </div>
         ) : (
-          renderForm()
-        )}
+        renderForm()
+      )}
       </div>
 
       {/* Mapa */}
@@ -142,6 +186,7 @@ export default function SimpleMapPage() {
           scrollWheelZoom={true}
           style={{ height: '75vh', width: '100%' }}
         >
+          <RecenterMap center={position} />
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution="&copy; OpenStreetMap contributors"
@@ -149,6 +194,21 @@ export default function SimpleMapPage() {
           <Marker position={position} icon={customIcon}>
             <Popup>¡Estás aquí!</Popup>
           </Marker>
+          
+
+          {nearbyStops.map((feature: any, idx: number) => {
+            const [lon, lat] = feature.geometry.coordinates;
+            return (
+              <Marker key={idx} position={[lat, lon]} icon={stopIcon}>
+                <Popup>
+                  {feature.properties?.nombre || 'Parada'}<br />
+                  ID: {feature.id}
+                </Popup>
+              </Marker>
+            );
+          })}
+
+
           {/* Solo mostrar el control de dibujo si está activa la opción */}
           {selectedOption === 'Corte Polígono' && (
             <FeatureGroup>
