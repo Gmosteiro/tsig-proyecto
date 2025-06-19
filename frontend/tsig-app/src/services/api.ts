@@ -24,35 +24,6 @@ export type RoutingRequestDTO = {
 
 export type EstadoParada = 'HABILITADA' | 'DESHABILITADA';
 
-export type PuntoDTO = {
-    latitud: number
-    longitud: number
-}
-
-export type LineaDTO = {
-    id?: number
-    nombre: string
-    descripcion: string
-    empresa: string
-    observacion?: string
-    puntos: PuntoDTO[]
-    rutaGeoJSON: any
-}
-
-export type HorarioDTO = {
-    hora: string // formato "HH:mm", solo hora y minutos
-}
-
-export async function validateRoute(request: RoutingRequestDTO) {
-    const res = await axios.post('/apiurl/api/lineas/validar', request)
-    return res.data
-}
-
-export const saveLine = async (lineData: LineaDTO) => {
-    const res = await axios.post('/apiurl/api/lineas/guardar', lineData)
-    return res.data
-}
-
 export async function createStop(stopData: CrearParadaDTO) {
     const res = await axios.post('/apiurl/api/parada/crear', stopData)
     return res.data
