@@ -1,4 +1,4 @@
-import { MapContainer, Marker, useMapEvents, GeoJSON, FeatureGroup, Polygon } from 'react-leaflet'
+import { MapContainer, Marker, useMapEvents, GeoJSON } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
 import React, { useState, useRef, useEffect } from 'react'
@@ -22,7 +22,8 @@ import { deleteStop } from '../services/api'
 import { CrearParadaDTO } from '../services/api'
 import Searcher from '../components/search/Searcher'
 import { useMap } from 'react-leaflet'
-import { EditControl } from 'react-leaflet-draw'
+import PolygonDrawControl from '../components/map/PolygonDrawControl'
+
 
 export default function MapPage() {
   const { stops } = useMapData()
@@ -38,7 +39,7 @@ export default function MapPage() {
   const [editingStop, setEditingStop] = useState<any | null>(null);
   const [deleteStopMode, setDeleteStopMode] = useState(false);
   const [selectedLinea, setSelectedLinea] = useState<any | null>(null)
-  const [showSearcher, setShowSearcher] = useState(false); // <--- NUEVO ESTADO
+  const [showSearcher, setShowSearcher] = useState(false);
   const latestRouteGeoJSON = useRef<any>(null)
   const mapRef = useRef<any>(null)
   const featureGroupRef = useRef<any>(null)
@@ -222,9 +223,6 @@ export default function MapPage() {
 
       const geoJson = e.layer.toGeoJSON();
 
-
-
-
       console.log("Polígono creado:", geoJson);
 
       if (featureGroupRef.current) {
@@ -233,7 +231,6 @@ export default function MapPage() {
       setPolygonCoords([]);
     }
   }
-
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -347,29 +344,12 @@ export default function MapPage() {
             />
           )}
           {deleteStopMode && <DeleteStopControl />}
-
-          <FeatureGroup ref={featureGroupRef}>
-            <EditControl
-              position="topright"
-              onCreated={handleCreated}
-              onDeleted={() => {
-                setPolygonCoords([])
-              }}
-              draw={{
-                rectangle: false,
-                circle: false,
-                circlemarker: false,
-                marker: false,
-                polyline: false,
-                polygon: true,
-              }}
-            />
-
-            {polygonCoords.length > 0 && (
-              <Polygon positions={polygonCoords} />
-            )}
-          </FeatureGroup>
-
+          <PolygonDrawControl
+            featureGroupRef={featureGroupRef}
+            polygonCoords={polygonCoords}
+            setPolygonCoords={setPolygonCoords}
+            handleCreated={handleCreated}
+          />
 
         </MapContainer>
       </main>
