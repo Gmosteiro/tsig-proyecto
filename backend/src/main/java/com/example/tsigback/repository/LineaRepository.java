@@ -71,5 +71,15 @@ public interface LineaRepository extends JpaRepository<Linea, Integer> {
     List<Linea> findByRutaAndKilometro(@Param("ruta") int ruta,
                                     @Param("kilometro") int kilometro);
 
+    @Query(value = """
+    SELECT l.*
+    FROM linea l
+    WHERE ST_Intersects(
+        l.recorrido,
+        ST_SetSRID(ST_GeomFromGeoJSON(:geojson), 4326)
+    )
+    """, nativeQuery = true)
+    List<Linea> findByRecorridoIntersectaPoligono(@Param("geojson") String geojson);
+
 
 }

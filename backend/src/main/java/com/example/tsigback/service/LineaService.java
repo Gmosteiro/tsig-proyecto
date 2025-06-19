@@ -13,9 +13,11 @@ import com.example.tsigback.repository.ParadaRepository;
 import com.example.tsigback.repository.RoutingRepository;
 import com.example.tsigback.utils.GeoUtils;
 
+import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.MultiLineString;
 import org.locationtech.jts.geom.MultiPoint;
 import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.io.geojson.GeoJsonReader;
 import org.locationtech.jts.io.geojson.GeoJsonWriter;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -104,7 +106,7 @@ public class LineaService {
         if (lineas.isEmpty()) {
             throw new LineaNoEncontradaException("No se encontraron líneas para el origen y destino especificados.");
         }
-        return lineas.stream().map(this::toDTO).collect(Collectors.toList());
+        return lineas.stream().map(this::toSimpleDTO).collect(Collectors.toList());
     }
 
     public List<LineaDTO> obtenerLineasPorRutaKilometro(int ruta, int kilometro) throws LineaNoEncontradaException {
@@ -112,7 +114,22 @@ public class LineaService {
         if (lineas.isEmpty()) {
             throw new LineaNoEncontradaException("No se encontraron líneas para la ruta y kilómetros especificados.");
         }
-        return lineas.stream().map(this::toDTO).collect(Collectors.toList());
+        return lineas.stream().map(this::toSimpleDTO).collect(Collectors.toList());
+    }
+
+    public List<LineaDTO> obtenerLineasPorInterseccionPoligono(String geoJsonPoligono) {
+        try {
+            List<Linea> intersectan = lineaRepository.findByRecorridoIntersectaPoligono(geoJsonPoligono);
+            return intersectan.stream().map(this::toSimpleDTO).collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("No se pudo procesar el polígono GeoJSON: " + e.getMessage(), e);
+        }
+    }
+
+    public LineaDTO obtenerLineaPorId(int id) {
+        return lineaRepository.findById(id)
+                .map(this::toDTO)
+                .orElse(null);
     }
 
     private LineaDTO toDTO(Linea linea) {
@@ -161,6 +178,30 @@ public class LineaService {
                 .rutaGeoJSON(rutaGeoJSON)
                 .recorrido(recorridoWKT)
                 .paradaLineaIds(paradaLineaIds)
+                .build();
+    }
+
+    private LineaDTO toSimpleDTO(Linea linea) {
+        if (linea == null) return null;
+
+        // Obtener IDs de ParadaLinea
+        List<Integer> paradaLineaIds = null;
+        if (linea.getParadasLineas() != null) {
+            paradaLineaIds = linea.getParadasLineas().stream()
+                .map(ParadaLinea::getId)
+                .toList();
+        }
+
+        return LineaDTO.builder()
+                .id((long) linea.getId())
+                .nombre(linea.getDescripcion())
+                .descripcion(linea.getObservacion())
+                .empresa(linea.getEmpresa())
+                .observacion(linea.getObservacion())
+                .origen(linea.getOrigen())
+                .destino(linea.getDestino())
+                .paradaLineaIds(paradaLineaIds)
+                // No incluye puntos, rutaGeoJSON ni recorrido
                 .build();
     }
 
