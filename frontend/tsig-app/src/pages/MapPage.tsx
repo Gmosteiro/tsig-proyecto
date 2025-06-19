@@ -243,17 +243,27 @@ export default function MapPage() {
         </div>
         {!creatingStop && !addingRoute && (
           <div className="flex gap-2 justify-center my-4">
-            <button className="bg-yellow-600 text-white px-4 py-2 rounded" onClick={() => setCreatingStop(true)}>Crear Parada</button>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={() => setAddingRoute(true)}>Crear Ruta</button>
             <button
-              className="bg-blue-600 text-white px-4 py-2 rounded"
+              className="bg-yellow-600 text-white px-4 py-2 rounded cursor-pointer"
+              onClick={() => setCreatingStop(true)}
+            >
+              Crear Parada
+            </button>
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer"
+              onClick={() => setAddingRoute(true)}
+            >
+              Crear Ruta
+            </button>
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer"
               onClick={() => setShowSearcher(v => !v)}
             >
               {showSearcher ? "Ocultar Buscador" : "Buscar Rutas"}
             </button>
             {(showSearcher || selectedLinea) && (
               <button
-                className="bg-gray-500 text-white px-4 py-2 rounded"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer"
                 onClick={() => {
                   setShowSearcher(false);
                   setSelectedLinea(null);
