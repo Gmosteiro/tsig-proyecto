@@ -65,8 +65,8 @@ export async function updateStop(stopData: ParadaDTO) {
     return res.data;
 }
 
-export async function deleteStop(nombre: string) {
-    const res = await axios.delete(`/apiurl/api/parada/borrar/${nombre}`);
+export async function deleteStop(id: number) {
+    const res = await axios.delete(`/apiurl/api/parada/id/${id}`);
     return res.data;
 }
 

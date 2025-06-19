@@ -186,11 +186,12 @@ export default function MapPage() {
 
           if (data && data.features && data.features.length > 0) {
             const parada = data.features[0];
-            const nombre = parada.properties?.nombre;
-            if (nombre) {
+            const id = parada.properties?.id;
+            console.log(id)
+            if (id) {
               // Llama a la API para borrar la parada
-              await deleteStop(nombre);
-              alert(`Parada "${nombre}" eliminada correctamente.`);
+              await deleteStop(id);
+              alert(`Parada "${id}" eliminada correctamente.`);
             } else {
               alert("No se encontró el nombre de la parada.");
             }
@@ -308,13 +309,35 @@ export default function MapPage() {
             />
           )}
           {stops && stops.map(stop => (
-            <StopMarker key={stop.id} stop={stop} onClick={setEditingStop} />
+            <StopMarker
+              key={stop.id}
+              stop={stop}
+              onClick={() => {
+                if (!deleteStopMode) {
+                  setEditingStop(stop);
+                }
+              }}
+            />
           ))}
           {routeGeoJSON && (
             <GeoJSON data={routeGeoJSON} style={{ color: 'red', weight: 5, opacity: 0.9 }} />
           )}
           {deleteStopMode && <DeleteStopControl />}
         </MapContainer>
+        {deleteStopMode && (
+          <div style={{
+            background: '#fee',
+            color: '#b00',
+            padding: '8px 0',
+            textAlign: 'center',
+            fontWeight: 'bold',
+            border: '1px solid #b00',
+            marginBottom: 10,
+            borderRadius: 4
+          }}>
+            Modo borrar activo: haz clic en una parada para eliminarla.
+          </div>
+        )}
       </main>
       <Footer />
     </div>
