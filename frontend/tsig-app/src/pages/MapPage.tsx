@@ -42,23 +42,15 @@ export default function MapPage() {
   const latestRouteGeoJSON = useRef<any>(null)
   const mapRef = useRef<any>(null)
   const featureGroupRef = useRef<any>(null)
-
-  // Estado para el polígono seleccionado
   const [polygonCoords, setPolygonCoords] = useState<[number, number][]>([])
 
-  // Centrar el mapa cuando se selecciona una línea
   useEffect(() => {
     if (selectedLinea && selectedLinea.rutaGeoJSON && mapRef.current) {
-      try {
-        const geojson = JSON.parse(selectedLinea.rutaGeoJSON)
-        // Obtener bounds de la ruta
-        const coords = geojson.coordinates.flat(1)
-        const latlngs = coords.map(([lng, lat]: [number, number]) => [lat, lng])
-        if (latlngs.length > 0) {
-          mapRef.current.fitBounds(latlngs)
-        }
-      } catch (e) {
-        // Error parseando geojson
+      const geojson = JSON.parse(selectedLinea.rutaGeoJSON)
+      const coords = geojson.coordinates.flat(1)
+      const latlngs = coords.map(([lng, lat]: [number, number]) => [lat, lng])
+      if (latlngs.length > 0) {
+        mapRef.current.fitBounds(latlngs)
       }
     }
   }, [selectedLinea])
@@ -158,14 +150,6 @@ export default function MapPage() {
     setShowRouteForm(false)
   }
 
-  // Handler para guardar cambios de parada
-  const handleEditStop = async (stopData: any) => {
-    // Aquí deberías llamar a tu API para actualizar la parada
-    // await updateStop(stopData)
-    console.log("Parada editada:", stopData);
-    setEditingStop(null);
-  };
-
   function DeleteStopControl() {
     useMapEvents({
       click: async (e) => {
@@ -231,16 +215,18 @@ export default function MapPage() {
     return null;
   }
 
-  // Handler cuando se crea un polígono
   const handleCreated = async (e: any) => {
     if (e.layerType === 'polygon') {
       const latlngs = e.layer.getLatLngs()[0].map((latlng: any) => [latlng.lat, latlng.lng]);
       setPolygonCoords(latlngs);
 
       const geoJson = e.layer.toGeoJSON();
-      // Aquí puedes llamar a la API
+
+
+
+
       console.log("Polígono creado:", geoJson);
-      // Borra los polígonos de Leaflet y de React
+
       if (featureGroupRef.current) {
         featureGroupRef.current.clearLayers();
       }
@@ -248,10 +234,6 @@ export default function MapPage() {
     }
   }
 
-  // Handler cuando se borra un polígono
-  const handleDeleted = () => {
-    setPolygonCoords([])
-  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -261,7 +243,7 @@ export default function MapPage() {
           {showSearcher && (
             <Searcher onVerLinea={(data: LineaDTO) => {
               setSelectedLinea(data);
-              setShowSearcher(false); // Opcional: ocultar Searcher al seleccionar una línea
+              setShowSearcher(false);
             }} />
           )}
         </div>
@@ -347,7 +329,9 @@ export default function MapPage() {
             <StopForm
               initialData={editingStop}
               onCancel={() => setEditingStop(null)}
-              onSubmit={handleEditStop}
+              onSubmit={() => {
+                setEditingStop(null);
+              }}
             />
           )}
           {stops && stops.map(stop => (
@@ -363,12 +347,14 @@ export default function MapPage() {
             />
           )}
           {deleteStopMode && <DeleteStopControl />}
-          {/* --- Selección de Polígonos --- */}
+
           <FeatureGroup ref={featureGroupRef}>
             <EditControl
               position="topright"
               onCreated={handleCreated}
-              onDeleted={handleDeleted}
+              onDeleted={() => {
+                setPolygonCoords([])
+              }}
               draw={{
                 rectangle: false,
                 circle: false,
@@ -378,11 +364,13 @@ export default function MapPage() {
                 polygon: true,
               }}
             />
+
             {polygonCoords.length > 0 && (
               <Polygon positions={polygonCoords} />
             )}
           </FeatureGroup>
-          {/* --- Fin selección de Polígonos --- */}
+
+
         </MapContainer>
       </main>
       <Footer />
