@@ -126,6 +126,11 @@ public class LineaService {
         }
     }
 
+    public List<LineaDTO> obtenerLineasPorEmpresa(String empresa) {
+        List<Linea> lineas = lineaRepository.findByEmpresaNombre(empresa);
+        return lineas.stream().map(this::toSimpleDTO).collect(Collectors.toList());
+    }
+
     public LineaDTO obtenerLineaPorId(int id) {
         return lineaRepository.findById(id)
                 .map(this::toDTO)

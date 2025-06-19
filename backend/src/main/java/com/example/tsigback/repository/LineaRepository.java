@@ -81,5 +81,12 @@ public interface LineaRepository extends JpaRepository<Linea, Integer> {
     """, nativeQuery = true)
     List<Linea> findByRecorridoIntersectaPoligono(@Param("geojson") String geojson);
 
+    @Query(value = """
+    SELECT l.*
+    FROM linea l
+    WHERE l.empresa = :empresa
+    """, nativeQuery = true)
+    List<Linea> findByEmpresaNombre(@Param("empresa") String empresa);
+
 
 }

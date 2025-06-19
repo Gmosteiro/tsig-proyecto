@@ -110,8 +110,8 @@ public class LineaController {
     }
 
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> obtenerLinea(@PathVariable int id) {
+    @GetMapping
+    public ResponseEntity<?> obtenerLinea(@RequestParam int id) {
         if (id == 0) {
             return ResponseEntity.badRequest().body("Debe especificar un id de línea válido.");
         }
@@ -126,7 +126,22 @@ public class LineaController {
         }
     }
 
-    
+    @GetMapping("/empresa")
+    public ResponseEntity<?> obtenerLineasPorEmpresa(@RequestParam String empresa) {
+        if (empresa == null || empresa.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Debe especificar el nombre de la empresa.");
+        }
+        try {
+            List<LineaDTO> lineas = lineaService.obtenerLineasPorEmpresa(empresa.trim());
+            if (lineas == null || lineas.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No se encontraron líneas para la empresa especificada.");
+            }
+            return ResponseEntity.ok(lineas);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno: " + e.getMessage());
+        }
+    }
+
     /*@PutMapping
     public ResponseEntity<String> modificarLinea(@RequestBody LineaDTO lineaDTO) {
         try {
