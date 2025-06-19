@@ -7,6 +7,8 @@ import com.example.tsigback.entities.dtos.ListaPuntosDTO;
 import com.example.tsigback.entities.dtos.PuntoDTO;
 import com.example.tsigback.exception.LineaNoEncontradaException;
 import com.example.tsigback.service.LineaService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -83,10 +85,48 @@ public class LineaController {
         }
     }
 
+    @PostMapping("/interseccion-poligono")
+    public ResponseEntity<?> obtenerLineaInterseccionPoligono(@RequestBody String geoJsonPoligono) {
+        if (geoJsonPoligono == null || geoJsonPoligono.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Debe enviar un GeoJSON de polígono válido.");
+        }
+        try {
+            // Extraer geometry si es un Feature
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode node = mapper.readTree(geoJsonPoligono);
+            if (node.has("geometry")) {
+                geoJsonPoligono = node.get("geometry").toString();
+            }
+            List<LineaDTO> lineas = lineaService.obtenerLineasPorInterseccionPoligono(geoJsonPoligono);
+            if (lineas == null || lineas.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No se encontraron líneas que intersecten el polígono.");
+            }
+            return ResponseEntity.ok(lineas);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("GeoJSON inválido: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno: " + e.getMessage());
+        }
+    }
 
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> obtenerLinea(@PathVariable int id) {
+        if (id == 0) {
+            return ResponseEntity.badRequest().body("Debe especificar un id de línea válido.");
+        }
+        try {
+            LineaDTO linea = lineaService.obtenerLineaPorId(id);
+            if (linea == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No se encontró la línea solicitada.");
+            }
+            return ResponseEntity.ok(linea);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno: " + e.getMessage());
+        }
+    }
 
-
+    
     /*@PutMapping
     public ResponseEntity<String> modificarLinea(@RequestBody LineaDTO lineaDTO) {
         try {
