@@ -11,6 +11,13 @@ export type ParadaDTO = {
     longitud: number
 }
 
+export type ParadalineaDTO = {
+    idParadaLinea: number
+    idParada: number
+    idLinea: number
+    horarios: HorarioDTO[]
+}
+
 export type CrearParadaDTO = Omit<ParadaDTO, 'id'>
 
 export type RoutingPointDTO = {
@@ -44,6 +51,7 @@ export type HorarioDTO = {
 }
 
 export async function validateRoute(request: RoutingRequestDTO) {
+    console.log('Validating route with request:', request)
     const res = await axios.post('/apiurl/api/lineas/validar', request)
     return res.data
 }
@@ -68,6 +76,11 @@ export async function updateStop(stopData: ParadaDTO) {
 export async function deleteStop(id: number) {
     const res = await axios.delete(`/apiurl/api/parada/id/${id}`);
     return res.data;
+}
+
+export async function linkStopToLine(stopData: ParadalineaDTO) {
+    const res = await axios.post('/apiurl/api/parada/asociar/linea', stopData)
+    return res.data
 }
 
 export type WMSFeatureInfoParams = {

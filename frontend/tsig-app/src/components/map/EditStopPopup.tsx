@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { updateStop, deleteStop, ParadaDTO } from '../../services/api'; // <-- importa deleteStop
+import { updateStop, deleteStop, ParadaDTO } from '../../services/api';
 import styles from '../../styles/EditStopPopup.module.css';
 
 interface EditStopPopupProps {
@@ -7,7 +7,7 @@ interface EditStopPopupProps {
     onSave: (parada: ParadaDTO) => void;
     onClose: () => void;
     onMove?: (parada: ParadaDTO) => void;
-    onDelete?: (id: number) => void; // <-- opcional, por si quieres refrescar la lista
+    onDelete?: (id: number) => void;
 }
 
 const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, onMove, onDelete }) => {
@@ -52,8 +52,7 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, 
             alert("Error al guardar los cambios");
         }
     };
-
-    // NUEVO: handler para eliminar parada
+    
     const handleDelete = async () => {
         if (window.confirm(`¿Seguro que quieres eliminar la parada "${parada.nombre}"?`)) {
             try {

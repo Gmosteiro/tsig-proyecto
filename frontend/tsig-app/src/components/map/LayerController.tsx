@@ -8,8 +8,8 @@ import L from 'leaflet' // <--- Agrega esta línea
 
 export default function LayerController({ onMoveStop }: { onMoveStop?: (parada: ParadaDTO) => void }) {
     const [camineraVisible, setCamineraVisible] = useState(true)
-    const [paradaVisible, setParadaVisible] = useState(false)
-    const [lineaVisible, setLineaVisible] = useState(false)
+    const [paradaVisible, setParadaVisible] = useState(true)
+    const [lineaVisible, setLineaVisible] = useState(true)
     const [selectedParada, setSelectedParada] = useState<ParadaDTO | null>(null)
 
     return (
