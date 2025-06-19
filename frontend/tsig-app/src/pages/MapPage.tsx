@@ -6,8 +6,8 @@ import L from 'leaflet'
 import RoutingControl from '../components/map/RoutingControl'
 import PointControls from '../components/map/PointsControls'
 import { v4 as uuidv4 } from 'uuid'
-import { createStop, getWMSFeatureInfo } from '../services/api'
-import { validateRoute, saveLine, LineaDTO } from '../services/linea'
+import { createStop, getWMSFeatureInfo, deleteStop, CrearParadaDTO } from '../services/api'
+import { validateRoute, saveLine, LineaDTO, updateGeoJSON } from '../services/linea'
 import StopMarker from '../components/map/StopMarker'
 import useMapData from '../hooks/useMapData'
 import NavigationBar from '../components/ui/NavigationBar'
@@ -18,17 +18,12 @@ import markerShadow from '../assets/marker-shadow.png'
 import LayerController from '../components/map/LayerController'
 import RouteForm from '../components/ui/RouteForm'
 import StopForm from '../components/map/StopForm'
-import { deleteStop } from '../services/api'
-import { CrearParadaDTO } from '../services/api'
 import Searcher from '../components/search/Searcher'
 import { useMap } from 'react-leaflet'
 import PolygonDrawControl from '../components/map/PolygonDrawControl'
 
-
 export default function MapPage() {
   const { stops } = useMapData()
-
-
   const [creatingStop, setCreatingStop] = useState(false)
   const [addingRoute, setAddingRoute] = useState(false)
   const [isValidated, setIsValidated] = useState(false)
@@ -238,8 +233,9 @@ export default function MapPage() {
       <main className="flex-1">
         <div className="flex justify-center my-6">
           {showSearcher && (
-            <Searcher onVerLinea={(data: LineaDTO) => {
-              setSelectedLinea(data);
+            <Searcher onVerLinea={async (data: LineaDTO) => {
+              const line = await updateGeoJSON(data);
+              setSelectedLinea(line);
               setShowSearcher(false);
             }} />
           )}

@@ -1,10 +1,13 @@
 import React, { useState } from 'react'
+import { LineaDTO, getLineaByNombreEmpresa } from '../../services/linea'
+import LinesList from './LinesList'
 
 interface NombreSearchProps {
-    // Puedes agregar props si necesitas pasar datos desde el padre
+    onVerLinea?: (linea: LineaDTO) => void
+
 }
 
-const NombreSearch: React.FC<NombreSearchProps> = () => {
+const NombreSearch: React.FC<NombreSearchProps> = ({ onVerLinea }) => {
     const [nombre, setNombre] = useState('')
     const [resultados, setResultados] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
@@ -17,15 +20,15 @@ const NombreSearch: React.FC<NombreSearchProps> = () => {
         setResultados([])
 
         try {
-            // Aquí deberías llamar a tu API real
-            // Simulación de resultados
-            setTimeout(() => {
-                setResultados([
-                    { id: 1, nombre: 'Línea 101', descripcion: 'Recorrido Centro - Barrio Sur' },
-                    { id: 2, nombre: 'Línea 202', descripcion: 'Recorrido Centro - Prado' }
-                ])
-                setLoading(false)
-            }, 1000)
+
+            const res = await getLineaByNombreEmpresa(nombre)
+
+            if (res.length === 0) {
+                setError('No se encontraron líneas con ese nombre')
+            }
+
+            setResultados(res)
+            setLoading(false)
         } catch (err) {
             setError('Error al buscar líneas por nombre')
             setLoading(false)
@@ -54,15 +57,7 @@ const NombreSearch: React.FC<NombreSearchProps> = () => {
             </form>
             {loading && <div>Buscando...</div>}
             {error && <div className="text-red-500">{error}</div>}
-            {resultados.length > 0 && (
-                <ul className="mt-2">
-                    {resultados.map(linea => (
-                        <li key={linea.id} className="border-b py-1">
-                            <span className="font-semibold">{linea.nombre}</span> - {linea.descripcion}
-                        </li>
-                    ))}
-                </ul>
-            )}
+            <LinesList lineas={resultados} onVerLinea={onVerLinea} />
         </div>
     )
 }

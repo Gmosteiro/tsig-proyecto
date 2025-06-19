@@ -57,6 +57,39 @@ export const getLineaOrigenDestino = async (data: OrigenDestinoDto): Promise<Lin
     }
 }
 
+export const getLineaByNombreEmpresa = async (nombre: string): Promise<LineaDTO[]> => {
+    try {
+        const res = await axios.get('/apiurl/api/lineas/empresa', {
+            params: { empresa: nombre }
+        });
+
+        return res.data;
+    }
+    catch (error: any) {
+        if (error.response && error.response.status === 404) {
+            return [];
+        }
+        throw error;
+    }
+}
+
+
+export const updateGeoJSON = async (linea: LineaDTO): Promise<LineaDTO> => {
+    try {
+        const res = await axios.get('/apiurl/api/lineas', {
+            params: { id: linea.id }
+        });
+        return res.data;
+
+    }
+    catch (error: any) {
+        if (error.response && error.response.status === 404) {
+            return linea; // Si no se encuentra, devolvemos la línea original
+        }
+        throw error;
+    }
+}
+
 export const getDepartamentos = async () => {
     // Simulated response
     return [

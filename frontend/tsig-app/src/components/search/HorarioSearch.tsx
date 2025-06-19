@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
+import { LineaDTO } from '../../services/linea'
 
 interface HorarioSearchProps {
-    // Puedes agregar props si necesitas pasar datos desde el padre
+    onVerLinea?: (linea: LineaDTO) => void
+
 }
 
 const HorarioSearch: React.FC<HorarioSearchProps> = () => {

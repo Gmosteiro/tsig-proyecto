@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import OrigenDestinoSearch from './OrigenDestinoSearch'
-// import NombreSearch from './NombreSearch'
-// import HorarioSearch from './HorarioSearch'
+import NombreSearch from './NombreSearch'
+import HorarioSearch from './HorarioSearch'
 
 type SearchType = 'origenDestino' | 'nombre' | 'horario' | 'poligono' | null
 
@@ -12,8 +12,7 @@ type SearcherProps = {
 const searchOptions = [
     { value: 'origenDestino', label: 'Por Origen y Destino' },
     { value: 'nombre', label: 'Por Nombre de Línea' },
-    { value: 'horario', label: 'Por Horario' },
-    { value: 'poligono', label: 'Por Polígono' },
+    { value: 'horario', label: 'Por Horario' }
 ]
 
 const Searcher: React.FC<SearcherProps> = ({ onVerLinea }) => {
@@ -35,8 +34,8 @@ const Searcher: React.FC<SearcherProps> = ({ onVerLinea }) => {
             </div>
             <div>
                 {searchType === 'origenDestino' && <OrigenDestinoSearch onVerLinea={onVerLinea} />}
-                {/* {searchType === 'nombre' && <NombreSearch onVerLinea={onVerLinea} />}
-                {searchType === 'horario' && <HorarioSearch onVerLinea={onVerLinea} />}*/}
+                {searchType === 'nombre' && <NombreSearch onVerLinea={onVerLinea} />}
+                {searchType === 'horario' && <HorarioSearch onVerLinea={onVerLinea} />}
                 {!searchType && <div className="text-gray-500">Selecciona un tipo de búsqueda</div>}
             </div>
         </div>
