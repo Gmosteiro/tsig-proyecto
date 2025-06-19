@@ -1,5 +1,6 @@
-import { MapContainer, Marker, useMapEvents, GeoJSON } from 'react-leaflet'
+import { MapContainer, Marker, useMapEvents, GeoJSON, FeatureGroup, Polygon } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
+import 'leaflet-draw/dist/leaflet.draw.css'
 import React, { useState, useRef, useEffect } from 'react'
 import L from 'leaflet'
 import RoutingControl from '../components/map/RoutingControl'
@@ -21,6 +22,7 @@ import { deleteStop } from '../services/api'
 import { CrearParadaDTO } from '../services/api'
 import Searcher from '../components/search/Searcher'
 import { useMap } from 'react-leaflet'
+import { EditControl } from 'react-leaflet-draw'
 
 export default function MapPage() {
   const { stops } = useMapData()
@@ -36,8 +38,13 @@ export default function MapPage() {
   const [editingStop, setEditingStop] = useState<any | null>(null);
   const [deleteStopMode, setDeleteStopMode] = useState(false);
   const [selectedLinea, setSelectedLinea] = useState<any | null>(null)
+  const [showSearcher, setShowSearcher] = useState(false); // <--- NUEVO ESTADO
   const latestRouteGeoJSON = useRef<any>(null)
   const mapRef = useRef<any>(null)
+  const featureGroupRef = useRef<any>(null)
+
+  // Estado para el polígono seleccionado
+  const [polygonCoords, setPolygonCoords] = useState<[number, number][]>([])
 
   // Centrar el mapa cuando se selecciona una línea
   useEffect(() => {
@@ -224,19 +231,50 @@ export default function MapPage() {
     return null;
   }
 
+  // Handler cuando se crea un polígono
+  const handleCreated = async (e: any) => {
+    if (e.layerType === 'polygon') {
+      const latlngs = e.layer.getLatLngs()[0].map((latlng: any) => [latlng.lat, latlng.lng]);
+      setPolygonCoords(latlngs);
+
+      const geoJson = e.layer.toGeoJSON();
+      // Aquí puedes llamar a la API
+      console.log("Polígono creado:", geoJson);
+      // Borra los polígonos de Leaflet y de React
+      if (featureGroupRef.current) {
+        featureGroupRef.current.clearLayers();
+      }
+      setPolygonCoords([]);
+    }
+  }
+
+  // Handler cuando se borra un polígono
+  const handleDeleted = () => {
+    setPolygonCoords([])
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <NavigationBar />
       <main className="flex-1">
         <div className="flex justify-center my-6">
-          <Searcher onVerLinea={(data: LineaDTO) => {
-            setSelectedLinea(data);
-          }} />
+          {showSearcher && (
+            <Searcher onVerLinea={(data: LineaDTO) => {
+              setSelectedLinea(data);
+              setShowSearcher(false); // Opcional: ocultar Searcher al seleccionar una línea
+            }} />
+          )}
         </div>
         {!creatingStop && !addingRoute && (
           <div className="flex gap-2 justify-center my-4">
             <button className="bg-yellow-600 text-white px-4 py-2 rounded" onClick={() => setCreatingStop(true)}>Crear Parada</button>
             <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={() => setAddingRoute(true)}>Crear Ruta</button>
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded"
+              onClick={() => setShowSearcher(v => !v)}
+            >
+              {showSearcher ? "Ocultar Buscador" : "Buscar Rutas"}
+            </button>
           </div>
         )}
 
@@ -325,6 +363,26 @@ export default function MapPage() {
             />
           )}
           {deleteStopMode && <DeleteStopControl />}
+          {/* --- Selección de Polígonos --- */}
+          <FeatureGroup ref={featureGroupRef}>
+            <EditControl
+              position="topright"
+              onCreated={handleCreated}
+              onDeleted={handleDeleted}
+              draw={{
+                rectangle: false,
+                circle: false,
+                circlemarker: false,
+                marker: false,
+                polyline: false,
+                polygon: true,
+              }}
+            />
+            {polygonCoords.length > 0 && (
+              <Polygon positions={polygonCoords} />
+            )}
+          </FeatureGroup>
+          {/* --- Fin selección de Polígonos --- */}
         </MapContainer>
       </main>
       <Footer />
