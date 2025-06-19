@@ -1,11 +1,12 @@
 import { MapContainer, Marker, useMapEvents, GeoJSON } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import L from 'leaflet'
 import RoutingControl from '../components/map/RoutingControl'
 import PointControls from '../components/map/PointsControls'
 import { v4 as uuidv4 } from 'uuid'
-import { validateRoute, saveLine, createStop, getWMSFeatureInfo } from '../services/api'
+import { createStop, getWMSFeatureInfo } from '../services/api'
+import { validateRoute, saveLine, LineaDTO } from '../services/linea'
 import StopMarker from '../components/map/StopMarker'
 import useMapData from '../hooks/useMapData'
 import NavigationBar from '../components/ui/NavigationBar'
@@ -17,8 +18,9 @@ import LayerController from '../components/map/LayerController'
 import RouteForm from '../components/ui/RouteForm'
 import StopForm from '../components/map/StopForm'
 import { deleteStop } from '../services/api'
-import axios from 'axios'
 import { CrearParadaDTO } from '../services/api'
+import Searcher from '../components/search/Searcher'
+import { useMap } from 'react-leaflet'
 
 export default function MapPage() {
   const { stops } = useMapData()
@@ -33,7 +35,26 @@ export default function MapPage() {
   const [routeGeoJSON, setRouteGeoJSON] = useState<any>(null)
   const [editingStop, setEditingStop] = useState<any | null>(null);
   const [deleteStopMode, setDeleteStopMode] = useState(false);
-  const latestRouteGeoJSON = useRef<any>(null);
+  const [selectedLinea, setSelectedLinea] = useState<any | null>(null)
+  const latestRouteGeoJSON = useRef<any>(null)
+  const mapRef = useRef<any>(null)
+
+  // Centrar el mapa cuando se selecciona una línea
+  useEffect(() => {
+    if (selectedLinea && selectedLinea.rutaGeoJSON && mapRef.current) {
+      try {
+        const geojson = JSON.parse(selectedLinea.rutaGeoJSON)
+        // Obtener bounds de la ruta
+        const coords = geojson.coordinates.flat(1)
+        const latlngs = coords.map(([lng, lat]: [number, number]) => [lat, lng])
+        if (latlngs.length > 0) {
+          mapRef.current.fitBounds(latlngs)
+        }
+      } catch (e) {
+        // Error parseando geojson
+      }
+    }
+  }, [selectedLinea])
 
   const handleCreateStop = async (stopData: CrearParadaDTO) => {
     await createStop(stopData)
@@ -138,11 +159,6 @@ export default function MapPage() {
     setEditingStop(null);
   };
 
-  // Handler para borrar parada
-  const handleDeleteStopClick = () => {
-    setDeleteStopMode(true);
-  };
-
   function DeleteStopControl() {
     useMapEvents({
       click: async (e) => {
@@ -200,14 +216,26 @@ export default function MapPage() {
     return null
   }
 
+  function SetMapRef({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null> }) {
+    const map = useMap();
+    React.useEffect(() => {
+      mapRef.current = map;
+    }, [map, mapRef]);
+    return null;
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <NavigationBar />
       <main className="flex-1">
+        <div className="flex justify-center my-6">
+          <Searcher onVerLinea={(data: LineaDTO) => {
+            setSelectedLinea(data);
+          }} />
+        </div>
         {!creatingStop && !addingRoute && (
           <div className="flex gap-2 justify-center my-4">
             <button className="bg-yellow-600 text-white px-4 py-2 rounded" onClick={() => setCreatingStop(true)}>Crear Parada</button>
-            <button className="bg-red-600 text-white px-4 py-2 rounded" onClick={handleDeleteStopClick}>Borrar Parada</button>
             <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={() => setAddingRoute(true)}>Crear Ruta</button>
           </div>
         )}
@@ -239,6 +267,7 @@ export default function MapPage() {
           zoom={13}
           style={{ height: '80vh', width: '100%' }}
         >
+          <SetMapRef mapRef={mapRef} />
           <LayerController />
           {creatingStop && (
             <StopForm
@@ -288,6 +317,12 @@ export default function MapPage() {
           ))}
           {routeGeoJSON && (
             <GeoJSON data={routeGeoJSON} style={{ color: 'red', weight: 5, opacity: 0.9 }} />
+          )}
+          {selectedLinea && selectedLinea.rutaGeoJSON && (
+            <GeoJSON
+              data={JSON.parse(selectedLinea.rutaGeoJSON)}
+              style={{ color: 'blue', weight: 5, opacity: 0.9 }}
+            />
           )}
           {deleteStopMode && <DeleteStopControl />}
         </MapContainer>
