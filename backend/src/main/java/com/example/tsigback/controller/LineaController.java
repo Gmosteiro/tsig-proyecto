@@ -2,7 +2,6 @@ package com.example.tsigback.controller;
 
 import com.example.tsigback.entities.request.RutaKilometroRequest;
 import com.example.tsigback.entities.request.OrigenDestinoRequest;
-import com.example.tsigback.entities.request.RangoHorarioRequest;
 import com.example.tsigback.entities.dtos.LineaDTO;
 import com.example.tsigback.entities.dtos.ListaPuntosDTO;
 import com.example.tsigback.entities.dtos.PuntoDTO;
@@ -144,7 +143,7 @@ public class LineaController {
         }
     }
 
-     @DeleteMapping("/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<String> eliminarLinea(@PathVariable int id) {
         try {
             lineaService.eliminarLineaYRelaciones(id);
@@ -156,14 +155,16 @@ public class LineaController {
         }
     }
 
-    @PostMapping("/reporte-horario")
-    public ResponseEntity<?> obtenerLineasActivasEnRango(@RequestBody RangoHorarioRequest request) {
-        if (request == null || request.horaDesde == null || request.horaHasta == null) {
+    @GetMapping("/reporte-horario")
+    public ResponseEntity<?> obtenerLineasActivasEnRango(
+            @RequestParam String horaDesde,
+            @RequestParam String horaHasta) {
+        if (horaDesde == null || horaHasta == null) {
             return ResponseEntity.badRequest().body("Debe especificar horaDesde y horaHasta.");
         }
         try {
-            LocalTime desde = LocalTime.parse(request.horaDesde);
-            LocalTime hasta = LocalTime.parse(request.horaHasta);
+            LocalTime desde = LocalTime.parse(horaDesde);
+            LocalTime hasta = LocalTime.parse(horaHasta);
             List<LineaDTO> lineas = lineaService.obtenerLineasActivasEnRango(desde, hasta);
             if (lineas.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No se encontraron líneas activas en ese rango horario.");
