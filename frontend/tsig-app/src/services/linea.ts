@@ -40,6 +40,27 @@ export async function validateRoute(request: RoutingRequestDTO) {
     return res.data
 }
 
+type HorariosDTO = {
+    horaDesde: string; // formato "HH:mm:ss"
+    horaHasta: string; // formato "HH:mm:ss"
+}
+
+export async function getLineasByHorario(horarios: HorariosDTO): Promise<LineaDTO[]> {
+    try {
+
+        // hh:mm:ss
+        const res = await axios.get('/apiurl/api/lineas/reporte-horario', {
+            params: horarios
+        });
+        return res.data;
+    } catch (error: any) {
+        if (error.response && error.response.status === 404) {
+            return [];
+        }
+        throw error;
+    }
+}
+
 type OrigenDestinoDto = {
     idDepartamentoOrigen: number;
     idDepartamentoDestino: number;

@@ -11,7 +11,7 @@ type SearcherProps = {
 
 const searchOptions = [
     { value: 'origenDestino', label: 'Por Origen y Destino' },
-    { value: 'nombre', label: 'Por Nombre de Línea' },
+    { value: 'nombre', label: 'Por Nombre de Empresa' },
     { value: 'horario', label: 'Por Horario' }
 ]
 

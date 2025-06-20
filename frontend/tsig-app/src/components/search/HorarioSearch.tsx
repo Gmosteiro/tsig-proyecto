@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { LineaDTO } from '../../services/linea'
+import { LineaDTO, getLineasByHorario } from '../../services/linea'
 import LinesList from './LinesList'
 
 interface HorarioSearchProps {
@@ -7,7 +7,8 @@ interface HorarioSearchProps {
 }
 
 const HorarioSearch: React.FC<HorarioSearchProps> = ({ onVerLinea }) => {
-    const [hora, setHora] = useState('')
+    const [horaDesde, setHoraDesde] = useState('')
+    const [horaHasta, setHoraHasta] = useState('')
     const [resultados, setResultados] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -19,15 +20,15 @@ const HorarioSearch: React.FC<HorarioSearchProps> = ({ onVerLinea }) => {
         setResultados([])
 
         try {
-            // Aquí deberías llamar a tu API real
-            // Simulación de resultados
-            setTimeout(() => {
-                setResultados([
-                    { id: 1, nombre: 'Línea 101', horario: hora },
-                    { id: 2, nombre: 'Línea 202', horario: hora }
-                ])
-                setLoading(false)
-            }, 1000)
+
+            const lineas = await getLineasByHorario({ horaDesde, horaHasta })
+
+            if (lineas.length === 0) {
+                setError('No se encontraron líneas para el horario especificado')
+            } else {
+                setResultados(lineas)
+            }
+            setLoading(false)
         } catch (err) {
             setError('Error al buscar líneas por horario')
             setLoading(false)
@@ -41,12 +42,23 @@ const HorarioSearch: React.FC<HorarioSearchProps> = ({ onVerLinea }) => {
                 className="flex flex-col md:flex-row gap-4 items-center mb-6"
             >
                 <div className="flex flex-col w-full md:w-auto">
-                    <label htmlFor="hora" className="font-semibold mb-1 text-gray-700">Hora</label>
+                    <label htmlFor="horaDesde" className="font-semibold mb-1 text-gray-700">Hora desde</label>
                     <input
-                        id="hora"
+                        id="horaDesde"
                         type="time"
-                        value={hora}
-                        onChange={e => setHora(e.target.value)}
+                        value={horaDesde}
+                        onChange={e => setHoraDesde(e.target.value)}
+                        className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        required
+                    />
+                </div>
+                <div className="flex flex-col w-full md:w-auto">
+                    <label htmlFor="horaHasta" className="font-semibold mb-1 text-gray-700">Hora hasta</label>
+                    <input
+                        id="horaHasta"
+                        type="time"
+                        value={horaHasta}
+                        onChange={e => setHoraHasta(e.target.value)}
                         className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
                         required
                     />
