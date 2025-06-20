@@ -45,9 +45,9 @@ export default function SimpleMapPage() {
         const latlng: [number, number] = [pos.coords.latitude, pos.coords.longitude];
         setPosition(latlng);
 
-        // Hacemos consulta WMS de paradas cercanas
-        const mapSize = { x: 1024, y: 768 }; // Tamaño "simulado" para la query
-        const tolerance = 4000; // METROS DE VISUALIZACION DE PARADAS Y LINES ALREDEDOR DE TU UBICACION
+        // Consulta WMS de paradas cercanas
+        const mapSize = { x: 1024, y: 768 };
+        const tolerance = 4000; // METROS de visualizacion de PARADAS y LINES alrededor de ubicaion actual
         const featureCount = 200;
 
         const data = await getWMSFeatureInfo({
@@ -70,7 +70,7 @@ export default function SimpleMapPage() {
         }
 
 
-        // Hacemos consulta WMS de líneas cercanas
+        // Consulta WMS de líneas cercanas
         const linesData = await getWMSFeatureInfo({
           layerName: "tsig:linea",
           crsCode: "EPSG:4326",
@@ -217,11 +217,12 @@ export default function SimpleMapPage() {
             <Popup>¡Estás aquí!</Popup>
           </Marker>
           
-
+          {/* Paradas Cercanas */}
           {nearbyStops.map((feature: any, idx: number) => {
             const [lon, lat] = feature.geometry.coordinates;
             return (
               <Marker key={idx} position={[lat, lon]} icon={stopIcon}>
+                {/* Popup Temporal */}
                 <Popup>
                   {feature.properties?.nombre || 'Parada'}<br />
                   ID: {feature.id}
@@ -230,6 +231,7 @@ export default function SimpleMapPage() {
             );
           })}
 
+          {/* Lineas Cercanas */}
           {nearbyLines.map((feature: any, idx: number) => (
             <GeoJSON
               key={idx}
@@ -241,9 +243,12 @@ export default function SimpleMapPage() {
               }}
             >
               <Popup>
-                {feature.properties?.nombre || 'Linea'}<br />
-                ID: {feature.id}
+                <strong>Linea</strong><br />
+                Origen: {feature.properties?.origen}<br />
+                Destino: {feature.properties?.destino}<br />
+                Empresa: {feature.properties?.empresa}
               </Popup>
+
             </GeoJSON>
           ))}
 
