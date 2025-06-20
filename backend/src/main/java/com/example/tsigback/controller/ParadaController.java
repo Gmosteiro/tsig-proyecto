@@ -57,8 +57,8 @@ public class ParadaController {
         }
     }
 
-    @DeleteMapping("/id/{id}")
-    public ResponseEntity<String> modificarParada(@PathParam("id") int id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> eliminarParada(@PathVariable int id) {
         try {
             paradaService.eliminarParada(id);
             return ResponseEntity.ok("La parada se ha eliminado correctamente");

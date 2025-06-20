@@ -2,6 +2,7 @@ package com.example.tsigback.controller;
 
 import com.example.tsigback.entities.request.RutaKilometroRequest;
 import com.example.tsigback.entities.request.OrigenDestinoRequest;
+import com.example.tsigback.entities.request.RangoHorarioRequest;
 import com.example.tsigback.entities.dtos.LineaDTO;
 import com.example.tsigback.entities.dtos.ListaPuntosDTO;
 import com.example.tsigback.entities.dtos.PuntoDTO;
@@ -10,6 +11,7 @@ import com.example.tsigback.service.LineaService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -139,6 +141,36 @@ public class LineaController {
             return ResponseEntity.ok(lineas);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno: " + e.getMessage());
+        }
+    }
+
+     @DeleteMapping("/{id}")
+    public ResponseEntity<String> eliminarLinea(@PathVariable int id) {
+        try {
+            lineaService.eliminarLineaYRelaciones(id);
+            return ResponseEntity.ok("La línea y sus relaciones han sido eliminadas correctamente");
+        } catch (LineaNoEncontradaException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No existe la línea con id " + id);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/reporte-horario")
+    public ResponseEntity<?> obtenerLineasActivasEnRango(@RequestBody RangoHorarioRequest request) {
+        if (request == null || request.horaDesde == null || request.horaHasta == null) {
+            return ResponseEntity.badRequest().body("Debe especificar horaDesde y horaHasta.");
+        }
+        try {
+            LocalTime desde = LocalTime.parse(request.horaDesde);
+            LocalTime hasta = LocalTime.parse(request.horaHasta);
+            List<LineaDTO> lineas = lineaService.obtenerLineasActivasEnRango(desde, hasta);
+            if (lineas.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No se encontraron líneas activas en ese rango horario.");
+            }
+            return ResponseEntity.ok(lineas);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error en el formato de hora o en la consulta: " + e.getMessage());
         }
     }
 

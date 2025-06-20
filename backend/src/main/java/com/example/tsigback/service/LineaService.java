@@ -11,6 +11,7 @@ import com.example.tsigback.exception.LineaNoEncontradaException;
 import com.example.tsigback.repository.LineaRepository;
 import com.example.tsigback.repository.ParadaRepository;
 import com.example.tsigback.repository.RoutingRepository;
+import com.example.tsigback.repository.ParadaLineaRepository;
 import com.example.tsigback.utils.GeoUtils;
 
 import org.locationtech.jts.geom.Geometry;
@@ -23,6 +24,8 @@ import org.locationtech.jts.io.geojson.GeoJsonWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,6 +41,9 @@ public class LineaService {
 
     @Autowired
     private RoutingRepository routingRepository;
+
+    @Autowired
+    private ParadaLineaRepository paradaLineaRepository;
 
     private static final double MAX_DIST = 100.0; // metros
 
@@ -210,6 +216,33 @@ public class LineaService {
                 .build();
     }
 
+    public void eliminarLineaYRelaciones(int id) throws LineaNoEncontradaException {
+        Linea linea = lineaRepository.findById(id)
+            .orElseThrow(() -> new LineaNoEncontradaException("Línea con id " + id + " no encontrada"));
+
+        List<ParadaLinea> paradaLineas = linea.getParadasLineas();
+        for (ParadaLinea pl : paradaLineas) {
+            Parada parada = pl.getParada();
+            paradaLineaRepository.delete(pl);
+
+            List<ParadaLinea> restantes = paradaLineaRepository.findByParadaId(parada.getId());
+            if (restantes.isEmpty()) {
+                parada.setEstado(EstadoParada.DESHABILITADA);
+                paradaRepository.save(parada);
+            }
+        }
+        lineaRepository.delete(linea);
+    }
+
+    public List<LineaDTO> obtenerLineasActivasEnRango(LocalTime horaDesde, LocalTime horaHasta) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+        List<Linea> lineas = lineaRepository.findLineasActivasEnRango(
+            horaDesde.format(formatter),
+            horaHasta.format(formatter)
+        );
+        return lineas.stream().map(this::toSimpleDTO).collect(Collectors.toList());
+    }
+
     /*public void modificarLinea(LineaDTO lineaDTO) throws LineaNoEncontradaException {
         Linea linea = lineaRepository.findById(lineaDTO.getId())
             .orElseThrow(() -> new LineaNoEncontradaException("La linea con id " + lineaDTO.getId() + " no ha sido encontrada"));
@@ -275,4 +308,6 @@ public class LineaService {
         .stream().map(l -> toDTO(l, false))
         .collect(Collectors.toList()); 
     }*/
+
+    
 }
