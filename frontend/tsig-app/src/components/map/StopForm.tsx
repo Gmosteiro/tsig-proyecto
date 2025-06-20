@@ -122,13 +122,13 @@ export default function StopForm({ onCancel, onSubmit, initialData }: StopFormPr
                     <div className="flex gap-2">
                         <button
                             type="submit"
-                            className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded shadow transition-colors duration-150"
+                            className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded shadow transition-colors duration-150 cursor-pointer"
                         >
                             {initialData ? 'Guardar cambios' : 'Crear parada'}
                         </button>
                         <button
                             type="button"
-                            className="bg-gray-400 text-white font-semibold px-4 py-2 rounded shadow transition-colors duration-150"
+                            className="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded shadow transition-colors duration-150 cursor-pointer"
                             onClick={onCancel}
                         >
                             Cancelar

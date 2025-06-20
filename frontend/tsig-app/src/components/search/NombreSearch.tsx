@@ -1,10 +1,12 @@
 import React, { useState } from 'react'
+import { LineaDTO, getLineaByNombreEmpresa } from '../../services/linea'
+import LinesList from './LinesList'
 
 interface NombreSearchProps {
-    // Puedes agregar props si necesitas pasar datos desde el padre
+    onVerLinea?: (linea: LineaDTO) => void
 }
 
-const NombreSearch: React.FC<NombreSearchProps> = () => {
+const NombreSearch: React.FC<NombreSearchProps> = ({ onVerLinea }) => {
     const [nombre, setNombre] = useState('')
     const [resultados, setResultados] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
@@ -17,15 +19,12 @@ const NombreSearch: React.FC<NombreSearchProps> = () => {
         setResultados([])
 
         try {
-            // Aquí deberías llamar a tu API real
-            // Simulación de resultados
-            setTimeout(() => {
-                setResultados([
-                    { id: 1, nombre: 'Línea 101', descripcion: 'Recorrido Centro - Barrio Sur' },
-                    { id: 2, nombre: 'Línea 202', descripcion: 'Recorrido Centro - Prado' }
-                ])
-                setLoading(false)
-            }, 1000)
+            const res = await getLineaByNombreEmpresa(nombre)
+            if (res.length === 0) {
+                setError('No se encontraron líneas con ese nombre')
+            }
+            setResultados(res)
+            setLoading(false)
         } catch (err) {
             setError('Error al buscar líneas por nombre')
             setLoading(false)
@@ -33,37 +32,33 @@ const NombreSearch: React.FC<NombreSearchProps> = () => {
     }
 
     return (
-        <div>
-            <form onSubmit={handleSearch} className="flex gap-2 items-center mb-4">
-                <label htmlFor="nombre" className="font-medium">Nombre o número de línea:</label>
-                <input
-                    id="nombre"
-                    type="text"
-                    value={nombre}
-                    onChange={e => setNombre(e.target.value)}
-                    className="border rounded px-2 py-1"
-                    required
-                />
+        <>
+            <form
+                onSubmit={handleSearch}
+                className="flex flex-col md:flex-row gap-4 items-center mb-6"
+            >
+                <div className="flex flex-col w-full md:w-auto">
+                    <label htmlFor="nombre" className="font-semibold mb-1 text-gray-700">Nombre o número de línea</label>
+                    <input
+                        id="nombre"
+                        type="text"
+                        value={nombre}
+                        onChange={e => setNombre(e.target.value)}
+                        className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        required
+                    />
+                </div>
                 <button
                     type="submit"
-                    className="bg-blue-600 text-white px-3 py-1 rounded"
+                    className="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-semibold px-6 py-2 rounded shadow mt-2 md:mt-6"
                     disabled={loading}
                 >
-                    Buscar
+                    {loading ? "Buscando..." : "Buscar"}
                 </button>
             </form>
-            {loading && <div>Buscando...</div>}
-            {error && <div className="text-red-500">{error}</div>}
-            {resultados.length > 0 && (
-                <ul className="mt-2">
-                    {resultados.map(linea => (
-                        <li key={linea.id} className="border-b py-1">
-                            <span className="font-semibold">{linea.nombre}</span> - {linea.descripcion}
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </div>
+            {error && <div className="text-red-600 mb-4">{error}</div>}
+            <LinesList lineas={resultados} onVerLinea={onVerLinea} />
+        </>
     )
 }
 
