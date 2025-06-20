@@ -1,6 +1,7 @@
 import axios from 'axios'
 // import { Stop } from '../lib/types/types'
 import { WMS_URL } from '../lib/constants'
+import { HorarioDTO } from './linea'
 export type ParadaDTO = {
     id: number
     nombre: string
@@ -9,6 +10,13 @@ export type ParadaDTO = {
     observacion: string
     latitud: number
     longitud: number
+}
+
+export type ParadalineaDTO = {
+    idParadaLinea: number
+    idParada: number
+    idLinea: number
+    horarios: HorarioDTO[]
 }
 
 export type CrearParadaDTO = Omit<ParadaDTO, 'id'>
@@ -39,6 +47,11 @@ export async function updateStop(stopData: ParadaDTO) {
 export async function deleteStop(id: number) {
     const res = await axios.delete(`/apiurl/api/parada/${id}`);
     return res.data;
+}
+
+export async function linkStopToLine(stopData: ParadalineaDTO) {
+    const res = await axios.post('/apiurl/api/parada/asociar/linea', stopData)
+    return res.data
 }
 
 export type WMSFeatureInfoParams = {

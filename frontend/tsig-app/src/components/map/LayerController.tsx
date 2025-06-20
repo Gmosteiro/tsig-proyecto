@@ -4,11 +4,12 @@ import { ParadaDTO } from '../../services/api'
 import WMSFeatureInfoHandler from './WMSFeatureInfoHandler'
 import StopInfoPopupContainer from './StopInfoPopupContainer'
 import { WMS_URL, DEFAULT_TILE_SIZE } from '../../lib/constants'
+import L from 'leaflet' // <--- Agrega esta línea
 
-export default function LayerController() {
+export default function LayerController({ onMoveStop }: { onMoveStop?: (parada: ParadaDTO) => void }) {
     const [camineraVisible, setCamineraVisible] = useState(true)
-    const [paradaVisible, setParadaVisible] = useState(false)
-    const [lineaVisible, setLineaVisible] = useState(false)
+    const [paradaVisible, setParadaVisible] = useState(true)
+    const [lineaVisible, setLineaVisible] = useState(true)
     const [selectedParada, setSelectedParada] = useState<ParadaDTO | null>(null)
 
     return (
@@ -65,16 +66,20 @@ export default function LayerController() {
                 tolerance={12}
                 onFeatureInfo={data => {
                     if (data && data.features && data.features.length > 0) {
+                        const parada = data.features[0]
                         const props = data.features[0].properties
-                        const paradaId = data.features[0].id.split('.')[1]
+                        const paradaId = parada.id.split('.')[1]
+
+                        const [x, y] = parada.geometry.coordinates
+                        const latlng = L.CRS.EPSG3857.unproject(L.point(x, y))
                         setSelectedParada({
                             id: paradaId,
                             nombre: props.nombre,
                             estado: props.estado,
                             refugio: props.refugio,
                             observacion: props.observacion,
-                            latitud: props.latitud,
-                            longitud: props.longitud,
+                            latitud: latlng.lat,
+                            longitud: latlng.lng,
                         })
                     } else {
                         setSelectedParada(null)
@@ -91,7 +96,14 @@ export default function LayerController() {
                 }}
             /> */}
 
-            <StopInfoPopupContainer parada={selectedParada} onClose={() => setSelectedParada(null)} />
+            <StopInfoPopupContainer
+                parada={selectedParada}
+                onClose={() => setSelectedParada(null)}
+                onMove={parada => {
+                    if (onMoveStop) onMoveStop(parada)
+                    setSelectedParada(null) // Oculta el popup al mover
+                }}
+            />
         </>
     )
 }
