@@ -36,20 +36,3 @@ GeoServer http://localhost:8080/geoserver | admin | geoserver
 # Detener contenedores
 
 docker-compose down
-
-# Eliminar volúmenes
-
-En vez
-docker-compose down -v
-
-# logs
-
-docker logs tsig-proyecto-frontend-1
-
-# Cómo persistir la configuración de GeoServer
-
-./geoserver_backup_restore.sh
-
-# Error de permisos:
-
-chmod +x geoserver_backup_restore.sh
