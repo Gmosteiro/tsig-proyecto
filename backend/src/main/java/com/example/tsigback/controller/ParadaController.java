@@ -7,7 +7,8 @@ import com.example.tsigback.exception.LineaNoEncontradaException;
 import com.example.tsigback.exception.ParadaLejosDeRutaException;
 import com.example.tsigback.exception.ParadaNoEncontradaException;
 import com.example.tsigback.service.ParadaService;
-import jakarta.websocket.server.PathParam;
+
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
@@ -16,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/parada")
 public class ParadaController {
@@ -66,23 +68,6 @@ public class ParadaController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(paradaLejosDeRutaException.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @PostMapping("/asociar/linea")
-    public ResponseEntity<String> asociarParadaConLinea(@RequestBody ParadaLineaDTO paradaLineaDTO) {
-        try {
-            if (paradaLineaDTO == null || paradaLineaDTO.getIdLinea() == 0 || paradaLineaDTO.getIdParada() == 0) {
-                return ResponseEntity.badRequest().body("El DTO vino con datos erroneos");
-            }
-            paradaService.agregarLineaAParada(paradaLineaDTO);
-            return ResponseEntity.ok("Se ha asignado la parada con id " + paradaLineaDTO.getIdParada() + " con la linea id " + paradaLineaDTO.getIdLinea());
-        } catch (ParadaNoEncontradaException | LineaNoEncontradaException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); 
-        } catch (EntidadYaExistenteException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage()); 
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); 
         }
     }
 

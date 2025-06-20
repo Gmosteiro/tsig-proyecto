@@ -1,8 +1,9 @@
 package com.example.tsigback.repository;
 
 import java.util.List;
-import java.util.Optional;
 
+import org.locationtech.jts.geom.MultiLineString;
+import org.locationtech.jts.geom.Point;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -29,3 +30,4 @@ public interface ParadaLineaRepository extends JpaRepository<ParadaLinea, Intege
 
     ParadaLinea findByParadaIdAndLineaId(int paradaId, int lineaId);
 }
+

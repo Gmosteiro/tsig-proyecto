@@ -14,9 +14,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.tsigback.entities.dtos.ParadaLineaDTO;
 import com.example.tsigback.exception.EntidadYaExistenteException;
 import com.example.tsigback.exception.LineaNoEncontradaException;
+import com.example.tsigback.exception.ParadaLejosDeRutaException;
 import com.example.tsigback.exception.ParadaNoEncontradaException;
 import com.example.tsigback.service.ParadaService;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestController
 @RequestMapping("/api/parada/linea")
 public class ParadaLineaController {
@@ -36,12 +40,15 @@ public class ParadaLineaController {
                                     paradaLineaDTO.getIdLinea());
         } catch (ParadaNoEncontradaException | LineaNoEncontradaException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); 
-        } catch (EntidadYaExistenteException e) {
+        } catch (EntidadYaExistenteException | ParadaLejosDeRutaException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage()); 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); 
         }
     }
+                
+            
+            
 
     //Usa el paradalineaId
     @PostMapping("/horario")

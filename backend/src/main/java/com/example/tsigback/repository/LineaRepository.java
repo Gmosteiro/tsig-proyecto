@@ -1,5 +1,8 @@
 package com.example.tsigback.repository;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.locationtech.jts.geom.MultiLineString;
 import org.locationtech.jts.geom.Point;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +14,10 @@ import com.example.tsigback.entities.Linea;
 
 @Repository
 public interface LineaRepository extends JpaRepository<Linea, Integer> {
+
+    Optional<Linea> findById(int id);
+    
+    List<Linea> findByDestino(String destino);
 
     @Query(value = """
         SELECT nombre 
@@ -31,17 +38,34 @@ public interface LineaRepository extends JpaRepository<Linea, Integer> {
     @Query(value = """
     SELECT EXISTS (
         SELECT 1
-        FROM linea
-        WHERE id = :lineaId
-            ST_DWithin(
-            ST_Transform(:nuevoRecorrido, 3857),
-            ST_Transform(:punto, 3857),
-            :margen
-        )
+        FROM  linea
+        WHERE id = :id
+        AND ST_DWithin(
+                  ST_Transform(recorrido, 3857),   
+                  ST_Transform(:parada,   3857),  
+                  :distancia                       
+               )
     )
     """, nativeQuery = true)
-    boolean isPuntoCercaDeAlgunaLinea(@Param("lineaId") int lineaId, 
-                            @Param("punto") Point punto, 
-                            @Param("margen") int margen,
-                            @Param("nuevoRecorrido") MultiLineString nuevoRecorrido);
+    Boolean esParadaCercaDelRecorrido(
+        @Param("parada")    Point   parada,
+        @Param("id")        int     id,
+        @Param("distancia") double  distancia);   
+    
+
+
+    @Query(value = """
+    SELECT ST_DWithin(
+             ST_Transform(:nuevoRecorrido, 3857),   
+             ST_Transform(:punto,          3857),  
+             :margen                              
+           )
+    """, nativeQuery = true)
+    Boolean esNuevaParadaCercaDeParada(
+        @Param("nuevoRecorrido") MultiLineString nuevoRecorrido,
+        @Param("punto") Point punto,
+        @Param("margen") double margen);
+
+    
+
 }

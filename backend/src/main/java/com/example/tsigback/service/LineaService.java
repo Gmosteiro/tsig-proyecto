@@ -4,7 +4,6 @@ import com.example.tsigback.entities.Linea;
 import com.example.tsigback.entities.Parada;
 import com.example.tsigback.entities.ParadaLinea;
 import com.example.tsigback.entities.dtos.LineaDTO;
-import com.example.tsigback.entities.dtos.ParadaDTO;
 import com.example.tsigback.entities.dtos.PuntoDTO;
 import com.example.tsigback.entities.enums.EstadoParada;
 import com.example.tsigback.exception.LineaNoEncontradaException;
@@ -13,18 +12,19 @@ import com.example.tsigback.repository.ParadaRepository;
 import com.example.tsigback.repository.RoutingRepository;
 import com.example.tsigback.utils.GeoUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
 import org.locationtech.jts.geom.MultiLineString;
 import org.locationtech.jts.geom.MultiPoint;
 import org.locationtech.jts.geom.Point;
-import org.locationtech.jts.io.geojson.GeoJsonWriter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class LineaService {
 
@@ -41,14 +41,9 @@ public class LineaService {
 
     public void crearLinea(LineaDTO linea) {
         try {
-            System.out.println("DEBUG puntos recibidos: " + linea.getPuntos());
-            System.out.println("DEBUG rutaGeoJSON recibido: " + linea.getRutaGeoJSON());
-            if (linea.getRutaGeoJSON() == null || linea.getRutaGeoJSON().trim().isEmpty() || linea.getRutaGeoJSON().equals("null")) {
-                throw new IllegalArgumentException("El campo rutaGeoJSON no puede ser nulo, vacío ni 'null'.");
-            }
+            validateGeoJson(linea.getRutaGeoJSON());
             MultiLineString recorrido = GeoUtils.geoJsonToMultiLineString(linea.getRutaGeoJSON());
             MultiPoint puntos = GeoUtils.crearMultiPointDesdeDTOs(linea.getPuntos());
-
             Point puntoOrigen = getPuntoDeOrigen(linea.getPuntos());
             Point puntoDestino = getPuntoDestino(linea.getPuntos());
             String origen = lineaRepository.obtenerDepartamentoOrigen(puntoOrigen);
@@ -99,7 +94,7 @@ public class LineaService {
         }
     }
 
-    /*public void modificarLinea(LineaDTO lineaDTO) throws LineaNoEncontradaException {
+    public void modificarLinea(LineaDTO lineaDTO) throws LineaNoEncontradaException {
         Linea linea = lineaRepository.findById(lineaDTO.getId())
             .orElseThrow(() -> new LineaNoEncontradaException("La linea con id " + lineaDTO.getId() + " no ha sido encontrada"));
         
@@ -110,8 +105,7 @@ public class LineaService {
         List<PuntoDTO> puntosDtos = lineaDTO.getPuntos();
 
         if (puntosDtos != null && puntosDtos.size() > 1) {
-            MultiLineString nuevoRecorrido = calculateRoute(lineaDTO.getPuntos());
-
+            MultiLineString nuevoRecorrido = GeoUtils.geoJsonToMultiLineString(lineaDTO.getRutaGeoJSON());
             List<ParadaLinea> paradas = linea.getParadasLineas();
             //Itero por todas las paradas que estan asociadas en la lineas
             for (ParadaLinea parada : paradas) {
@@ -128,12 +122,12 @@ public class LineaService {
         lineaRepository.save(linea);
     }
 
+    
     private void procesamientoDeParadaLinea(ParadaLinea parada, Linea linea, MultiLineString nuevoRecorrido) {
         Parada paradaAsociada = parada.getParada();
                 
         // Reviso si la parada esta cerca de la nueva linea
-        if (!lineaRepository.isPuntoCercaDeAlgunaLinea(linea.getId(), parada.getParada().getUbicacion(), 100, nuevoRecorrido)) {
-            
+        if (!lineaRepository.esNuevaParadaCercaDeParada(nuevoRecorrido, parada.getParada().getUbicacion(),100.0)) {
             //Si es 1, es porque solamente esta asociada a una linea
             if (estaAsociadoUnicamenteAEstaLinea(paradaAsociada)) {
                 paradaAsociada.setEstado(EstadoParada.DESHABILITADA);        
@@ -142,6 +136,12 @@ public class LineaService {
         }
 
         parada.setEstaHabilitada(false);
+    }
+
+    private void validateGeoJson(String rutaGeoJSON) {
+        if (rutaGeoJSON == null || rutaGeoJSON.trim().isEmpty() || rutaGeoJSON.equals("null")) {
+            throw new IllegalArgumentException("El campo rutaGeoJSON no puede ser nulo, vacío ni 'null'.");
+        }
     }
 
     private boolean estaAsociadoUnicamenteAEstaLinea(Parada paradaAsociada) {
@@ -153,54 +153,19 @@ public class LineaService {
                 .count() == 1;
     }
 
-    public List<LineaDTO> obtenerTodas() {
-        return lineaRepository.findAll()
-        .stream().map(l -> toDTO(l, true))
-        .collect(Collectors.toList()); 
+    public List<LineaDTO> buscarLineaPorDestino(String destino) {
+        return lineaRepository.findByDestino(destino).stream().map(linea -> toDTO(linea)).collect(Collectors.toList());
     }
 
-    public List<LineaDTO> obtenerTodasSinRecorrido() {
-        return lineaRepository.findAll()
-        .stream().map(l -> toDTO(l, false))
-        .collect(Collectors.toList()); 
-    }
-
-    private LineaDTO toDTO(Linea linea, boolean conRecorrido) {
-
-        // 1. Convertir MultiPoint a lista de [lon, lat]
-        List<PuntoDTO> listaPuntos = null;
-        if (linea.getPuntos() != null) {
-            listaPuntos = new ArrayList<>();
-            for (int i = 0; i < linea.getPuntos().getNumGeometries(); i++) {
-                var p = (org.locationtech.jts.geom.Point) linea.getPuntos().getGeometryN(i);
-                listaPuntos.add(PuntoDTO.builder().lon(p.getX()).lat(p.getY()).build());
-            }
-        }
-
-        String wkt = null;
-        if (conRecorrido) {
-            // Recorrido a WKT
-            wkt = (linea.getRecorrido() != null) ? linea.getRecorrido().toText() : null;
-        }    
-
-        // 3. Ids de ParadaLinea habilitadas
-        List<Integer> paradaLineaIds = null;
-        if (linea.getParadasLineas() != null) {
-            paradaLineaIds = linea.getParadasLineas().stream()
-                    .map(ParadaLinea::getId)
-                    .toList();
-        }
-
+    public LineaDTO toDTO (Linea linea) {
         return LineaDTO.builder()
                 .id(linea.getId())
                 .descripcion(linea.getDescripcion())
-                .empresa(linea.getEmpresa())
-                .origen(linea.getOrigen())
                 .destino(linea.getDestino())
                 .observacion(linea.getObservacion())
-                .puntos(listaPuntos)
-                .recorrido(conRecorrido ? wkt : null)
-                .paradaLineaIds(paradaLineaIds)
+                .origen(linea.getOrigen())
+                .empresa(linea.getEmpresa())
+                .recorrido(linea.getRecorrido().toText())
                 .build();
-    }*/
+    }
 }

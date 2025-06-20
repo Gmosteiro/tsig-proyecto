@@ -18,6 +18,8 @@ import com.example.tsigback.repository.ParadaLineaRepository;
 import com.example.tsigback.repository.ParadaRepository;
 import com.example.tsigback.utils.GeoUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,6 +28,7 @@ import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class ParadaService {
 
@@ -97,7 +100,7 @@ public class ParadaService {
         paradaRepository.delete(parada);
     }
 
-     public void agregarLineaAParada(ParadaLineaDTO dto) throws ParadaNoEncontradaException, LineaNoEncontradaException, EntidadYaExistenteException {
+     public void agregarLineaAParada(ParadaLineaDTO dto) throws ParadaNoEncontradaException, LineaNoEncontradaException, EntidadYaExistenteException, ParadaLejosDeRutaException {
         Parada parada = paradaRepository.findById(dto.getIdParada())
             .orElseThrow(() -> new ParadaNoEncontradaException("Parada no encontrada con id " + dto.getIdParada()));
 
@@ -110,7 +113,11 @@ public class ParadaService {
 
 
         if (paradaLinea != null) {
-            throw new LineaNoEncontradaException("Linea no encontrada con id " + dto.getIdLinea());
+            throw new EntidadYaExistenteException("Linea " + + dto.getIdLinea() + " ya relacionada con la parada " + dto.getIdParada());
+        }
+
+        if (!lineaRepository.esParadaCercaDelRecorrido(parada.getUbicacion(), linea.getId(), 100.0)) {
+            throw new ParadaLejosDeRutaException("La parada " + dto.getIdParada() + " se encuentra lejos de la linea " + dto.getIdLinea());
         }
         
         ParadaLinea nuevaParadaLinea = ParadaLinea.builder()

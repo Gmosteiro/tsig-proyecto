@@ -2,16 +2,12 @@ package com.example.tsigback.controller;
 
 import com.example.tsigback.entities.dtos.LineaDTO;
 import com.example.tsigback.entities.dtos.ListaPuntosDTO;
-import com.example.tsigback.entities.dtos.PuntoDTO;
 import com.example.tsigback.exception.LineaNoEncontradaException;
 import com.example.tsigback.service.LineaService;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,7 +39,7 @@ public class LineaController {
         return ResponseEntity.ok("Linea creada correctamente");
     }
 
-    /*@PutMapping
+    @PutMapping
     public ResponseEntity<String> modificarLinea(@RequestBody LineaDTO lineaDTO) {
         try {
             if (lineaDTO == null) {
@@ -60,6 +56,18 @@ public class LineaController {
         }
     }
 
+    @GetMapping("/destino/{destino}")
+    public ResponseEntity<List<LineaDTO>> buscarLineaPorDestino(@PathVariable("destino") String destino) {
+        try {
+            if (destino == null || destino.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            return ResponseEntity.ok(lineaService.buscarLineaPorDestino(destino));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    /*
     //Estos metodos de aca abajo son para testing
     @GetMapping("/todas")
     public ResponseEntity<List<LineaDTO>> mostrarTodas() {

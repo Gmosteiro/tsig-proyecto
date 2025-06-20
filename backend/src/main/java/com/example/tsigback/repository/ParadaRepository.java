@@ -2,8 +2,6 @@ package com.example.tsigback.repository;
 
 import com.example.tsigback.entities.Parada;
 
-import java.util.Optional;
-
 import org.locationtech.jts.geom.Point;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -23,3 +21,4 @@ public interface ParadaRepository extends JpaRepository<Parada, Integer> {
     """, nativeQuery = true)
     boolean isRutaCercana(@Param("punto") Point ubicacion,@Param("distancia") Double buffer);
 }
+ 
