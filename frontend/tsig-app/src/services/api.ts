@@ -78,6 +78,7 @@ export type WMSFeatureInfoParams = {
     point: { x: number, y: number },
     infoFormat?: string,
     tolerance?: number
+    featureCount?: number
 }
 
 // Puedes ajustar este tipo según la estructura real de la respuesta del WMS
@@ -94,7 +95,8 @@ export async function getWMSFeatureInfo({
     size,
     point,
     infoFormat = "application/json",
-    tolerance = 5
+    tolerance = 5,
+    featureCount = 5    // 👈 default a 5
 }: WMSFeatureInfoParams): Promise<WMSFeatureInfoResponse> {
     const url = new URL(WMS_URL);
     url.search = new URLSearchParams({
@@ -113,7 +115,7 @@ export async function getWMSFeatureInfo({
         INFO_FORMAT: infoFormat,
         X: Math.round(point.x).toString(),
         Y: Math.round(point.y).toString(),
-        FEATURE_COUNT: '5',
+        FEATURE_COUNT: featureCount.toString(),
         BUFFER: tolerance.toString()
     } as Record<string, string>).toString();
 
