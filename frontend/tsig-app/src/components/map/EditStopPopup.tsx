@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { updateStop, ParadaDTO } from '../../services/api';
+import { updateStop, deleteStop, ParadaDTO } from '../../services/api';
 import styles from '../../styles/EditStopPopup.module.css';
 
 interface EditStopPopupProps {
     parada: ParadaDTO;
     onSave: (parada: ParadaDTO) => void;
     onClose: () => void;
+    onMove?: (parada: ParadaDTO) => void;
+    onDelete?: (id: number) => void;
 }
 
-const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave }) => {
+const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, onMove, onDelete }) => {
     if (!parada) return null;
 
     const [form, setForm] = useState({
@@ -48,6 +50,20 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave }
             if (onClose) onClose();
         } catch (err) {
             alert("Error al guardar los cambios");
+        }
+    };
+    
+    const handleDelete = async () => {
+        if (window.confirm(`¿Seguro que quieres eliminar la parada "${parada.nombre}"?`)) {
+            try {
+                console.log('Parada eliminada:', parada.id);
+                await deleteStop(parada.id);
+                if (onDelete) onDelete(parada.id);
+                if (onClose) onClose();
+                alert('Parada eliminada correctamente.');
+            } catch (err) {
+                alert("Error al eliminar la parada");
+            }
         }
     };
 
@@ -129,6 +145,24 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave }
                         className={styles.saveButton}
                     >
                         Guardar
+                    </button>
+                    <button
+                        type="button"
+                        className={styles.moveButton}
+                        style={{ marginLeft: 8 }}
+                        onClick={() => {
+                            if (onMove) onMove({ ...parada, ...form });
+                        }}
+                    >
+                        Mover
+                    </button>
+                    <button
+                        type="button"
+                        className={styles.deleteButton}
+                        style={{ marginLeft: 8, background: '#d32f2f', color: 'white' }}
+                        onClick={handleDelete}
+                    >
+                        Eliminar
                     </button>
                 </div>
             </form>

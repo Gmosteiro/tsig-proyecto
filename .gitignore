@@ -24,3 +24,4 @@ geoserver_data/monitoring/
 
 # User projections (often user-specific)
 geoserver_data/user_projections/
+geoserver_data/security/usergroup/default/users.xml
