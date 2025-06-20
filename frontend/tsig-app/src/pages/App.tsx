@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import LoginPage from "../pages/LoginPage";
 import { useAuth } from "../context/authContext";
 import MapView from "../pages/MapPage";
-// import SimpleMapPage from '../pages/SimpleMapPage';
+import SimpleMapPage from '../pages/SimpleMapPage';
 
 export default function App() {
   const { isAuthenticated } = useAuth();
@@ -21,13 +21,13 @@ export default function App() {
               path="/map"
               element={isAuthenticated ? <MapView /> : <Navigate to="/" replace />}
             />
-            {/* <Route
+            <Route
               path="/"
               element={!isAuthenticated ? <SimpleMapPage /> : <Navigate to="/map" replace />}
-            /> */}
+            />
             <Route
               path="*"
-              element={<Navigate to="/" replace />}
+              element={<Navigate to="/map" replace />}
             />
           </Routes>
         </Router>
