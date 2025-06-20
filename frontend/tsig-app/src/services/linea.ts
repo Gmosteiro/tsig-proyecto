@@ -45,6 +45,18 @@ type HorariosDTO = {
     horaHasta: string; // formato "HH:mm:ss"
 }
 
+export async function getLinesByGeoJson(geoJson: string): Promise<LineaDTO[]> {
+    try {
+        const res = await axios.post('/apiurl/api/lineas/interseccion-poligono', geoJson);
+        return res.data;
+    } catch (error: any) {
+        if (error.response && error.response.status === 404) {
+            return [];
+        }
+        throw error;
+    }
+}
+
 export async function getLineasByHorario(horarios: HorariosDTO): Promise<LineaDTO[]> {
     try {
 

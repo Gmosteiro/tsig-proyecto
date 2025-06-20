@@ -2,11 +2,13 @@ import React, { useState } from 'react'
 import OrigenDestinoSearch from './OrigenDestinoSearch'
 import NombreSearch from './NombreSearch'
 import HorarioSearch from './HorarioSearch'
+import LinesList from './LinesList' // <-- Importa LinesList
 
 type SearchType = 'origenDestino' | 'nombre' | 'horario' | 'poligono' | null
 
 type SearcherProps = {
-    onVerLinea?: (linea: any) => void
+    onVerLinea?: (linea: any) => void,
+    initialLines?: any[] | null
 }
 
 const searchOptions = [
@@ -15,8 +17,21 @@ const searchOptions = [
     { value: 'horario', label: 'Por Horario' }
 ]
 
-const Searcher: React.FC<SearcherProps> = ({ onVerLinea }) => {
-    const [searchType, setSearchType] = useState<SearchType>(null)
+const Searcher: React.FC<SearcherProps> = ({ onVerLinea, initialLines }) => {
+    const [searchType, setSearchType] = useState<SearchType>(initialLines ? 'poligono' : null)
+
+    if (initialLines && searchType === 'poligono') {
+        return (
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-3xl mx-auto p-6 border border-gray-100">
+                <h2 className="text-xl font-bold mb-4 text-gray-800">Líneas encontradas en el polígono</h2>
+                {initialLines.length === 0 ? (
+                    <div className="text-gray-400 text-center py-8">No se encontraron líneas.</div>
+                ) : (
+                    <LinesList lineas={initialLines} onVerLinea={onVerLinea} />
+                )}
+            </div>
+        )
+    }
 
     return (
         <div className="bg-white rounded-xl shadow-lg w-full max-w-3xl mx-auto p-6 border border-gray-100">

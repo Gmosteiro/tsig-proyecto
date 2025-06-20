@@ -6,7 +6,7 @@ import L from 'leaflet'
 import RoutingControl from '../components/map/RoutingControl'
 import PointControls from '../components/map/PointsControls'
 import { v4 as uuidv4 } from 'uuid'
-import { createStop, getWMSFeatureInfo, deleteStop, CrearParadaDTO, updateStop } from '../services/api'
+import { createStop, CrearParadaDTO, updateStop } from '../services/api'
 import { validateRoute, saveLine, LineaDTO, updateGeoJSON } from '../services/linea'
 import StopMarker from '../components/map/StopMarker'
 import useMapData from '../hooks/useMapData'
@@ -20,7 +20,6 @@ import RouteForm from '../components/ui/RouteForm'
 import StopForm from '../components/map/StopForm'
 import Searcher from '../components/search/Searcher'
 import { useMap } from 'react-leaflet'
-import PolygonDrawControl from '../components/map/PolygonDrawControl'
 import EditStopPopup from '../components/map/EditStopPopup'
 
 export default function MapPage() {
@@ -37,9 +36,8 @@ export default function MapPage() {
   const [showSearcher, setShowSearcher] = useState(false);
   const latestRouteGeoJSON = useRef<any>(null)
   const mapRef = useRef<any>(null)
-  const featureGroupRef = useRef<any>(null)
   const [movingStop, setMovingStop] = useState<any | null>(null);
-  const [polygonCoords, setPolygonCoords] = useState<[number, number][]>([])
+  const [polygonLines, setPolygonLines] = useState<any[] | null>(null)
 
   useEffect(() => {
     if (selectedLinea && selectedLinea.rutaGeoJSON && mapRef.current) {
@@ -51,7 +49,7 @@ export default function MapPage() {
       }
     }
   }, [selectedLinea])
-  
+
 
   const handleCreateStop = async (stopData: CrearParadaDTO) => {
     await createStop(stopData)
@@ -188,34 +186,22 @@ export default function MapPage() {
     return null;
   }
 
-  const handleCreated = async (e: any) => {
-    if (e.layerType === 'polygon') {
-      const latlngs = e.layer.getLatLngs()[0].map((latlng: any) => [latlng.lat, latlng.lng]);
-      setPolygonCoords(latlngs);
-
-      const geoJson = e.layer.toGeoJSON();
-
-      console.log("Polígono creado:", geoJson);
-      //TODO
-
-      if (featureGroupRef.current) {
-        featureGroupRef.current.clearLayers();
-      }
-      setPolygonCoords([]);
-    }
-  }
 
   return (
     <div className="flex flex-col min-h-screen">
       <NavigationBar />
       <main className="flex-1">
         <div className="flex justify-center my-6">
-          {showSearcher && (
-            <Searcher onVerLinea={async (data: LineaDTO) => {
-              const line = await updateGeoJSON(data);
-              setSelectedLinea(line);
-              setShowSearcher(false);
-            }} />
+          {(showSearcher || polygonLines) && (
+            <Searcher
+              onVerLinea={async (data: LineaDTO) => {
+                const line = await updateGeoJSON(data);
+                setSelectedLinea(line);
+                setShowSearcher(false);
+                setPolygonLines(null);
+              }}
+              initialLines={polygonLines}
+            />
           )}
         </div>
         {!creatingStop && !addingRoute && (
