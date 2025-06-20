@@ -1,6 +1,7 @@
 import axios from 'axios'
 // import { Stop } from '../lib/types/types'
 import { WMS_URL } from '../lib/constants'
+import { HorarioDTO } from './linea'
 export type ParadaDTO = {
     id: number
     nombre: string
@@ -10,6 +11,22 @@ export type ParadaDTO = {
     latitud: number
     longitud: number
 }
+
+export type ParadalineaDTO = {
+    idParadaLinea: number
+    idParada: number
+    idLinea: number
+    horarios: HorarioDTO[]
+}
+
+export type LineaDTO = {
+    id: number;
+    nombre: string;
+    origen: string;
+    destino: string;
+    empresa: string;
+    observacion: string;
+};
 
 export type CrearParadaDTO = Omit<ParadaDTO, 'id'>
 
@@ -24,35 +41,6 @@ export type RoutingRequestDTO = {
 
 export type EstadoParada = 'HABILITADA' | 'DESHABILITADA';
 
-export type PuntoDTO = {
-    latitud: number
-    longitud: number
-}
-
-export type LineaDTO = {
-    id?: number
-    nombre: string
-    descripcion: string
-    empresa: string
-    observacion?: string
-    puntos: PuntoDTO[]
-    rutaGeoJSON: any
-}
-
-export type HorarioDTO = {
-    hora: string // formato "HH:mm", solo hora y minutos
-}
-
-export async function validateRoute(request: RoutingRequestDTO) {
-    const res = await axios.post('/apiurl/api/lineas/validar', request)
-    return res.data
-}
-
-export const saveLine = async (lineData: LineaDTO) => {
-    const res = await axios.post('/apiurl/api/lineas/guardar', lineData)
-    return res.data
-}
-
 export async function createStop(stopData: CrearParadaDTO) {
     const res = await axios.post('/apiurl/api/parada/crear', stopData)
     return res.data
@@ -66,7 +54,22 @@ export async function updateStop(stopData: ParadaDTO) {
 }
 
 export async function deleteStop(id: number) {
-    const res = await axios.delete(`/apiurl/api/parada/id/${id}`);
+    const res = await axios.delete(`/apiurl/api/parada/${id}`);
+    return res.data;
+}
+
+export async function linkStopToLine(stopData: ParadalineaDTO) {
+    const res = await axios.post('/apiurl/api/parada/asociar/linea', stopData)
+    return res.data
+}
+
+export async function getAllLines(): Promise<LineaDTO[]> {
+    const res = await axios.get('/apiurl/api/lineas/todas');
+    return res.data;
+}
+
+export async function associateStopWithLine(data: ParadalineaDTO): Promise<any> {
+    const res = await axios.post('/apiurl/api/parada/asociar/linea', data);
     return res.data;
 }
 

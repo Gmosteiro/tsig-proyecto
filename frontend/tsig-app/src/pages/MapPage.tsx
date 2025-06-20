@@ -1,11 +1,13 @@
 import { MapContainer, Marker, useMapEvents, GeoJSON } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import { useState, useRef } from 'react'
+import 'leaflet-draw/dist/leaflet.draw.css'
+import React, { useState, useRef, useEffect } from 'react'
 import L from 'leaflet'
 import RoutingControl from '../components/map/RoutingControl'
 import PointControls from '../components/map/PointsControls'
 import { v4 as uuidv4 } from 'uuid'
-import { validateRoute, saveLine, createStop, getWMSFeatureInfo } from '../services/api'
+import { createStop, CrearParadaDTO, updateStop } from '../services/api'
+import { validateRoute, saveLine, LineaDTO, updateGeoJSON } from '../services/linea'
 import StopMarker from '../components/map/StopMarker'
 import useMapData from '../hooks/useMapData'
 import NavigationBar from '../components/ui/NavigationBar'
@@ -16,14 +18,12 @@ import markerShadow from '../assets/marker-shadow.png'
 import LayerController from '../components/map/LayerController'
 import RouteForm from '../components/ui/RouteForm'
 import StopForm from '../components/map/StopForm'
-import { deleteStop, updateStop } from '../services/api'
-import { CrearParadaDTO } from '../services/api'
+import Searcher from '../components/search/Searcher'
+import { useMap } from 'react-leaflet'
 import EditStopPopup from '../components/map/EditStopPopup'
 
 export default function MapPage() {
   const { stops } = useMapData()
-
-
   const [creatingStop, setCreatingStop] = useState(false)
   const [addingRoute, setAddingRoute] = useState(false)
   const [isValidated, setIsValidated] = useState(false)
@@ -32,9 +32,24 @@ export default function MapPage() {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
   const [routeGeoJSON, setRouteGeoJSON] = useState<any>(null)
   const [editingStop, setEditingStop] = useState<any | null>(null);
+  const [selectedLinea, setSelectedLinea] = useState<any | null>(null)
+  const [showSearcher, setShowSearcher] = useState(false);
+  const latestRouteGeoJSON = useRef<any>(null)
+  const mapRef = useRef<any>(null)
   const [movingStop, setMovingStop] = useState<any | null>(null);
-  const [deleteStopMode, setDeleteStopMode] = useState(false);
-  const latestRouteGeoJSON = useRef<any>(null);
+  const [polygonLines, setPolygonLines] = useState<any[] | null>(null)
+
+  useEffect(() => {
+    if (selectedLinea && selectedLinea.rutaGeoJSON && mapRef.current) {
+      const geojson = JSON.parse(selectedLinea.rutaGeoJSON)
+      const coords = geojson.coordinates.flat(1)
+      const latlngs = coords.map(([lng, lat]: [number, number]) => [lat, lng])
+      if (latlngs.length > 0) {
+        mapRef.current.fitBounds(latlngs)
+      }
+    }
+  }, [selectedLinea])
+
 
   const handleCreateStop = async (stopData: CrearParadaDTO) => {
     await createStop(stopData)
@@ -147,66 +162,11 @@ export default function MapPage() {
   const handleMoveStopSubmit = async (stopData: any) => {
     try {
       await updateStop(stopData);
-      alert("Parada movida correctamente.");
     } catch (err: any) {
       alert("Error al mover la parada: " + (err?.response?.data || err.message));
     }
     setMovingStop(null);
   };
-
-  // Handler para borrar parada
-  const handleDeleteStopClick = () => {
-    setDeleteStopMode(true);
-  };
-
-  function DeleteStopControl() {
-    useMapEvents({
-      click: async (e) => {
-        if (!deleteStopMode) return;
-
-        try {
-          const map = e.target;
-          const size = map.getSize();
-          const bounds = map.getBounds();
-          const crs = map.options.crs;
-          const point = map.latLngToContainerPoint(e.latlng);
-          const sw = crs.project(bounds.getSouthWest());
-          const ne = crs.project(bounds.getNorthEast());
-          const bbox = [sw.x, sw.y, ne.x, ne.y].join(',');
-
-          const data = await getWMSFeatureInfo({
-            layerName: "tsig:parada",
-            crsCode: crs.code ?? "",
-            bbox,
-            size,
-            point,
-            infoFormat: "application/json",
-            tolerance: 12
-          });
-
-          if (data && data.features && data.features.length > 0) {
-            const parada = data.features[0];
-            const id = parada.properties?.id;
-            console.log(id)
-            if (id) {
-              // Llama a la API para borrar la parada
-              await deleteStop(id);
-              alert(`Parada "${id}" eliminada correctamente.`);
-            } else {
-              alert("No se encontró el nombre de la parada.");
-            }
-          } else {
-            alert("No se encontró una parada en el lugar seleccionado.");
-          }
-        } catch (err: any) {
-          alert("Error al intentar borrar la parada: " + (err?.response?.data || err.message));
-        } finally {
-          setDeleteStopMode(false);
-        }
-      }
-    });
-    return null;
-  }
 
   function AddPointControl({ onAddPoint }: { onAddPoint: (latlng: [number, number]) => void }) {
     useMapEvents({
@@ -217,15 +177,63 @@ export default function MapPage() {
     return null
   }
 
+  function SetMapRef({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null> }) {
+    const map = useMap();
+    React.useEffect(() => {
+      mapRef.current = map;
+    }, [map, mapRef]);
+    return null;
+  }
+
+
   return (
     <div className="flex flex-col min-h-screen">
       <NavigationBar />
       <main className="flex-1">
+        <div className="flex justify-center my-6">
+          {(showSearcher || polygonLines) && (
+            <Searcher
+              onVerLinea={async (data: LineaDTO) => {
+                const line = await updateGeoJSON(data);
+                setSelectedLinea(line);
+                setShowSearcher(false);
+                setPolygonLines(null);
+              }}
+              initialLines={polygonLines}
+            />
+          )}
+        </div>
         {!creatingStop && !addingRoute && (
           <div className="flex gap-2 justify-center my-4">
-            <button className="bg-yellow-600 text-white px-4 py-2 rounded" onClick={() => setCreatingStop(true)}>Crear Parada</button>
-            <button className="bg-red-600 text-white px-4 py-2 rounded" onClick={handleDeleteStopClick}>Borrar Parada</button>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={() => setAddingRoute(true)}>Crear Ruta</button>
+            <button
+              className="bg-yellow-600 text-white px-4 py-2 rounded cursor-pointer"
+              onClick={() => setCreatingStop(true)}
+            >
+              Crear Parada
+            </button>
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer"
+              onClick={() => setAddingRoute(true)}
+            >
+              Crear Ruta
+            </button>
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer"
+              onClick={() => setShowSearcher(v => !v)}
+            >
+              {showSearcher ? "Ocultar Buscador" : "Buscar Rutas"}
+            </button>
+            {(showSearcher || selectedLinea) && (
+              <button
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer"
+                onClick={() => {
+                  setShowSearcher(false);
+                  setSelectedLinea(null);
+                }}
+              >
+                Cancelar
+              </button>
+            )}
           </div>
         )}
 
@@ -256,6 +264,7 @@ export default function MapPage() {
           zoom={13}
           style={{ height: '80vh', width: '100%' }}
         >
+          <SetMapRef mapRef={mapRef} />
           <LayerController onMoveStop={handleMoveStop} />
           {creatingStop && (
             <StopForm
@@ -313,31 +322,14 @@ export default function MapPage() {
               key={stop.id}
               stop={stop}
               onClick={() => {
-                if (!deleteStopMode) {
-                  setEditingStop(stop);
-                }
+                setEditingStop(stop);
               }}
             />
           ))}
           {routeGeoJSON && (
             <GeoJSON data={routeGeoJSON} style={{ color: 'red', weight: 5, opacity: 0.9 }} />
           )}
-          {deleteStopMode && <DeleteStopControl />}
         </MapContainer>
-        {deleteStopMode && (
-          <div style={{
-            background: '#fee',
-            color: '#b00',
-            padding: '8px 0',
-            textAlign: 'center',
-            fontWeight: 'bold',
-            border: '1px solid #b00',
-            marginBottom: 10,
-            borderRadius: 4
-          }}>
-            Modo borrar activo: haz clic en una parada para eliminarla.
-          </div>
-        )}
       </main>
       <Footer />
     </div>

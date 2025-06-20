@@ -7,8 +7,8 @@ import { WMS_URL, DEFAULT_TILE_SIZE } from '../../lib/constants'
 import L from 'leaflet' // <--- Agrega esta línea
 
 export default function LayerController({ onMoveStop }: { onMoveStop?: (parada: ParadaDTO) => void }) {
-    const [camineraVisible, setCamineraVisible] = useState(true)
-    const [paradaVisible, setParadaVisible] = useState(false)
+    const [camineraVisible, setCamineraVisible] = useState(false)
+    const [paradaVisible, setParadaVisible] = useState(true)
     const [lineaVisible, setLineaVisible] = useState(false)
     const [selectedParada, setSelectedParada] = useState<ParadaDTO | null>(null)
 
