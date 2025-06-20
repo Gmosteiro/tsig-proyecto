@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap} from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, GeoJSON} from 'react-leaflet';
 import { useEffect, useState } from 'react';
 import L from 'leaflet';
 import NavigationBar from '../components/ui/NavigationBar';
@@ -8,7 +8,6 @@ import { FeatureGroup, Polygon } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import { getWMSFeatureInfo } from '../services/api';
-//import { useMap } from 'react-leaflet';
 
 
 const customIcon = new L.Icon({
@@ -36,6 +35,7 @@ function RecenterMap({ center }: { center: [number, number] }) {
 export default function SimpleMapPage() {
   const [position, setPosition] = useState<[number, number]>([-34.9, -56.2]);
   const [nearbyStops, setNearbyStops] = useState<any[]>([]);
+  const [nearbyLines, setNearbyLines] = useState<any[]>([]);
   const [polygon, setPolygon] = useState<any>(null);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
@@ -68,6 +68,28 @@ export default function SimpleMapPage() {
         } else {
           setNearbyStops([]);
         }
+
+
+        // Hacemos consulta WMS de líneas cercanas
+        const linesData = await getWMSFeatureInfo({
+          layerName: "tsig:linea",
+          crsCode: "EPSG:4326",
+          bbox: `${latlng[1] - 0.01},${latlng[0] - 0.01},${latlng[1] + 0.01},${latlng[0] + 0.01}`,
+          size: mapSize,
+          point: { x: mapSize.x / 2, y: mapSize.y / 2 },
+          infoFormat: "application/json",
+          tolerance,
+          featureCount
+        });
+
+        console.log("WMS lineas:", linesData);
+
+        if (linesData && linesData.features) {
+          setNearbyLines(linesData.features);
+        } else {
+          setNearbyLines([]);
+        }
+
       },
       (err) => {
         console.error("Error obteniendo geolocalización:", err);
@@ -208,6 +230,24 @@ export default function SimpleMapPage() {
             );
           })}
 
+          {nearbyLines.map((feature: any, idx: number) => (
+            <GeoJSON
+              key={idx}
+              data={feature}
+              style={{
+                color: 'blue',
+                weight: 4,
+                opacity: 0.7
+              }}
+            >
+              <Popup>
+                {feature.properties?.nombre || 'Linea'}<br />
+                ID: {feature.id}
+              </Popup>
+            </GeoJSON>
+          ))}
+
+
 
           {/* Solo mostrar el control de dibujo si está activa la opción */}
           {selectedOption === 'Corte Polígono' && (
@@ -231,6 +271,8 @@ export default function SimpleMapPage() {
               )}
             </FeatureGroup>
           )}
+
+          
         </MapContainer>
       ) : (
         <div className="text-center text-gray-600 mt-10">Cargando ubicación...</div>
