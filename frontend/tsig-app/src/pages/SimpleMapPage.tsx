@@ -237,7 +237,7 @@ export default function SimpleMapPage() {
               key={idx}
               data={feature}
               style={{
-                color: 'blue',
+                color: 'green',
                 weight: 4,
                 opacity: 0.7
               }}
