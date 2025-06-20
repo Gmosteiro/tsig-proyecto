@@ -21,6 +21,7 @@ import StopForm from '../components/map/StopForm'
 import Searcher from '../components/search/Searcher'
 import { useMap } from 'react-leaflet'
 import PolygonDrawControl from '../components/map/PolygonDrawControl'
+import { getLinesByGeoJson } from '../services/linea'
 
 export default function MapPage() {
   const { stops } = useMapData()
@@ -39,6 +40,7 @@ export default function MapPage() {
   const mapRef = useRef<any>(null)
   const featureGroupRef = useRef<any>(null)
   const [polygonCoords, setPolygonCoords] = useState<[number, number][]>([])
+  const [polygonLines, setPolygonLines] = useState<any[] | null>(null)
 
   useEffect(() => {
     if (selectedLinea && selectedLinea.rutaGeoJSON && mapRef.current) {
@@ -218,8 +220,9 @@ export default function MapPage() {
 
       const geoJson = e.layer.toGeoJSON();
 
-      console.log("Polígono creado:", geoJson);
-      //TODO
+      const lines = await getLinesByGeoJson(geoJson);
+      setPolygonLines(lines);
+      setShowSearcher(false); // Oculta el buscador normal si está abierto
 
       if (featureGroupRef.current) {
         featureGroupRef.current.clearLayers();
@@ -233,12 +236,16 @@ export default function MapPage() {
       <NavigationBar />
       <main className="flex-1">
         <div className="flex justify-center my-6">
-          {showSearcher && (
-            <Searcher onVerLinea={async (data: LineaDTO) => {
-              const line = await updateGeoJSON(data);
-              setSelectedLinea(line);
-              setShowSearcher(false);
-            }} />
+          {(showSearcher || polygonLines) && (
+            <Searcher
+              onVerLinea={async (data: LineaDTO) => {
+                const line = await updateGeoJSON(data);
+                setSelectedLinea(line);
+                setShowSearcher(false);
+                setPolygonLines(null);
+              }}
+              initialLines={polygonLines}
+            />
           )}
         </div>
         {!creatingStop && !addingRoute && (
