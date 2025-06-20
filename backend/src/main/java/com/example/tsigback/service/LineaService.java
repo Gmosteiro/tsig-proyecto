@@ -11,6 +11,7 @@ import com.example.tsigback.exception.LineaNoEncontradaException;
 import com.example.tsigback.repository.LineaRepository;
 import com.example.tsigback.repository.ParadaRepository;
 import com.example.tsigback.repository.RoutingRepository;
+import com.example.tsigback.repository.ParadaLineaRepository;
 import com.example.tsigback.utils.GeoUtils;
 
 import org.locationtech.jts.geom.Geometry;
@@ -38,6 +39,9 @@ public class LineaService {
 
     @Autowired
     private RoutingRepository routingRepository;
+
+    @Autowired
+    private ParadaLineaRepository paradaLineaRepository;
 
     private static final double MAX_DIST = 100.0; // metros
 
@@ -208,6 +212,24 @@ public class LineaService {
                 .paradaLineaIds(paradaLineaIds)
                 // No incluye puntos, rutaGeoJSON ni recorrido
                 .build();
+    }
+
+    public void eliminarLineaYRelaciones(int id) throws LineaNoEncontradaException {
+        Linea linea = lineaRepository.findById(id)
+            .orElseThrow(() -> new LineaNoEncontradaException("Línea con id " + id + " no encontrada"));
+
+        List<ParadaLinea> paradaLineas = linea.getParadasLineas();
+        for (ParadaLinea pl : paradaLineas) {
+            Parada parada = pl.getParada();
+            paradaLineaRepository.delete(pl);
+
+            List<ParadaLinea> restantes = paradaLineaRepository.findByParadaId(parada.getId());
+            if (restantes.isEmpty()) {
+                parada.setEstado(EstadoParada.DESHABILITADA);
+                paradaRepository.save(parada);
+            }
+        }
+        lineaRepository.delete(linea);
     }
 
     /*public void modificarLinea(LineaDTO lineaDTO) throws LineaNoEncontradaException {
