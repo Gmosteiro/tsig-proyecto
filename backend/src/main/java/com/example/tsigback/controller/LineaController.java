@@ -175,7 +175,7 @@ public class LineaController {
         }
     }
 
-    /*@PutMapping
+    @PutMapping
     public ResponseEntity<String> modificarLinea(@RequestBody LineaDTO lineaDTO) {
         try {
             if (lineaDTO == null) {
@@ -201,5 +201,5 @@ public class LineaController {
     @GetMapping("/todas/sin_recorrido")
     public ResponseEntity<List<LineaDTO>> mostrarTodasSinRecorrido() {
         return ResponseEntity.status(HttpStatus.OK).body(lineaService.obtenerTodasSinRecorrido());
-    }*/
+    }
 }

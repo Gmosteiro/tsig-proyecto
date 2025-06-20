@@ -243,8 +243,8 @@ public class LineaService {
         return lineas.stream().map(this::toSimpleDTO).collect(Collectors.toList());
     }
 
-    /*public void modificarLinea(LineaDTO lineaDTO) throws LineaNoEncontradaException {
-        Linea linea = lineaRepository.findById(lineaDTO.getId())
+    public void modificarLinea(LineaDTO lineaDTO) throws LineaNoEncontradaException {
+        Linea linea = lineaRepository.findById(Math.toIntExact(lineaDTO.getId()))
             .orElseThrow(() -> new LineaNoEncontradaException("La linea con id " + lineaDTO.getId() + " no ha sido encontrada"));
         
         linea.setDescripcion(lineaDTO.getDescripcion() != null ? lineaDTO.getDescripcion() : linea.getDescripcion());
@@ -254,19 +254,17 @@ public class LineaService {
         List<PuntoDTO> puntosDtos = lineaDTO.getPuntos();
 
         if (puntosDtos != null && puntosDtos.size() > 1) {
-            MultiLineString nuevoRecorrido = calculateRoute(lineaDTO.getPuntos());
 
             List<ParadaLinea> paradas = linea.getParadasLineas();
             //Itero por todas las paradas que estan asociadas en la lineas
-            for (ParadaLinea parada : paradas) {
+            /*for (ParadaLinea parada : paradas) {
                 procesamientoDeParadaLinea(parada, linea, nuevoRecorrido);
-            }
+            }*/
 
             String origen = lineaRepository.obtenerDepartamentoOrigen(getPuntoDeOrigen(puntosDtos));
             String destino = lineaRepository.obtenerDepartamentoDestino(getPuntoDestino(puntosDtos));
             linea.setOrigen(origen);
             linea.setDestino(destino);
-            linea.setRecorrido(nuevoRecorrido);
         }
         
         lineaRepository.save(linea);
@@ -280,7 +278,7 @@ public class LineaService {
             
             //Si es 1, es porque solamente esta asociada a una linea
             if (estaAsociadoUnicamenteAEstaLinea(paradaAsociada)) {
-                paradaAsociada.setEstado(EstadoParada.DESHABILITADA);        
+                paradaAsociada.setEstado(EstadoParada.DESHABILITADA);
             }
             paradaRepository.save(paradaAsociada);
         }
@@ -299,15 +297,15 @@ public class LineaService {
 
     public List<LineaDTO> obtenerTodas() {
         return lineaRepository.findAll()
-        .stream().map(l -> toDTO(l, true))
-        .collect(Collectors.toList()); 
+        .stream().map(this::toDTO)
+        .collect(Collectors.toList());
     }
 
     public List<LineaDTO> obtenerTodasSinRecorrido() {
         return lineaRepository.findAll()
-        .stream().map(l -> toDTO(l, false))
-        .collect(Collectors.toList()); 
-    }*/
+        .stream().map(this::toSimpleDTO)
+        .collect(Collectors.toList());
+    }
 
     
 }

@@ -19,6 +19,15 @@ export type ParadalineaDTO = {
     horarios: HorarioDTO[]
 }
 
+export type LineaDTO = {
+    id: number;
+    nombre: string;
+    origen: string;
+    destino: string;
+    empresa: string;
+    observacion: string;
+};
+
 export type CrearParadaDTO = Omit<ParadaDTO, 'id'>
 
 export type RoutingPointDTO = {
@@ -52,6 +61,16 @@ export async function deleteStop(id: number) {
 export async function linkStopToLine(stopData: ParadalineaDTO) {
     const res = await axios.post('/apiurl/api/parada/asociar/linea', stopData)
     return res.data
+}
+
+export async function getAllLines(): Promise<LineaDTO[]> {
+    const res = await axios.get('/apiurl/api/lineas/todas');
+    return res.data;
+}
+
+export async function associateStopWithLine(data: ParadalineaDTO): Promise<any> {
+    const res = await axios.post('/apiurl/api/parada/asociar/linea', data);
+    return res.data;
 }
 
 export type WMSFeatureInfoParams = {
