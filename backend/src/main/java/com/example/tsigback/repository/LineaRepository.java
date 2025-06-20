@@ -88,5 +88,14 @@ public interface LineaRepository extends JpaRepository<Linea, Integer> {
     """, nativeQuery = true)
     List<Linea> findByEmpresaNombre(@Param("empresa") String empresa);
 
+    @Query(value = """
+    SELECT DISTINCT l.*
+    FROM linea l
+    JOIN parada_linea pl ON pl.linea_id = l.id
+    JOIN horario_parada_linea hpl ON hpl.parada_linea_id = pl.id
+    WHERE hpl.horario BETWEEN CAST(:horaDesde AS time) AND CAST(:horaHasta AS time)
+    """, nativeQuery = true)
+    List<Linea> findLineasActivasEnRango(@Param("horaDesde") String horaDesde, @Param("horaHasta") String horaHasta);
+
 
 }

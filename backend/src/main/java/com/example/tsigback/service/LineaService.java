@@ -24,6 +24,8 @@ import org.locationtech.jts.io.geojson.GeoJsonWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -232,6 +234,15 @@ public class LineaService {
         lineaRepository.delete(linea);
     }
 
+    public List<LineaDTO> obtenerLineasActivasEnRango(LocalTime horaDesde, LocalTime horaHasta) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+        List<Linea> lineas = lineaRepository.findLineasActivasEnRango(
+            horaDesde.format(formatter),
+            horaHasta.format(formatter)
+        );
+        return lineas.stream().map(this::toSimpleDTO).collect(Collectors.toList());
+    }
+
     /*public void modificarLinea(LineaDTO lineaDTO) throws LineaNoEncontradaException {
         Linea linea = lineaRepository.findById(lineaDTO.getId())
             .orElseThrow(() -> new LineaNoEncontradaException("La linea con id " + lineaDTO.getId() + " no ha sido encontrada"));
@@ -297,4 +308,6 @@ public class LineaService {
         .stream().map(l -> toDTO(l, false))
         .collect(Collectors.toList()); 
     }*/
+
+    
 }
