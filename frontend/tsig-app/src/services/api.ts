@@ -68,19 +68,16 @@ export async function associateStopWithLine(data: ParadaLineaDTO): Promise<any> 
     return res.data;
 }
 
-// --- Obtener líneas asociadas a una parada ---
 export async function getAssociatedLinesForStop(paradaId: number): Promise<ParadaLineaDTO[]> {
     const res = await axios.get('/apiurl/api/parada/linea/todas');
     return res.data.filter((pl: ParadaLineaDTO) => Number(pl.idParada) === Number(paradaId));
 }
 
-// --- Obtener horarios de una línea en una parada ---
 export async function getSchedulesForLineAndStop(lineaId: number, paradaId: number): Promise<HorarioDTO[]> {
     const res = await axios.get(`/apiurl/api/horarios?lineaId=${lineaId}&paradaId=${paradaId}`);
     return res.data;
 }
 
-// --- Agregar horario a una línea en una parada ---
 export async function addScheduleToLineStop(
     lineaId: number,
     paradaId: number,
