@@ -57,6 +57,18 @@ export async function getLinesByGeoJson(geoJson: string): Promise<LineaDTO[]> {
     }
 }
 
+export const getLineasPorKilometro = async (kilometro: number, ruta: number): Promise<LineaDTO[]> => {
+    try {
+        const res = await axios.post('/apiurl/api/lineas/rutakm', { ruta: ruta, kilometro: kilometro });
+        return res.data;
+    } catch (error: any) {
+        if (error.response && error.response.status === 404) {
+            return [];
+        }
+        throw error;
+    }
+}
+
 export async function getLineasByHorario(horarios: HorariosDTO): Promise<LineaDTO[]> {
     try {
 

@@ -3,8 +3,9 @@ import OrigenDestinoSearch from './OrigenDestinoSearch'
 import NombreSearch from './NombreSearch'
 import HorarioSearch from './HorarioSearch'
 import LinesList from './LinesList' // <-- Importa LinesList
+import RutaKilometro from './RutaKilometro'
 
-type SearchType = 'origenDestino' | 'nombre' | 'horario' | 'poligono' | null
+type SearchType = 'origenDestino' | 'nombre' | 'horario' | 'kilometro' | 'poligono' | null
 
 type SearcherProps = {
     onVerLinea?: (linea: any) => void,
@@ -14,7 +15,8 @@ type SearcherProps = {
 const searchOptions = [
     { value: 'origenDestino', label: 'Por Origen y Destino' },
     { value: 'nombre', label: 'Por Nombre de Empresa' },
-    { value: 'horario', label: 'Por Horario' }
+    { value: 'horario', label: 'Por Horario' },
+    { value: 'kilometro', label: 'Por ruta y kilómetro' },
 ]
 
 const Searcher: React.FC<SearcherProps> = ({ onVerLinea, initialLines }) => {
@@ -55,6 +57,7 @@ const Searcher: React.FC<SearcherProps> = ({ onVerLinea, initialLines }) => {
                 {searchType === 'origenDestino' && <OrigenDestinoSearch onVerLinea={onVerLinea} />}
                 {searchType === 'nombre' && <NombreSearch onVerLinea={onVerLinea} />}
                 {searchType === 'horario' && <HorarioSearch onVerLinea={onVerLinea} />}
+                {searchType === 'kilometro' && <RutaKilometro onVerLinea={onVerLinea} />}
                 {!searchType && (
                     <div className="text-gray-400 text-center py-8">
                         Selecciona un tipo de búsqueda para comenzar.
