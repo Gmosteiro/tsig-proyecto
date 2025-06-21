@@ -143,19 +143,20 @@ public class ParadaService {
     }
 
      public void agregarHorario(ParadaLineaDTO paradaLineaDTO) throws ParadaNoEncontradaException, LineaNoEncontradaException, ParadaLineaNoEncontradaException {
-        ParadaLinea paradaLinea = paradaLineaRepository.findById(paradaLineaDTO.getIdLinea())
+        ParadaLinea paradaLinea = paradaLineaRepository.findById(paradaLineaDTO.getIdParadaLinea())
             .orElseThrow(() -> new ParadaLineaNoEncontradaException("No existe esa parada linea id"));
 
-        List<HorarioParadaLinea> horarios = paradaLineaDTO.getHorarios().stream()
-            .map(horarioDto -> HorarioParadaLinea.builder()
-                .horario(horarioDto.getHora())
-                .paradaLinea(paradaLinea)
-                .build())
-            .toList();
+    List<HorarioParadaLinea> nuevosHorarios = paradaLineaDTO.getHorarios().stream()
+        .map(horarioDto -> HorarioParadaLinea.builder()
+            .horario(horarioDto.getHora())
+            .paradaLinea(paradaLinea)
+            .build())
+        .toList();
 
-        paradaLinea.setHorarios(horarios);
+    // Agrega los nuevos horarios a la colección existente
+    paradaLinea.getHorarios().addAll(nuevosHorarios);
 
-        paradaLineaRepository.save(paradaLinea);     
+    paradaLineaRepository.save(paradaLinea);     
      }
 
     public List<ParadaDTO> obtenerTodasLasParadas() {

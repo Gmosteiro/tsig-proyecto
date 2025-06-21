@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getSchedulesForLineAndStop, addScheduleToLineStop, getAssociatedLinesForStop, ParadaLineaDTO } from '../../services/api';
+import { getSchedulesForLineAndStop, addScheduleToLineStop, getAssociatedLinesForStop } from '../../services/api';
 import { HorarioDTO } from '../../services/linea';
 import styles from '../../styles/SchedulePopup.module.css';
 
@@ -12,33 +12,30 @@ interface SchedulePopupProps {
 const SchedulePopup: React.FC<SchedulePopupProps> = ({ paradaId, lineaId, onClose }) => {
     const [horarios, setHorarios] = useState<HorarioDTO[]>([]);
     const [nuevoHorario, setNuevoHorario] = useState('');
-    const [paradaLineaId, setParadaLineaId] = useState<number>(0);
+    const [paradaLineaId, setParadaLineaId] = useState<number | null>(null);
 
     useEffect(() => {
-        const fetchHorarios = async () => {
-            try {
-                const data = await getSchedulesForLineAndStop(lineaId, paradaId);
-                setHorarios(data);
-                // Buscar el idParadaLinea correcto
-                const asociaciones = await getAssociatedLinesForStop(paradaId);
-                const asociacion = asociaciones.find(pl => pl.idLinea === lineaId);
-                setParadaLineaId(asociacion ? asociacion.idParadaLinea : 0);
-            } catch {
-                alert('Error al cargar los horarios');
-            }
+        const fetchData = async () => {
+            // 1. Cargar asociaciones
+            const asociaciones = await getAssociatedLinesForStop(paradaId);
+
+            // Busca la asociación para la línea y parada deseada
+            const paradaLinea = asociaciones.find(
+                pl => Number(pl.idLinea) === Number(lineaId) && Number(pl.idParada) === Number(paradaId)
+            );
+            const horariosData = paradaLinea ? paradaLinea.horarios : [];
+            setHorarios(horariosData);
+
+            // 2. Buscar el idParadaLinea correcto
+            const asociacion = asociaciones.find(pl => Number(pl.idLinea) === Number(lineaId));
+            setParadaLineaId(asociacion ? asociacion.idParadaLinea : null);
         };
-        fetchHorarios();
+        fetchData();
     }, [lineaId, paradaId]);
 
     const handleAgregar = async () => {
-        if (!nuevoHorario) return;
+        if (!nuevoHorario || paradaLineaId == null) return;
         try {
-            console.log({
-                idParadaLinea: paradaLineaId,
-                idParada: paradaId,
-                idLinea: lineaId,
-                horarios: [{ hora: nuevoHorario }]
-            });
             await addScheduleToLineStop(lineaId, paradaId, { hora: nuevoHorario }, paradaLineaId);
             setHorarios([...horarios, { hora: nuevoHorario }]);
             setNuevoHorario('');
@@ -52,9 +49,11 @@ const SchedulePopup: React.FC<SchedulePopupProps> = ({ paradaId, lineaId, onClos
             <button onClick={onClose} className={styles.closeButton}>×</button>
             <h3>Horarios para la línea {lineaId}</h3>
             <ul>
-                {horarios.map((h, i) => (
-                    <li key={i}>{h.hora}</li>
-                ))}
+                {horarios.length === 0 ? (
+                    <li>No hay horarios</li>
+                ) : (
+                    horarios.map((h, i) => <li key={i}>{h.hora}</li>)
+                )}
             </ul>
             <div>
                 <input

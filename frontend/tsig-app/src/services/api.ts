@@ -88,9 +88,9 @@ export async function addScheduleToLineStop(
     idParadaLinea: number
 ): Promise<any> {
     const paradaLineaDTO = {
-        idParadaLinea,
-        idParada: paradaId,
-        idLinea: lineaId,
+        idParadaLinea: Number(idParadaLinea),
+        idParada: Number(paradaId),
+        idLinea: Number(lineaId),
         horarios: [horario]
     };
     const res = await axios.post('/apiurl/api/parada/linea/horario', paradaLineaDTO);
