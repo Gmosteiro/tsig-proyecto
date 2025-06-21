@@ -4,13 +4,22 @@ import { ParadaDTO } from '../../services/api'
 import WMSFeatureInfoHandler from './WMSFeatureInfoHandler'
 import StopInfoPopupContainer from './StopInfoPopupContainer'
 import { WMS_URL, DEFAULT_TILE_SIZE } from '../../lib/constants'
-import L from 'leaflet' // <--- Agrega esta línea
+import L from 'leaflet'
 
 export default function LayerController({ onMoveStop }: { onMoveStop?: (parada: ParadaDTO) => void }) {
     const [camineraVisible, setCamineraVisible] = useState(false)
     const [paradaVisible, setParadaVisible] = useState(true)
     const [lineaVisible, setLineaVisible] = useState(false)
     const [selectedParada, setSelectedParada] = useState<ParadaDTO | null>(null)
+    const [paradaFiltro, setParadaFiltro] = useState<'todos' | 'habilitadas' | 'deshabilitadas'>('todos')
+
+    // CQL_FILTER según filtro seleccionado
+    const paradaCqlFilter =
+        paradaFiltro === 'habilitadas'
+            ? 'estado=0'
+            : paradaFiltro === 'deshabilitadas'
+            ? 'estado=1'
+            : undefined
 
     return (
         <>
@@ -38,15 +47,31 @@ export default function LayerController({ onMoveStop }: { onMoveStop?: (parada: 
                     />
                 </LayersControl.Overlay>
                 <LayersControl.Overlay name="Paradas" checked={paradaVisible}>
-                    <WMSTileLayer
-                        eventHandlers={{ add: () => setParadaVisible(true), remove: () => setParadaVisible(false) }}
-                        url={WMS_URL}
-                        layers="tsig:parada"
-                        styles="Parada"
-                        format="image/png"
-                        transparent={true}
-                        tileSize={DEFAULT_TILE_SIZE}
-                    />
+                    <>
+                        <div style={{ position: 'absolute', zIndex: 1000, right: 60, top: 10, background: 'rgba(255,255,255,0.9)', padding: 6, borderRadius: 6 }}>
+                            <label style={{ marginRight: 8 }}>Mostrar:</label>
+                            <select
+                                value={paradaFiltro}
+                                onChange={e => setParadaFiltro(e.target.value as any)}
+                                style={{ fontSize: 14 }}
+                            >
+                                <option value="todos">Todos</option>
+                                <option value="habilitadas">Habilitadas</option>
+                                <option value="deshabilitadas">Deshabilitadas</option>
+                            </select>
+                        </div>
+                        <WMSTileLayer
+                            key={paradaFiltro}
+                            eventHandlers={{ add: () => setParadaVisible(true), remove: () => setParadaVisible(false) }}
+                            url={WMS_URL}
+                            layers="tsig:parada"
+                            styles="Parada"
+                            format="image/png"
+                            transparent={true}
+                            tileSize={DEFAULT_TILE_SIZE}
+                            params={paradaCqlFilter ? ({ CQL_FILTER: paradaCqlFilter } as any) : {}}
+                        />
+                    </>
                 </LayersControl.Overlay>
                 <LayersControl.Overlay name="Líneas" checked={lineaVisible}>
                     <WMSTileLayer
@@ -87,21 +112,12 @@ export default function LayerController({ onMoveStop }: { onMoveStop?: (parada: 
                 }}
             />
 
-            {/* <WMSFeatureInfoHandler
-                visible={lineaVisible}
-                layerName="tsig:linea"
-                tolerance={8}
-                onFeatureInfo={(data) => {
-                    console.log('Feature info for lineas:', data)
-                }}
-            /> */}
-
             <StopInfoPopupContainer
                 parada={selectedParada}
                 onClose={() => setSelectedParada(null)}
                 onMove={parada => {
                     if (onMoveStop) onMoveStop(parada)
-                    setSelectedParada(null) // Oculta el popup al mover
+                    setSelectedParada(null)
                 }}
             />
         </>
