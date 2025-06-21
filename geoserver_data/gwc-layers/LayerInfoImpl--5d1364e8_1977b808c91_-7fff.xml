@@ -10,16 +10,48 @@
   </mimeFormats>
   <gridSubsets>
     <gridSubset>
-      <gridSetName>EPSG:4326</gridSetName>
-    </gridSubset>
-    <gridSubset>
       <gridSetName>EPSG:900913</gridSetName>
-    </gridSubset>
-    <gridSubset>
-      <gridSetName>WebMercatorQuad</gridSetName>
+      <extent>
+        <coords>
+          <double>-6257845.212452216</double>
+          <double>-4151719.66348349</double>
+          <double>-6255567.615670586</double>
+          <double>-4148909.9767047893</double>
+        </coords>
+      </extent>
     </gridSubset>
     <gridSubset>
       <gridSetName>WebMercatorQuadx2</gridSetName>
+      <extent>
+        <coords>
+          <double>-6257845.212452216</double>
+          <double>-4151719.66348349</double>
+          <double>-6255567.615670586</double>
+          <double>-4148909.9767047893</double>
+        </coords>
+      </extent>
+    </gridSubset>
+    <gridSubset>
+      <gridSetName>WebMercatorQuad</gridSetName>
+      <extent>
+        <coords>
+          <double>-6257845.212452216</double>
+          <double>-4151719.66348349</double>
+          <double>-6255567.615670586</double>
+          <double>-4148909.9767047893</double>
+        </coords>
+      </extent>
+    </gridSubset>
+    <gridSubset>
+      <gridSetName>EPSG:4326</gridSetName>
+      <extent>
+        <coords>
+          <double>-56.21518</double>
+          <double>-34.91046</double>
+          <double>-56.19472</double>
+          <double>-34.88975952103216</double>
+        </coords>
+      </extent>
     </gridSubset>
   </gridSubsets>
   <metaWidthHeight>
@@ -32,8 +64,10 @@
     <styleParameterFilter>
       <key>STYLES</key>
       <defaultValue></defaultValue>
-      <availableStyles class="sorted-set"/>
-      <defaultStyle>line</defaultStyle>
+      <availableStyles class="sorted-set">
+        <string>line</string>
+      </availableStyles>
+      <defaultStyle>line_green</defaultStyle>
     </styleParameterFilter>
   </parameterFilters>
   <gutter>0</gutter>
