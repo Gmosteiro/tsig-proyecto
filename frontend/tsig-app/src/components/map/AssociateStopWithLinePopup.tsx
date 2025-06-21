@@ -1,6 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { getAllLines, associateStopWithLine, ParadaDTO, LineaDTO, ParadalineaDTO } from '../../services/api';
+import React, { useEffect, useState } from 'react';
+import {
+    getAllLines,
+    associateStopWithLine,
+    getAssociatedLinesForStop,
+    ParadaDTO,
+    LineaDTO,
+    ParadaLineaDTO
+} from '../../services/api';
 import styles from '../../styles/EditStopPopup.module.css';
+import SchedulePopup from './SchedulePopup';
 
 interface AssociateStopWithLinePopupProps {
     parada: ParadaDTO;
@@ -9,40 +17,49 @@ interface AssociateStopWithLinePopupProps {
 
 const AssociateStopWithLinePopup: React.FC<AssociateStopWithLinePopupProps> = ({ parada, onClose }) => {
     const [lines, setLines] = useState<LineaDTO[]>([]);
+    const [associatedLines, setAssociatedLines] = useState<ParadaLineaDTO[]>([]);
+    const [showSchedulePopup, setShowSchedulePopup] = useState(false);
+    const [schedulePopupLineId, setSchedulePopupLineId] = useState<number | null>(null);
     const [selectedLine, setSelectedLine] = useState<number | null>(null);
 
     useEffect(() => {
-        const fetchLines = async () => {
-            try {
-                const allLines = await getAllLines();
-                setLines(allLines);
-            } catch (error) {
-                console.error("Error fetching lines:", error);
-                alert("Error al cargar las líneas.");
-            }
-        };
-        fetchLines();
+        getAllLines().then(setLines);
+        fetchAssociatedLines();
+        // eslint-disable-next-line
     }, []);
+
+    const fetchAssociatedLines = async () => {
+        try {
+            const data = await getAssociatedLinesForStop(parada.id);
+            setAssociatedLines(data);
+        } catch {
+            alert('Error al cargar líneas asociadas');
+        }
+    };
 
     const handleAssociate = async () => {
         if (selectedLine) {
             try {
-                const paradaLinea: ParadalineaDTO = {
-                    idParadaLinea: 0, // o null si tu backend lo permite
+                const paradaLinea: ParadaLineaDTO = {
+                    idParadaLinea: 0,
                     idParada: parada.id,
                     idLinea: selectedLine,
                     horarios: []
                 };
                 await associateStopWithLine(paradaLinea);
                 alert('Parada asociada correctamente.');
-                onClose();
-            } catch (error) {
-                console.error("Error associating stop with line:", error);
+                fetchAssociatedLines();
+            } catch {
                 alert('Error al asociar la parada con la línea.');
             }
         } else {
             alert('Por favor, seleccione una línea.');
         }
+    };
+
+    const handleViewSchedules = (lineaId: number) => {
+        setSchedulePopupLineId(lineaId);
+        setShowSchedulePopup(true);
     };
 
     return (
@@ -52,7 +69,7 @@ const AssociateStopWithLinePopup: React.FC<AssociateStopWithLinePopupProps> = ({
             <div className={styles.inputGroup}>
                 <label>Líneas:</label>
                 <select
-                    onChange={(e) => setSelectedLine(Number(e.target.value))}
+                    onChange={e => setSelectedLine(Number(e.target.value))}
                     className={styles.selectInput}
                     value={selectedLine || ''}
                 >
@@ -65,6 +82,33 @@ const AssociateStopWithLinePopup: React.FC<AssociateStopWithLinePopupProps> = ({
             <div className={styles.buttonGroup}>
                 <button onClick={handleAssociate} className={styles.saveButton}>Asociar</button>
             </div>
+            <div className={styles.associatedLines}>
+                <h3>Líneas Asociadas:</h3>
+                <ul>
+                    {associatedLines.map(linea => {
+                        const lineaInfo = lines.find(l => l.id === linea.idLinea);
+                        return (
+                            <li key={linea.idLinea}>
+                                {lineaInfo ? lineaInfo.nombre : `Línea ${linea.idLinea}`}
+                                <button
+                                    className={styles.viewButton}
+                                    style={{ marginLeft: 8 }}
+                                    onClick={() => handleViewSchedules(linea.idLinea)}
+                                >
+                                    Ver Horarios
+                                </button>
+                            </li>
+                        );
+                    })}
+                </ul>
+            </div>
+            {showSchedulePopup && schedulePopupLineId !== null && (
+                <SchedulePopup
+                    paradaId={parada.id}
+                    lineaId={schedulePopupLineId}
+                    onClose={() => setShowSchedulePopup(false)}
+                />
+            )}
         </div>
     );
 };

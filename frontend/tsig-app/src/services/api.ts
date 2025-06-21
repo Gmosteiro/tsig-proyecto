@@ -2,6 +2,7 @@ import axios from 'axios'
 // import { Stop } from '../lib/types/types'
 import { WMS_URL } from '../lib/constants'
 import { HorarioDTO } from './linea'
+
 export type ParadaDTO = {
     id: number
     nombre: string
@@ -12,7 +13,7 @@ export type ParadaDTO = {
     longitud: number
 }
 
-export type ParadalineaDTO = {
+export type ParadaLineaDTO = {
     idParadaLinea: number
     idParada: number
     idLinea: number
@@ -48,7 +49,6 @@ export async function createStop(stopData: CrearParadaDTO) {
 
 export async function updateStop(stopData: ParadaDTO) {
     console.log('Updating stop:', stopData)
-
     const res = await axios.put(`/apiurl/api/parada/modificar`, stopData);
     return res.data;
 }
@@ -58,18 +58,42 @@ export async function deleteStop(id: number) {
     return res.data;
 }
 
-export async function linkStopToLine(stopData: ParadalineaDTO) {
-    const res = await axios.post('/apiurl/api/parada/asociar/linea', stopData)
-    return res.data
-}
-
 export async function getAllLines(): Promise<LineaDTO[]> {
     const res = await axios.get('/apiurl/api/lineas/todas');
     return res.data;
 }
 
-export async function associateStopWithLine(data: ParadalineaDTO): Promise<any> {
+export async function associateStopWithLine(data: ParadaLineaDTO): Promise<any> {
     const res = await axios.post('/apiurl/api/parada/asociar/linea', data);
+    return res.data;
+}
+
+// --- Obtener líneas asociadas a una parada ---
+export async function getAssociatedLinesForStop(paradaId: number): Promise<ParadaLineaDTO[]> {
+    const res = await axios.get('/apiurl/api/parada/linea/todas');
+    return res.data.filter((pl: ParadaLineaDTO) => Number(pl.idParada) === Number(paradaId));
+}
+
+// --- Obtener horarios de una línea en una parada ---
+export async function getSchedulesForLineAndStop(lineaId: number, paradaId: number): Promise<HorarioDTO[]> {
+    const res = await axios.get(`/apiurl/api/horarios?lineaId=${lineaId}&paradaId=${paradaId}`);
+    return res.data;
+}
+
+// --- Agregar horario a una línea en una parada ---
+export async function addScheduleToLineStop(
+    lineaId: number,
+    paradaId: number,
+    horario: HorarioDTO,
+    idParadaLinea: number
+): Promise<any> {
+    const paradaLineaDTO = {
+        idParadaLinea,
+        idParada: paradaId,
+        idLinea: lineaId,
+        horarios: [horario]
+    };
+    const res = await axios.post('/apiurl/api/parada/linea/horario', paradaLineaDTO);
     return res.data;
 }
 
