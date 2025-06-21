@@ -40,7 +40,7 @@ export type RoutingRequestDTO = {
     points: RoutingPointDTO[]
 }
 
-export type EstadoParada = 'HABILITADA' | 'DESHABILITADA';
+export type EstadoParada = 0 | 1;
 
 export async function createStop(stopData: CrearParadaDTO) {
     const res = await axios.post('/apiurl/api/parada/crear', stopData)

@@ -13,6 +13,7 @@ interface EditStopPopupProps {
 
 const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, onMove, onDelete }) => {
     if (!parada) return null;
+    console.log('EditStopPopup parada:', parada);
 
     const [isAssociating, setIsAssociating] = useState(false);
     const [form, setForm] = useState({
@@ -145,18 +146,18 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, 
                                 onChange={handleChange}
                                 className={styles.selectInput}
                             >
-                                <option value="HABILITADA">Habilitada</option>
-                                <option value="DESHABILITADA">Deshabilitada</option>
+                                <option value="0">Habilitada</option>
+                                <option value="1">Deshabilitada</option>
                             </select>
                         </label>
                     </div>
                     <div className={styles.buttonGroup}>
-                        {/* <button
+                        <button
                             type="submit"
                             className={styles.saveButton}
                         >
                             Guardar
-                        </button> */}
+                        </button>
                         <button
                             type="button"
                             className={styles.moveButton}

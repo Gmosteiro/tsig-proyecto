@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, GeoJSON} from 'react-leaflet';
 import { useEffect, useState } from 'react';
 import L from 'leaflet';
 import NavigationBar from '../components/ui/NavigationBar';
@@ -6,6 +6,8 @@ import Footer from '../components/ui/Footer';
 import 'leaflet/dist/leaflet.css';
 import { FeatureGroup, Polygon } from 'react-leaflet';
 import 'leaflet-draw/dist/leaflet.draw.css';
+import { getWMSFeatureInfo } from '../services/api';
+import { EditControl } from 'react-leaflet-draw';
 
 const customIcon = new L.Icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png',
@@ -13,21 +15,88 @@ const customIcon = new L.Icon({
   iconAnchor: [12, 41],
 });
 
-export default function SimpleMapPage() {
-  const [position, setPosition] = useState<[number, number] | null>(null);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [polygon, setPolygon] = useState<any>(null); // Guardar el polígono dibujado
+const stopIcon = new L.Icon({
+  iconUrl: '/images/marker-bus.png',
+  iconSize: [25, 25],
+  iconAnchor: [12, 41],
+});
+
+function RecenterMap({ center }: { center: [number, number] }) {
+  const map = useMap();
 
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setPosition([latitude, longitude]);
-      },
-      (error) => {
-        console.error('Error al obtener la ubicación:', error);
+    map.setView(center);
+  }, [center, map]);
+
+  return null;
+}
+
+export default function SimpleMapPage() {
+  const [position, setPosition] = useState<[number, number]>([-34.9, -56.2]);
+  const [nearbyStops, setNearbyStops] = useState<any[]>([]);
+  const [nearbyLines, setNearbyLines] = useState<any[]>([]);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [polygon, setPolygon] = useState<any>(null); // Guardar el polígono dibujado
+  const [hideDisabled, setHideDisabled] = useState(false);
+
+
+
+useEffect(() => {
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const latlng: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+      setPosition(latlng);
+
+      // Consulta WMS de paradas cercanas
+      const mapSize = { x: 1024, y: 768 };
+      const tolerance = 4000; // METROS de visualizacion de PARADAS y LINES alrededor de ubicaion actual
+      const featureCount = 200;
+
+      const data = await getWMSFeatureInfo({
+        layerName: "tsig:parada",
+        crsCode: "EPSG:4326",
+        bbox: `${latlng[1] - 0.01},${latlng[0] - 0.01},${latlng[1] + 0.01},${latlng[0] + 0.01}`,
+        size: mapSize,
+        point: { x: mapSize.x / 2, y: mapSize.y / 2 },
+        infoFormat: "application/json",
+        tolerance,
+        featureCount
+      });
+
+      console.log("WMS paradas:", data);
+
+      if (data && data.features) {
+        setNearbyStops(data.features);
+      } else {
+        setNearbyStops([]);
       }
-    );
+
+
+      // Consulta WMS de líneas cercanas
+      const linesData = await getWMSFeatureInfo({
+        layerName: "tsig:linea",
+        crsCode: "EPSG:4326",
+        bbox: `${latlng[1] - 0.01},${latlng[0] - 0.01},${latlng[1] + 0.01},${latlng[0] + 0.01}`,
+        size: mapSize,
+        point: { x: mapSize.x / 2, y: mapSize.y / 2 },
+        infoFormat: "application/json",
+        tolerance,
+        featureCount
+      });
+
+      console.log("WMS lineas:", linesData);
+
+      if (linesData && linesData.features) {
+        setNearbyLines(linesData.features);
+      } else {
+        setNearbyLines([]);
+      }
+
+    },
+    (err) => {
+      console.error("Error obteniendo geolocalización:", err);
+    }
+  );
   }, []);
 
   const handleCreated = (e: any) => {
@@ -115,9 +184,11 @@ export default function SimpleMapPage() {
       <NavigationBar />
 
       {/* Selector o formulario */}
-      <div className="flex justify-center p-4 bg-gray-100 shadow">
+      <div className="flex justify-between items-center px-6 py-4 bg-gray-100 shadow">
         {!selectedOption ? (
-          <div className="flex flex-wrap gap-4">
+          <>
+          <div className="flex flex-wrap gap-4 justify-center flex-1">
+            
             {['Origen-Destino', 'Por Horario', 'Por Ruta/KM', 'Por Empresa', 'Corte Polígono'].map((label) => (
               <button
                 key={label}
@@ -128,6 +199,22 @@ export default function SimpleMapPage() {
               </button>
             ))}
           </div>
+
+          <div className="flex items-center ml-4">
+            <input
+              type="checkbox"
+              id="toggleHideDisabled"
+              checked={hideDisabled}
+              onChange={() => setHideDisabled(prev => !prev)}
+              className="mr-2 scale-90"
+            />
+            <label htmlFor="toggleHideDisabled" className="text-sm font-small">
+              Líneas y Paradas Deshabilitadas
+            </label>
+          </div>
+
+          
+          </>
         ) : (
           renderForm()
         )}
@@ -148,6 +235,44 @@ export default function SimpleMapPage() {
           <Marker position={position} icon={customIcon}>
             <Popup>¡Estás aquí!</Popup>
           </Marker>
+          
+          {/* Paradas Cercanas */}
+          {nearbyStops.map((feature: any, idx: number) => {
+            const [lon, lat] = feature.geometry.coordinates;
+            return (
+              <Marker key={idx} position={[lat, lon]} icon={stopIcon}>
+                {/* Popup Temporal */}
+                <Popup>
+                  {feature.properties?.nombre || 'Parada'}<br />
+                  ID: {feature.id}
+                </Popup>
+              </Marker>
+            );
+          })}
+
+          {/* Lineas Cercanas */}
+          {nearbyLines.map((feature: any, idx: number) => (
+            <GeoJSON
+              key={idx}
+              data={feature}
+              style={{
+                color: 'green',
+                weight: 4,
+                opacity: 0.7
+              }}
+            >
+              <Popup>
+                <strong>Linea</strong><br />
+                Origen: {feature.properties?.origen}<br />
+                Destino: {feature.properties?.destino}<br />
+                Empresa: {feature.properties?.empresa}
+              </Popup>
+
+            </GeoJSON>
+          ))}
+
+
+
           {/* Solo mostrar el control de dibujo si está activa la opción */}
           {selectedOption === 'Corte Polígono' && (
             <FeatureGroup>
@@ -169,7 +294,7 @@ export default function SimpleMapPage() {
                 <Polygon positions={polygon.geometry.coordinates[0].map((coord: [number, number]) => [coord[1], coord[0]])} />
               )}
             </FeatureGroup>
-          )}s
+          )}
         </MapContainer>
       ) : (
         <div className="text-center text-gray-600 mt-10">Cargando ubicación...</div>
