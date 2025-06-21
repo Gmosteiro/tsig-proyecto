@@ -64,10 +64,10 @@ public interface LineaRepository extends JpaRepository<Linea, Integer> {
             @Param("punto") Point punto,
             @Param("margen") double margen);
 
-    boolean isPuntoCercaDeAlgunaLinea(@Param("lineaId") int lineaId,
-            @Param("punto") Point punto,
-            @Param("margen") int margen,
-            @Param("nuevoRecorrido") MultiLineString nuevoRecorrido);
+    //boolean isPuntoCercaDeAlgunaLinea(@Param("lineaId") int lineaId,
+    //        @Param("punto") Point punto,
+    //        @Param("margen") int margen,
+    //        @Param("nuevoRecorrido") MultiLineString nuevoRecorrido);
 
     @Query(value = """
             SELECT l.*
