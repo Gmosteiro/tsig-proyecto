@@ -54,7 +54,7 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, 
             alert("Error al guardar los cambios");
         }
     };
-    
+
     const handleDelete = async () => {
         if (window.confirm(`¿Seguro que quieres eliminar la parada "${parada.nombre}"?`)) {
             try {
@@ -123,17 +123,18 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, 
                             />
                         </label>
                     </div>
-                    <div className={styles.inputGroup}>
-                        <label>
+                    <div className={`${styles.inputGroup} ${styles.checkboxGroup}`}>
+                        <label htmlFor="refugio" className={styles.checkboxLabel}>
                             Refugio:
-                            <input
-                                type="checkbox"
-                                name="refugio"
-                                checked={form.refugio}
-                                onChange={handleChange}
-                                className={styles.checkboxInput}
-                            />
                         </label>
+                        <input
+                            id="refugio"
+                            type="checkbox"
+                            name="refugio"
+                            checked={form.refugio}
+                            onChange={handleChange}
+                            className={styles.checkboxInput}
+                        />
                     </div>
                     <div className={styles.inputGroup}>
                         <label>
@@ -150,16 +151,15 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, 
                         </label>
                     </div>
                     <div className={styles.buttonGroup}>
-                        <button
+                        {/* <button
                             type="submit"
                             className={styles.saveButton}
                         >
                             Guardar
-                        </button>
+                        </button> */}
                         <button
                             type="button"
                             className={styles.moveButton}
-                            style={{ marginLeft: 8 }}
                             onClick={() => {
                                 if (onMove) onMove({ ...parada, ...form });
                             }}

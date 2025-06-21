@@ -38,7 +38,7 @@ const NombreSearch: React.FC<NombreSearchProps> = ({ onVerLinea }) => {
                 className="flex flex-col md:flex-row gap-4 items-center mb-6"
             >
                 <div className="flex flex-col w-full md:w-auto">
-                    <label htmlFor="nombre" className="font-semibold mb-1 text-gray-700">Nombre o número de línea</label>
+                    <label htmlFor="nombre" className="font-semibold mb-1 text-gray-700">Nombre de Empresa</label>
                     <input
                         id="nombre"
                         type="text"

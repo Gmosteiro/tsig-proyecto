@@ -162,7 +162,6 @@ export default function MapPage() {
   const handleMoveStopSubmit = async (stopData: any) => {
     try {
       await updateStop(stopData);
-      alert("Parada movida correctamente.");
     } catch (err: any) {
       alert("Error al mover la parada: " + (err?.response?.data || err.message));
     }
@@ -266,7 +265,6 @@ export default function MapPage() {
           style={{ height: '80vh', width: '100%' }}
         >
           <SetMapRef mapRef={mapRef} />
-          <LayerController />
           <LayerController onMoveStop={handleMoveStop} />
           {creatingStop && (
             <StopForm
