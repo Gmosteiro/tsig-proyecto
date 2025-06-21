@@ -38,6 +38,8 @@ export default function SimpleMapPage() {
   const [nearbyLines, setNearbyLines] = useState<any[]>([]);
   const [polygon, setPolygon] = useState<any>(null);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [hideDisabled, setHideDisabled] = useState(false);
+
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
@@ -182,9 +184,11 @@ export default function SimpleMapPage() {
       <NavigationBar />
 
       {/* Selector o formulario */}
-      <div className="flex justify-center p-4 bg-gray-100 shadow">
+      <div className="flex justify-between items-center px-6 py-4 bg-gray-100 shadow">
         {!selectedOption ? (
-          <div className="flex flex-wrap gap-4">
+          <>
+          <div className="flex flex-wrap gap-4 justify-center flex-1">
+            
             {['Origen-Destino', 'Por Horario', 'Por Ruta/KM', 'Por Empresa', 'Corte Polígono'].map((label) => (
               <button
                 key={label}
@@ -195,6 +199,22 @@ export default function SimpleMapPage() {
               </button>
             ))}
           </div>
+
+          <div className="flex items-center ml-4">
+            <input
+              type="checkbox"
+              id="toggleHideDisabled"
+              checked={hideDisabled}
+              onChange={() => setHideDisabled(prev => !prev)}
+              className="mr-2 scale-90"
+            />
+            <label htmlFor="toggleHideDisabled" className="text-sm font-small">
+              Líneas y Paradas Deshabilitadas
+            </label>
+          </div>
+
+          
+          </>
         ) : (
         renderForm()
       )}
