@@ -4,10 +4,11 @@ import { LineaDTO } from '../../services/linea'
 
 type LinesListProps = {
     lineas: LineaDTO[]
-    onVerLinea?: (linea: LineaDTO) => void // Nuevo prop
+    onVerLinea?: (linea: LineaDTO) => void
+    onEditLinea?: (linea: LineaDTO) => void // Nuevo prop
 }
 
-const LinesList: React.FC<LinesListProps> = ({ lineas, onVerLinea }) => {
+const LinesList: React.FC<LinesListProps> = ({ lineas, onVerLinea, onEditLinea }) => {
     if (!lineas.length) return null
 
     return (
@@ -27,6 +28,14 @@ const LinesList: React.FC<LinesListProps> = ({ lineas, onVerLinea }) => {
                     >
                         Ver
                     </button>
+                    {onEditLinea && (
+                        <button
+                            className="bg-blue-600 text-white px-2 py-1 rounded ml-2"
+                            onClick={() => onEditLinea(linea)}
+                        >
+                            Editar
+                        </button>
+                    )}
                 </li>
             ))}
         </ul>

@@ -4,16 +4,23 @@ interface RouteFormProps {
     points: [number, number][]
     onCancel: () => void
     onSave: (formData: { nombre: string, descripcion: string, empresa: string, observacion?: string }) => void
+    initialData?: {
+        nombre?: string
+        descripcion?: string
+        empresa?: string
+        observacion?: string
+    }
 }
 
-export default function RouteForm({ onCancel, onSave }: RouteFormProps) {
-    const [name, setName] = useState('')
-    const [description, setDescription] = useState('')
-    const [company, setCompany] = useState('')
-    const [observations, setObservations] = useState('')
+export default function RouteForm({ onCancel, onSave, points, initialData }: RouteFormProps) {
+    const [name, setName] = useState(initialData?.nombre || '')
+    const [description, setDescription] = useState(initialData?.descripcion || '')
+    const [company, setCompany] = useState(initialData?.empresa || '')
+    const [observations, setObservations] = useState(initialData?.observacion || '')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState(false)
+    const [routePoints, setRoutePoints] = useState<[number, number][]>(points || [])
 
     useEffect(() => {
         if (success) {
@@ -23,6 +30,11 @@ export default function RouteForm({ onCancel, onSave }: RouteFormProps) {
             return () => clearTimeout(timeout)
         }
     }, [success, onCancel])
+
+    // Ejemplo: agregar un punto manualmente (puedes reemplazar esto por integración con mapa)
+    const handleAddPoint = () => {
+        setRoutePoints([...routePoints, [0, 0]])
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -34,7 +46,8 @@ export default function RouteForm({ onCancel, onSave }: RouteFormProps) {
                 nombre: name,
                 descripcion: description,
                 empresa: company,
-                observacion: observations
+                observacion: observations,
+                puntos: routePoints
             })
             setSuccess(true)
         } catch (err: any) {
@@ -84,6 +97,17 @@ export default function RouteForm({ onCancel, onSave }: RouteFormProps) {
                     value={observations}
                     onChange={e => setObservations(e.target.value)}
                 />
+            </div>
+            <div className="mb-4">
+                <label className="block mb-1 font-medium">Puntos de la ruta</label>
+                <ul>
+                    {routePoints.map((pt, idx) => (
+                        <li key={idx}>[{pt[0]}, {pt[1]}]</li>
+                    ))}
+                </ul>
+                <button type="button" className="bg-blue-500 text-white px-2 py-1 rounded mt-2" onClick={handleAddPoint}>
+                    Agregar punto
+                </button>
             </div>
             {error && <div className="text-red-600 mb-2">{error}</div>}
             {success && <div className="text-green-600 mb-2">Línea guardada correctamente.</div>}

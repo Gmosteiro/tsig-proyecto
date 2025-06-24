@@ -146,3 +146,9 @@ export async function getWMSFeatureInfo({
     const resp = await axios.get(url.toString());
     return resp.data;
 }
+
+export async function updateLine(id: number, data: { nombre: string, descripcion: string, empresa: string, observacion?: string, puntos: [number, number][] }) {
+    // Ajusta el payload según lo que espera tu backend
+    const res = await axios.put(`/apiurl/api/lineas/${id}`, data);
+    return res.data;
+}
