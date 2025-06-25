@@ -9,7 +9,7 @@ interface NombreSearchProps {
 
 const NombreSearch: React.FC<NombreSearchProps> = ({ onVerLinea }) => {
     const [nombre, setNombre] = useState('')
-    const [empresas, setEmpresas] = useState<{ id: number, name: string }[]>([])
+    const [empresas, setEmpresas] = useState<{ id: number, nombre: string }[]>([])
     const [resultados, setResultados] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -62,8 +62,8 @@ const NombreSearch: React.FC<NombreSearchProps> = ({ onVerLinea }) => {
                     >
                         <option value="">Seleccionar empresa</option>
                         {empresas.map(empresa => (
-                            <option key={empresa.id} value={empresa.name}>
-                                {empresa.name}
+                            <option key={empresa.id} value={empresa.nombre}>
+                                {empresa.nombre}
                             </option>
                         ))}
                     </select>

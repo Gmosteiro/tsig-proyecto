@@ -11,7 +11,7 @@ export default function RouteForm({ onCancel, onSave }: RouteFormProps) {
     const [name, setName] = useState('')
     const [description, setDescription] = useState('')
     const [company, setCompany] = useState('')
-    const [empresas, setEmpresas] = useState<{ id: number, name: string }[]>([])
+    const [empresas, setEmpresas] = useState<{ id: number, nombre: string }[]>([])
     const [observations, setObservations] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -91,8 +91,8 @@ export default function RouteForm({ onCancel, onSave }: RouteFormProps) {
                 >
                     <option value="">Seleccionar empresa</option>
                     {empresas.map(empresa => (
-                        <option key={empresa.id} value={empresa.name}>
-                            {empresa.name}
+                        <option key={empresa.id} value={empresa.nombre}>
+                            {empresa.nombre}
                         </option>
                     ))}
                 </select>
