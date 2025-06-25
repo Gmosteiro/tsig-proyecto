@@ -36,9 +36,11 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
-        let newValue: string | boolean = value;
+        let newValue: string | boolean | number = value;
         if (type === 'checkbox' && e.target instanceof HTMLInputElement) {
             newValue = e.target.checked;
+        } else if (name === 'estado') {
+            newValue = parseInt(value, 10) as 0 | 1;
         }
         setForm(prev => ({
             ...prev,
@@ -142,12 +144,12 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, 
                             Estado:
                             <select
                                 name="estado"
-                                value={form.estado}
+                                value={form.estado.toString()}
                                 onChange={handleChange}
                                 className={styles.selectInput}
                             >
-                                <option value="0">Habilitada</option>
-                                <option value="1">Deshabilitada</option>
+                                <option value="1">Habilitada</option>
+                                <option value="0">Deshabilitada</option>
                             </select>
                         </label>
                     </div>

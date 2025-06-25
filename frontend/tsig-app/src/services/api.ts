@@ -1,7 +1,11 @@
 import axios from 'axios'
 // import { Stop } from '../lib/types/types'
 import { WMS_URL } from '../lib/constants'
-import { HorarioDTO } from './linea'
+
+export type HorarioDTO = {
+    id?: number
+    hora: string // formato "HH:mm", solo hora y minutos
+}
 
 export type ParadaDTO = {
     id: number
@@ -17,12 +21,16 @@ export type ParadaLineaDTO = {
     idParadaLinea: number
     idParada: number
     idLinea: number
+    estaHabilitada: boolean
     horarios: HorarioDTO[]
+    nombreParada?: string
+    latitudParada?: number
+    longitudParada?: number
 }
 
 export type LineaDTO = {
     id: number;
-    nombre: string;
+    descripcion: string;
     origen: string;
     destino: string;
     empresa: string;
@@ -71,6 +79,21 @@ export async function associateStopWithLine(data: ParadaLineaDTO): Promise<any> 
 export async function getAssociatedLinesForStop(paradaId: number): Promise<ParadaLineaDTO[]> {
     const res = await axios.get('/apiurl/api/parada/linea/todas');
     return res.data.filter((pl: ParadaLineaDTO) => Number(pl.idParada) === Number(paradaId));
+}
+
+export async function removeStopLineAssociation(idParadaLinea: number): Promise<any> {
+    const res = await axios.delete(`/apiurl/api/parada/linea/${idParadaLinea}`);
+    return res.data;
+}
+
+export async function removeSchedule(idHorario: number): Promise<any> {
+    const res = await axios.delete(`/apiurl/api/parada/linea/horario/${idHorario}`);
+    return res.data;
+}
+
+export async function toggleAssociationStatus(idParadaLinea: number): Promise<any> {
+    const res = await axios.put(`/apiurl/api/parada/linea/${idParadaLinea}/toggle-estado`);
+    return res.data;
 }
 
 export async function getSchedulesForLineAndStop(lineaId: number, paradaId: number): Promise<HorarioDTO[]> {
@@ -151,4 +174,24 @@ export async function getWMSFeatureInfo({
 
     const resp = await axios.get(url.toString());
     return resp.data;
+}
+
+/**
+ * Obtiene las líneas que están cerca de una parada específica
+ * @param paradaId ID de la parada
+ * @param distanciaMetros Distancia máxima en metros (por defecto 100)
+ * @returns Lista de líneas cercanas
+ */
+export async function getLineasCercanasAParada(paradaId: number, distanciaMetros: number = 100): Promise<LineaDTO[]> {
+    const res = await axios.get(`/apiurl/api/lineas/cercanas-a-parada`, {
+        params: { paradaId, distanciaMetros }
+    });
+    return res.data;
+}
+
+export async function changeStopLineAssociationStatus(paradaLineaId: number, enabled: boolean): Promise<void> {
+    const response = await axios.put(`/apiurl/api/parada/linea/${paradaLineaId}/estado`, null, {
+        params: { habilitada: enabled }
+    });
+    return response.data;
 }

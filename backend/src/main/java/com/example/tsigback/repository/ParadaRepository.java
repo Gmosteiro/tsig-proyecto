@@ -32,5 +32,19 @@ public interface ParadaRepository extends JpaRepository<Parada, Integer> {
     """, nativeQuery = true)
     boolean existeParadaCercaDePunto(@Param("punto") Point punto, @Param("distancia") double distancia);
 
+    @Query(value = """
+        SELECT COUNT(*) > 0
+        FROM parada p, linea l
+        WHERE p.id = :paradaId 
+        AND l.id = :lineaId
+        AND ST_DWithin(
+            ST_Transform(p.ubicacion, 3857),
+            ST_Transform(l.puntos, 3857),
+            :distancia
+        )
+    """, nativeQuery = true)
+    boolean esParadaCercanaALinea(@Param("paradaId") Long paradaId, 
+                                  @Param("lineaId") Long lineaId, 
+                                  @Param("distancia") double distancia);
+
 }
- 

@@ -5,7 +5,7 @@ interface StopTimesProps {
     id?: number; // Optional id of ParadaLineaDTO
 }
 
-const StopTimes: React.FC<StopTimesProps> = ({ id }) => {
+const StopTimes: React.FC<StopTimesProps> = ({ id: _id }) => {
     const [horarios, setHorarios] = useState<HorarioDTO[]>([]);
 
     const addHorario = () => {

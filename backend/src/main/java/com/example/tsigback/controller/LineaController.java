@@ -4,7 +4,9 @@ import com.example.tsigback.entities.request.RutaKilometroRequest;
 import com.example.tsigback.entities.request.OrigenDestinoRequest;
 import com.example.tsigback.entities.dtos.LineaDTO;
 import com.example.tsigback.entities.dtos.ListaPuntosDTO;
+import com.example.tsigback.entities.dtos.ParadaLineaDTO;
 import com.example.tsigback.exception.LineaNoEncontradaException;
+import com.example.tsigback.exception.ParadaNoEncontradaException;
 import com.example.tsigback.service.LineaService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -214,9 +216,59 @@ public class LineaController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
     @GetMapping("/todas")
     public ResponseEntity<List<LineaDTO>> mostrarTodas() {
         return ResponseEntity.status(HttpStatus.OK).body(lineaService.obtenerTodas());
+    }
+
+    @GetMapping("/cercanas-a-parada")
+    public ResponseEntity<?> obtenerLineasCercanasAParada(
+            @RequestParam int paradaId,
+            @RequestParam(defaultValue = "100.0") double distanciaMetros) {
+        try {
+            List<LineaDTO> lineas = lineaService.obtenerLineasCercanasAParada(paradaId, distanciaMetros);
+            if (lineas.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("No se encontraron líneas cercanas a la parada especificada.");
+            }
+            return ResponseEntity.ok(lineas);
+        } catch (ParadaNoEncontradaException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/paradas")
+    public ResponseEntity<?> obtenerParadasDeLinea(@PathVariable int id) {
+        try {
+            List<ParadaLineaDTO> paradasConHorarios = lineaService.obtenerParadasDeLineaConHorarios(id);
+            if (paradasConHorarios.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("No se encontraron paradas asociadas a la línea especificada.");
+            }
+            return ResponseEntity.ok(paradasConHorarios);
+        } catch (LineaNoEncontradaException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}/estado")
+    public ResponseEntity<String> cambiarEstadoLinea(
+            @PathVariable int id,
+            @RequestParam boolean habilitada) {
+        try {
+            lineaService.cambiarEstadoLinea(id, habilitada);
+            String estado = habilitada ? "habilitada" : "deshabilitada";
+            return ResponseEntity.ok("La línea ha sido " + estado + " correctamente");
+        } catch (LineaNoEncontradaException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno: " + e.getMessage());
+        }
     }
 
 }

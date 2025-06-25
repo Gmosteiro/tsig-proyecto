@@ -16,16 +16,19 @@ export const loginUser = async (credentials: LoginData): Promise<SessionResponse
             },
         }
     );
-    const text = await response.text();
 
     if (!response.ok) {
-        throw new Error(text || "Login failed");
+        const errorText = await response.text();
+        throw new Error(errorText || "Login failed");
     }
 
+    const data = await response.json();
+    
     return {
-        token: "mocked-token-del-backend",
+        token: data.token,
         user: {
-            name: "Admin",
+            name: data.user.name,
+            verified: data.user.verified
         }
     };
 };

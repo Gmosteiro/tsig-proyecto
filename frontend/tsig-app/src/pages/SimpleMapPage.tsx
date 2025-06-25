@@ -5,7 +5,6 @@ import NavigationBar from '../components/ui/NavigationBar';
 import Footer from '../components/ui/Footer';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import { getWMSFeatureInfo } from '../services/api';
 import { LineaDTO, updateGeoJSON, getLinesByGeoJson } from '../services/linea';
 import Searcher from '../components/search/Searcher';
 import PolygonDrawControl from '../components/map/PolygonDrawControl';
@@ -18,16 +17,8 @@ const customIcon = new L.Icon({
   iconAnchor: [12, 41],
 });
 
-const stopIcon = new L.Icon({
-  iconUrl: '/images/marker-bus.png',
-  iconSize: [25, 25],
-  iconAnchor: [12, 41],
-});
-
 export default function SimpleMapPage() {
   const [position, setPosition] = useState<[number, number]>([-34.9, -56.2]);
-  const [nearbyStops, setNearbyStops] = useState<any[]>([]);
-  const [nearbyLines, setNearbyLines] = useState<any[]>([]);
   const [selectedLinea, setSelectedLinea] = useState<any | null>(null);
   const [showSearcher, setShowSearcher] = useState(false);
   const [polygonCoords, setPolygonCoords] = useState<[number, number][]>([]);
@@ -88,52 +79,6 @@ export default function SimpleMapPage() {
       async (pos) => {
         const latlng: [number, number] = [pos.coords.latitude, pos.coords.longitude];
         setPosition(latlng);
-
-        // Consulta WMS de paradas cercanas
-        const mapSize = { x: 1024, y: 768 };
-        const tolerance = 4000; // METROS de visualizacion de PARADAS y LINES alrededor de ubicaion actual
-        const featureCount = 200;
-
-        const data = await getWMSFeatureInfo({
-          layerName: "tsig:parada",
-          crsCode: "EPSG:4326",
-          bbox: `${latlng[1] - 0.01},${latlng[0] - 0.01},${latlng[1] + 0.01},${latlng[0] + 0.01}`,
-          size: mapSize,
-          point: { x: mapSize.x / 2, y: mapSize.y / 2 },
-          infoFormat: "application/json",
-          tolerance,
-          featureCount
-        });
-
-        console.log("WMS paradas:", data);
-
-        if (data && data.features) {
-          setNearbyStops(data.features);
-        } else {
-          setNearbyStops([]);
-        }
-
-
-        // Consulta WMS de líneas cercanas
-        const linesData = await getWMSFeatureInfo({
-          layerName: "tsig:linea",
-          crsCode: "EPSG:4326",
-          bbox: `${latlng[1] - 0.01},${latlng[0] - 0.01},${latlng[1] + 0.01},${latlng[0] + 0.01}`,
-          size: mapSize,
-          point: { x: mapSize.x / 2, y: mapSize.y / 2 },
-          infoFormat: "application/json",
-          tolerance,
-          featureCount
-        });
-
-        console.log("WMS lineas:", linesData);
-
-        if (linesData && linesData.features) {
-          setNearbyLines(linesData.features);
-        } else {
-          setNearbyLines([]);
-        }
-
       },
       (err) => {
         console.error("Error obteniendo geolocalización:", err);
@@ -212,44 +157,28 @@ export default function SimpleMapPage() {
           style={{ height: '75vh', width: '100%' }}
         >
           <SetMapRef mapRef={mapRef} />
-          <LayerController />
+          <LayerController 
+            selectedLineaFromParent={selectedLinea}
+            onViewLine={async (linea: LineaDTO) => {
+              const line = await updateGeoJSON(linea);
+              setSelectedLinea(line);
+            }}
+            onCenterMap={(latitud: number, longitud: number) => {
+              console.log('SimpleMapPage - Centrando mapa en:', latitud, longitud);
+              if (mapRef.current) {
+                mapRef.current.setView([latitud, longitud], 16);
+                console.log('Mapa centrado exitosamente');
+              } else {
+                console.warn('mapRef.current no disponible');
+              }
+            }}
+            onClearSelectedLine={() => {
+              setSelectedLinea(null);
+            }}
+          />
           <Marker position={position} icon={customIcon}>
             <Popup>¡Estás aquí!</Popup>
           </Marker>
-
-          {/* Paradas Cercanas */}
-          {nearbyStops.map((feature: any, idx: number) => {
-            const [lon, lat] = feature.geometry.coordinates;
-            return (
-              <Marker key={idx} position={[lat, lon]} icon={stopIcon}>
-                {/* Popup Temporal */}
-                <Popup>
-                  {feature.properties?.nombre || 'Parada'}<br />
-                  ID: {feature.id}
-                </Popup>
-              </Marker>
-            );
-          })}
-
-          {/* Lineas Cercanas */}
-          {nearbyLines.map((feature: any, idx: number) => (
-            <GeoJSON
-              key={idx}
-              data={feature}
-              style={{
-                color: 'green',
-                weight: 4,
-                opacity: 0.7
-              }}
-            >
-              <Popup>
-                <strong>Linea</strong><br />
-                Origen: {feature.properties?.origen}<br />
-                Destino: {feature.properties?.destino}<br />
-                Empresa: {feature.properties?.empresa}
-              </Popup>
-            </GeoJSON>
-          ))}
 
           {/* Línea seleccionada desde el buscador */}
           {selectedLinea && selectedLinea.rutaGeoJSON && (
@@ -258,6 +187,22 @@ export default function SimpleMapPage() {
               style={{ color: 'blue', weight: 5, opacity: 0.9 }}
             />
           )}
+
+          {/* Líneas encontradas por polígono */}
+          {polygonLines && polygonLines.map((linea: any, idx: number) => (
+            <GeoJSON
+              key={idx}
+              data={JSON.parse(linea.rutaGeoJSON)}
+              style={{ color: 'red', weight: 3, opacity: 0.8 }}
+            >
+              <Popup>
+                <strong>Línea:</strong> {linea.descripcion}<br />
+                <strong>Empresa:</strong> {linea.empresa}<br />
+                <strong>Origen:</strong> {linea.origen}<br />
+                <strong>Destino:</strong> {linea.destino}
+              </Popup>
+            </GeoJSON>
+          ))}
 
           <PolygonDrawControl
             featureGroupRef={featureGroupRef}

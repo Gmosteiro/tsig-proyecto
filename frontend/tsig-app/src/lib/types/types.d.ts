@@ -5,6 +5,7 @@ export type LoginData = {
 
 export interface User {
     name: string;
+    verified?: boolean;
 }
 export interface Stop {
     id: string

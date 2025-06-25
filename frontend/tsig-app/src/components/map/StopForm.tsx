@@ -100,8 +100,8 @@ export default function StopForm({ onCancel, onSubmit, initialData }: StopFormPr
                             value={estado}
                             onChange={e => setEstado(e.target.value as unknown as EstadoParada)}
                         >
-                            <option value="HABILITADA">HABILITADA</option>
-                            <option value="DESHABILITADA">DESHABILITADA</option>
+                            <option value={1}>Habilitada</option>
+                            <option value={0}>Deshabilitada</option>
                         </select>
                     </div>
                     <div className="flex items-center gap-2">

@@ -15,6 +15,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class HorarioDTO {
 
+    private Integer id;
+    
     @JsonFormat(pattern = "HH:mm")
     private LocalTime hora;
 }

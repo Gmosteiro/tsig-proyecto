@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { ParadaLineaDTO } from './api';
 
 export type PuntoDTO = {
     latitud: number
@@ -6,19 +7,14 @@ export type PuntoDTO = {
 }
 export type LineaDTO = {
     id?: number
-    nombre: string
     descripcion: string
     empresa: string
     observacion?: string
     origen?: string
     destino?: string
+    estaHabilitada: boolean
     puntos: PuntoDTO[]
     rutaGeoJSON: string
-
-}
-
-export type HorarioDTO = {
-    hora: string // formato "HH:mm", solo hora y minutos
 }
 
 export type RoutingPointDTO = {
@@ -32,6 +28,24 @@ export type RoutingRequestDTO = {
 
 export const saveLine = async (lineData: LineaDTO) => {
     const res = await axios.post('/apiurl/api/lineas/guardar', lineData)
+    return res.data
+}
+
+// Función para actualizar una línea existente
+export async function updateLine(lineData: LineaDTO) {
+    const res = await axios.put('/apiurl/api/lineas', lineData)
+    return res.data
+}
+
+// Función para eliminar una línea
+export async function deleteLine(id: number) {
+    const res = await axios.delete(`/apiurl/api/lineas/${id}`)
+    return res.data
+}
+
+// Función para obtener una línea por ID
+export async function getLineById(id: number): Promise<LineaDTO> {
+    const res = await axios.get('/apiurl/api/lineas', { params: { id } })
     return res.data
 }
 
@@ -159,4 +173,56 @@ export const getDepartamentos = async () => {
         { id: 19, nombre: "CANELONES" },
         { id: 20, nombre: "MONTEVIDEO" }
     ].sort((a, b) => a.nombre.localeCompare(b.nombre));
+}
+
+// Función para obtener líneas cercanas a una parada específica
+export async function getLineasCercanasAParada(paradaId: number, distanciaMetros: number = 100): Promise<LineaDTO[]> {
+    try {
+        const res = await axios.get('/apiurl/api/lineas/cercanas-a-parada', {
+            params: { 
+                paradaId, 
+                distanciaMetros 
+            }
+        });
+        return res.data;
+    } catch (error: any) {
+        if (error.response && error.response.status === 404) {
+            return [];
+        }
+        throw error;
+    }
+}
+
+// Función para obtener todas las líneas habilitadas
+export async function getAllLineas(): Promise<LineaDTO[]> {
+    try {
+        const res = await axios.get('/apiurl/api/lineas/todas');
+        return res.data;
+    } catch (error: any) {
+        if (error.response && error.response.status === 404) {
+            return [];
+        }
+        throw error;
+    }
+}
+
+// Función para obtener paradas asociadas a una línea con sus horarios
+export async function getParadasDeLinea(lineaId: number): Promise<ParadaLineaDTO[]> {
+    try {
+        const res = await axios.get(`/apiurl/api/lineas/${lineaId}/paradas`);
+        return res.data;
+    } catch (error: any) {
+        if (error.response && error.response.status === 404) {
+            return [];
+        }
+        throw error;
+    }
+}
+
+// Función para cambiar estado de línea
+export async function changeLineStatus(lineaId: number, enabled: boolean): Promise<void> {
+    const response = await axios.put(`/apiurl/api/lineas/${lineaId}/estado`, null, {
+        params: { habilitada: enabled }
+    });
+    return response.data;
 }

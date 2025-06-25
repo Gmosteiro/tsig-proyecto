@@ -16,6 +16,7 @@ import com.example.tsigback.exception.ParadaNoEncontradaException;
 import com.example.tsigback.repository.LineaRepository;
 import com.example.tsigback.repository.ParadaLineaRepository;
 import com.example.tsigback.repository.ParadaRepository;
+import com.example.tsigback.repository.HorarioParadaLineaRepository;
 import com.example.tsigback.utils.GeoUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,9 @@ public class ParadaService {
 
     @Autowired 
     private LineaRepository lineaRepository;
+
+    @Autowired
+    private HorarioParadaLineaRepository horarioParadaLineaRepository;
 
     public void altaParada(ParadaDTO paradaDTO) throws ParadaLejosDeRutaException {
         Point ubicacion = GeoUtils.crearPunto(paradaDTO.getLongitud(), paradaDTO.getLatitud());
@@ -188,13 +192,99 @@ public class ParadaService {
         paradaLineaDTO.setIdParadaLinea(paradaLinea.getId());
         paradaLineaDTO.setIdLinea(paradaLinea.getLinea().getId());
         paradaLineaDTO.setIdParada(paradaLinea.getParada().getId());
+        paradaLineaDTO.setEstaHabilitada(paradaLinea.isEstaHabilitada());
 
         List<HorarioDTO> horarios = new ArrayList<>();
         for (HorarioParadaLinea iHorario : paradaLinea.getHorarios()) {
-            horarios.add(HorarioDTO.builder().hora(iHorario.getHorario()).build());
+            horarios.add(HorarioDTO.builder()
+                    .id(iHorario.getId())
+                    .hora(iHorario.getHorario())
+                    .build());
         }
         paradaLineaDTO.setHorarios(horarios);
         return paradaLineaDTO;
+    }
+    
+    public void eliminarAsociacionParadaLinea(int idParadaLinea) throws ParadaLineaNoEncontradaException {
+        ParadaLinea paradaLinea = paradaLineaRepository.findById(idParadaLinea)
+            .orElseThrow(() -> new ParadaLineaNoEncontradaException("No se encontró la asociación parada-línea con ID: " + idParadaLinea));
+        
+        // Al eliminar la asociación ParadaLinea, automáticamente se eliminan los horarios asociados
+        // debido a la configuración de cascada en la entidad
+        paradaLineaRepository.delete(paradaLinea);
+    }
+
+    public void eliminarHorario(int idHorario) {
+        horarioParadaLineaRepository.deleteById(idHorario);
+    }
+
+    public void cambiarEstadoAsociacion(int idParadaLinea) throws ParadaLineaNoEncontradaException, ParadaLejosDeRutaException {
+        ParadaLinea paradaLinea = paradaLineaRepository.findById(idParadaLinea)
+            .orElseThrow(() -> new ParadaLineaNoEncontradaException("No se encontró la asociación parada-línea con ID: " + idParadaLinea));
+        
+        boolean nuevoEstado = !paradaLinea.isEstaHabilitada();
+        
+        // Si se va a habilitar, verificar que la línea esté a menos de 100m de la parada
+        if (nuevoEstado) {
+            Parada parada = paradaLinea.getParada();
+            Linea linea = paradaLinea.getLinea();
+            
+            // Verificar distancia (usar lógica similar a la ya existente)
+            if (!validarDistanciaParadaLinea(parada, linea)) {
+                throw new ParadaLejosDeRutaException("No se puede habilitar la asociación: la línea está a más de 100 metros de la parada");
+            }
+        }
+        
+        paradaLinea.setEstaHabilitada(nuevoEstado);
+        paradaLineaRepository.save(paradaLinea);
+        
+        // Si se deshabilitó, verificar si la parada debe ser deshabilitada
+        if (!nuevoEstado) {
+            procesamientoDeParadaLinea(paradaLinea.getParada());
+        }
+    }
+
+    public void cambiarEstadoParadaLinea(int idParadaLinea, boolean habilitada) throws ParadaLineaNoEncontradaException, ParadaLejosDeRutaException {
+        ParadaLinea paradaLinea = paradaLineaRepository.findById(idParadaLinea)
+            .orElseThrow(() -> new ParadaLineaNoEncontradaException("No se encontró la asociación parada-línea con ID: " + idParadaLinea));
+        
+        // Si se va a habilitar, verificar que la línea esté a menos de 100m de la parada
+        if (habilitada && !paradaLinea.isEstaHabilitada()) {
+            Parada parada = paradaLinea.getParada();
+            Linea linea = paradaLinea.getLinea();
+            
+            // Verificar distancia (usar lógica similar a la ya existente)
+            if (!validarDistanciaParadaLinea(parada, linea)) {
+                throw new ParadaLejosDeRutaException("No se puede habilitar la asociación: la línea está a más de 100 metros de la parada");
+            }
+        }
+        
+        paradaLinea.setEstaHabilitada(habilitada);
+        paradaLineaRepository.save(paradaLinea);
+        
+        // Si se deshabilitó, verificar si la parada debe ser deshabilitada
+        if (!habilitada) {
+            procesamientoDeParadaLinea(paradaLinea.getParada());
+        }
+    }
+
+    private void procesamientoDeParadaLinea(Parada parada) {
+        // Verificar si la parada tiene otras líneas habilitadas
+        List<ParadaLinea> lineasHabilitadas = paradaLineaRepository.findByParadaId(parada.getId())
+            .stream()
+            .filter(ParadaLinea::isEstaHabilitada)
+            .toList();
+        
+        // Si no tiene líneas habilitadas, deshabilitar la parada
+        if (lineasHabilitadas.isEmpty()) {
+            parada.setEstado(EstadoParada.DESHABILITADA);
+            paradaRepository.save(parada);
+        }
+    }
+
+    private boolean validarDistanciaParadaLinea(Parada parada, Linea linea) {
+        // Usar consulta geoespacial en base de datos para validar distancia
+        return paradaRepository.esParadaCercanaALinea((long) parada.getId(), (long) linea.getId(), DEFAULT_BUFFER);
     }
     
 

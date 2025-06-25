@@ -60,4 +60,31 @@ public class GeoUtils {
             throw new IllegalArgumentException("Error al parsear GeoJSON: " + e.getMessage(), e);
         }
     }
+
+    /**
+     * Verifica si un punto está dentro del buffer de distancia de un conjunto de puntos
+     * @param punto Punto a verificar
+     * @param puntos Conjunto de puntos de referencia
+     * @param bufferMetros Distancia del buffer en metros
+     * @return true si el punto está dentro del buffer
+     */
+    public static boolean estaDentroDelBuffer(Point punto, MultiPoint puntos, Double bufferMetros) {
+        if (punto == null || puntos == null || bufferMetros == null) {
+            return false;
+        }
+
+        try {
+            // Convertir metros a grados (aproximación para distancias pequeñas)
+            // 1 grado ≈ 111,320 metros
+            double bufferGrados = bufferMetros / 111320.0;
+
+            // Crear buffer alrededor de los puntos
+            Geometry buffer = puntos.buffer(bufferGrados);
+
+            // Verificar si el punto está dentro del buffer
+            return buffer.contains(punto);
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }
