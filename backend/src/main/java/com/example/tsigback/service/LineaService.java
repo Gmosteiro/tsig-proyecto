@@ -57,6 +57,11 @@ public class LineaService {
             String origen = lineaRepository.obtenerDepartamentoOrigen(puntoOrigen);
             String destino = lineaRepository.obtenerDepartamentoDestino(puntoDestino);
 
+            if (!paradaRepository.existeParadaCercaDePunto(puntoOrigen, 50.0) ||
+                !paradaRepository.existeParadaCercaDePunto(puntoDestino, 50.0)) {
+                throw new IllegalArgumentException("El origen y/o destino no están a menos de 50 metros de una parada.");
+            }
+
             Linea nuevaLinea = Linea.builder()
                     .descripcion(linea.getDescripcion())
                     .empresa(linea.getEmpresa())

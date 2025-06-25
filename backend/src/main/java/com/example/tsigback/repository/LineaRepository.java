@@ -122,4 +122,14 @@ public interface LineaRepository extends JpaRepository<Linea, Integer> {
         List<Linea> findLineasActivasEnRango(@Param("horaDesde") String horaDesde,
                         @Param("horaHasta") String horaHasta);
 
+    @Query(value = """
+        SELECT COUNT(*) > 0
+        FROM parada
+        WHERE ST_DWithin(
+            ST_Transform(ubicacion, 3857),
+            ST_Transform(:punto, 3857),
+            :distancia
+        )
+    """, nativeQuery = true)
+    boolean existeParadaCercaDePunto(@Param("punto") Point punto, @Param("distancia") double distancia);
 }

@@ -41,8 +41,14 @@ public class LineaController {
             return ResponseEntity.badRequest().body("No se puede crear una línea nula o sin puntos.");
         }
 
-        lineaService.crearLinea(lineaDTO);
-        return ResponseEntity.ok("Linea creada correctamente");
+        try {
+            lineaService.crearLinea(lineaDTO);
+            return ResponseEntity.ok("Se ha creado la linea correctamente");
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body("Linea creada correctamente");
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().body(ex.getMessage());
+        }
     }
 
     @PostMapping("/origendestino")
