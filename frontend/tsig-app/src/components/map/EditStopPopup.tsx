@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { updateStop, deleteStop, ParadaDTO } from '../../services/api'; // <-- importa deleteStop
+import { updateStop, deleteStop, ParadaDTO } from '../../services/api';
 import styles from '../../styles/EditStopPopup.module.css';
+import AssociateStopWithLinePopup from './AssociateStopWithLinePopup';
 
 interface EditStopPopupProps {
     parada: ParadaDTO;
     onSave: (parada: ParadaDTO) => void;
     onClose: () => void;
     onMove?: (parada: ParadaDTO) => void;
-    onDelete?: (id: number) => void; // <-- opcional, por si quieres refrescar la lista
+    onDelete?: (id: number) => void;
 }
 
 const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, onMove, onDelete }) => {
     if (!parada) return null;
+    console.log('EditStopPopup parada:', parada);
 
+    const [isAssociating, setIsAssociating] = useState(false);
     const [form, setForm] = useState({
         nombre: parada.nombre,
         observacion: parada.observacion,
@@ -53,7 +56,6 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, 
         }
     };
 
-    // NUEVO: handler para eliminar parada
     const handleDelete = async () => {
         if (window.confirm(`¿Seguro que quieres eliminar la parada "${parada.nombre}"?`)) {
             try {
@@ -69,105 +71,122 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, 
     };
 
     return (
-        <div
-            className={styles.popupContainer}
-            onClick={e => e.stopPropagation()}
-        >
-            {onClose && (
-                <button
-                    onClick={onClose}
-                    aria-label="Cerrar"
-                    className={styles.closeButton}
-                >
-                    ×
-                </button>
+        <>
+            {isAssociating && (
+                <AssociateStopWithLinePopup
+                    parada={parada}
+                    onClose={() => setIsAssociating(false)}
+                />
             )}
-            <div className={styles.title}>
-                Editar parada
-            </div>
-            <form
-                onSubmit={e => {
-                    e.preventDefault();
-                    handleSave();
-                }}
+            <div
+                className={styles.popupContainer}
+                onClick={e => e.stopPropagation()}
+                style={{ display: isAssociating ? 'none' : 'block' }}
             >
-                <div className={styles.inputGroup}>
-                    <label>
-                        Nombre:<br />
-                        <input
-                            type="text"
-                            name="nombre"
-                            value={form.nombre}
-                            onChange={handleChange}
-                            className={styles.textInput}
-                        />
-                    </label>
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        aria-label="Cerrar"
+                        className={styles.closeButton}
+                    >
+                        ×
+                    </button>
+                )}
+                <div className={styles.title}>
+                    Editar parada
                 </div>
-                <div className={styles.inputGroup}>
-                    <label>
-                        Observación:<br />
-                        <textarea
-                            name="observacion"
-                            value={form.observacion}
-                            onChange={handleChange}
-                            className={styles.textAreaInput}
-                        />
-                    </label>
-                </div>
-                <div className={styles.inputGroup}>
-                    <label>
-                        Refugio:
+                <form
+                    onSubmit={e => {
+                        e.preventDefault();
+                        handleSave();
+                    }}
+                >
+                    <div className={styles.inputGroup}>
+                        <label>
+                            Nombre:<br />
+                            <input
+                                type="text"
+                                name="nombre"
+                                value={form.nombre}
+                                onChange={handleChange}
+                                className={styles.textInput}
+                            />
+                        </label>
+                    </div>
+                    <div className={styles.inputGroup}>
+                        <label>
+                            Observación:<br />
+                            <textarea
+                                name="observacion"
+                                value={form.observacion}
+                                onChange={handleChange}
+                                className={styles.textAreaInput}
+                            />
+                        </label>
+                    </div>
+                    <div className={`${styles.inputGroup} ${styles.checkboxGroup}`}>
+                        <label htmlFor="refugio" className={styles.checkboxLabel}>
+                            Refugio:
+                        </label>
                         <input
+                            id="refugio"
                             type="checkbox"
                             name="refugio"
                             checked={form.refugio}
                             onChange={handleChange}
                             className={styles.checkboxInput}
                         />
-                    </label>
-                </div>
-                <div className={styles.inputGroup}>
-                    <label>
-                        Estado:
-                        <select
-                            name="estado"
-                            value={form.estado}
-                            onChange={handleChange}
-                            className={styles.selectInput}
+                    </div>
+                    <div className={styles.inputGroup}>
+                        <label>
+                            Estado:
+                            <select
+                                name="estado"
+                                value={form.estado}
+                                onChange={handleChange}
+                                className={styles.selectInput}
+                            >
+                                <option value="0">Habilitada</option>
+                                <option value="1">Deshabilitada</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div className={styles.buttonGroup}>
+                        <button
+                            type="submit"
+                            className={styles.saveButton}
                         >
-                            <option value="HABILITADA">Habilitada</option>
-                            <option value="DESHABILITADA">Deshabilitada</option>
-                        </select>
-                    </label>
-                </div>
-                <div className={styles.buttonGroup}>
-                    <button
-                        type="submit"
-                        className={styles.saveButton}
-                    >
-                        Guardar
-                    </button>
-                    <button
-                        type="button"
-                        className={styles.moveButton}
-                        style={{ marginLeft: 8 }}
-                        onClick={() => {
-                            if (onMove) onMove({ ...parada, ...form });
-                        }}
-                    >
-                        Mover
-                    </button>
-                    <button
-                        type="button"
-                        className={styles.deleteButton}
-                        style={{ marginLeft: 8, background: '#d32f2f', color: 'white' }}
-                        onClick={handleDelete}
-                    >
-                        Eliminar
-                    </button>
-                </div>
-            </form>
-        </div>
+                            Guardar
+                        </button>
+                        <button
+                            type="button"
+                            className={styles.moveButton}
+                            onClick={() => {
+                                if (onMove) onMove({ ...parada, ...form });
+                            }}
+                        >
+                            Mover
+                        </button>
+                        <button
+                            type="button"
+                            className={styles.deleteButton}
+                            style={{ marginLeft: 8, background: '#d32f2f', color: 'white' }}
+                            onClick={handleDelete}
+                        >
+                            Eliminar
+                        </button>
+                        <button
+                            type="button"
+                            className={styles.associateButton}
+                            style={{ marginLeft: 8, background: '#1976d2', color: 'white' }}
+                            onClick={() => setIsAssociating(true)}
+                        >
+                            Asociar con Línea
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </>
     );
 };
 

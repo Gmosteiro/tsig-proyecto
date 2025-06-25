@@ -19,9 +19,8 @@ docker-compose up --build
 
 docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/scripts/postgis/ft_departamentos.sql
 docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/scripts/postgis/ft_caminera_nacional.sql
-docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/scripts/postgis/ft_caminera_nacional_edges.sql
 docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/scripts/postgis/ft_postes.sql
-docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/scripts/postgis/usuario.sql
+docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/scripts/postgis/data.sql
 bash backend/scripts/geoserver/geoserver-setup.sh
 
 ((Para la capa de lineas, hay que modificar la configuración en GeoServer directamente))
@@ -36,20 +35,3 @@ GeoServer http://localhost:8080/geoserver | admin | geoserver
 # Detener contenedores
 
 docker-compose down
-
-# Eliminar volúmenes
-
-En vez
-docker-compose down -v
-
-# logs
-
-docker logs tsig-proyecto-frontend-1
-
-# Cómo persistir la configuración de GeoServer
-
-./geoserver_backup_restore.sh
-
-# Error de permisos:
-
-chmod +x geoserver_backup_restore.sh

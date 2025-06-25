@@ -1,15 +1,21 @@
 package com.example.tsigback.controller;
 
+import com.example.tsigback.entities.request.RutaKilometroRequest;
+import com.example.tsigback.entities.request.OrigenDestinoRequest;
 import com.example.tsigback.entities.dtos.LineaDTO;
 import com.example.tsigback.entities.dtos.ListaPuntosDTO;
 import com.example.tsigback.exception.LineaNoEncontradaException;
 import com.example.tsigback.exception.ParadaNoEncontradaException;
 import com.example.tsigback.service.LineaService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.time.LocalTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -43,6 +49,140 @@ public class LineaController {
         }
     }
 
+    @PostMapping("/origendestino")
+    public ResponseEntity<?> obtenerLineasPorOrigenDestino(@RequestBody OrigenDestinoRequest request) {
+        if (request == null || request.getIdDepartamentoOrigen() == 0 || request.getIdDepartamentoDestino() == 0) {
+            return ResponseEntity.badRequest().body("Request inválido: Origen y destino deben ser especificados.");
+        }
+
+        try {
+            List<LineaDTO> lineas = lineaService.obtenerLineasPorOrigenDestino(request.getIdDepartamentoOrigen(),
+                    request.getIdDepartamentoDestino());
+            if (lineas.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("No se encontraron líneas para el origen y destino especificados.");
+            }
+            return ResponseEntity.status(HttpStatus.OK).body(lineas);
+        } catch (LineaNoEncontradaException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/rutakm")
+    public ResponseEntity<?> obtenerLineasPorRutaKilometro(@RequestBody RutaKilometroRequest request) {
+        if (request == null || request.getRuta() == 0 || request.getKilometro() == 0) {
+            return ResponseEntity.badRequest().body("Request inválido: Ruta y kilómetros deben ser especificados.");
+        }
+
+        try {
+            List<LineaDTO> lineas = lineaService.obtenerLineasPorRutaKilometro(request.getRuta(),
+                    request.getKilometro());
+            if (lineas.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("No se encontraron líneas para la ruta y kilómetros especificados.");
+            }
+            return ResponseEntity.status(HttpStatus.OK).body(lineas);
+        } catch (LineaNoEncontradaException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/interseccion-poligono")
+    public ResponseEntity<?> obtenerLineaInterseccionPoligono(@RequestBody String geoJsonPoligono) {
+        if (geoJsonPoligono == null || geoJsonPoligono.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Debe enviar un GeoJSON de polígono válido.");
+        }
+        try {
+            // Extraer geometry si es un Feature
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode node = mapper.readTree(geoJsonPoligono);
+            if (node.has("geometry")) {
+                geoJsonPoligono = node.get("geometry").toString();
+            }
+            List<LineaDTO> lineas = lineaService.obtenerLineasPorInterseccionPoligono(geoJsonPoligono);
+            if (lineas == null || lineas.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("No se encontraron líneas que intersecten el polígono.");
+            }
+            return ResponseEntity.ok(lineas);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("GeoJSON inválido: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno: " + e.getMessage());
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<?> obtenerLinea(@RequestParam int id) {
+        if (id == 0) {
+            return ResponseEntity.badRequest().body("Debe especificar un id de línea válido.");
+        }
+        try {
+            LineaDTO linea = lineaService.obtenerLineaPorId(id);
+            if (linea == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No se encontró la línea solicitada.");
+            }
+            return ResponseEntity.ok(linea);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/empresa")
+    public ResponseEntity<?> obtenerLineasPorEmpresa(@RequestParam String empresa) {
+        if (empresa == null || empresa.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Debe especificar el nombre de la empresa.");
+        }
+        try {
+            List<LineaDTO> lineas = lineaService.obtenerLineasPorEmpresa(empresa.trim());
+            if (lineas == null || lineas.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("No se encontraron líneas para la empresa especificada.");
+            }
+            return ResponseEntity.ok(lineas);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> eliminarLinea(@PathVariable int id) {
+        try {
+            lineaService.eliminarLineaYRelaciones(id);
+            return ResponseEntity.ok("La línea y sus relaciones han sido eliminadas correctamente");
+        } catch (LineaNoEncontradaException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No existe la línea con id " + id);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/reporte-horario")
+    public ResponseEntity<?> obtenerLineasActivasEnRango(
+            @RequestParam String horaDesde,
+            @RequestParam String horaHasta) {
+        if (horaDesde == null || horaHasta == null) {
+            return ResponseEntity.badRequest().body("Debe especificar horaDesde y horaHasta.");
+        }
+        try {
+            LocalTime desde = LocalTime.parse(horaDesde);
+            LocalTime hasta = LocalTime.parse(horaHasta);
+            List<LineaDTO> lineas = lineaService.obtenerLineasActivasEnRango(desde, hasta);
+            if (lineas.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("No se encontraron líneas activas en ese rango horario.");
+            }
+            return ResponseEntity.ok(lineas);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error en el formato de hora o en la consulta: " + e.getMessage());
+        }
+    }
+
     @PutMapping
     public ResponseEntity<String> modificarLinea(@RequestBody LineaDTO lineaDTO) {
         try {
@@ -52,7 +192,8 @@ public class LineaController {
             lineaService.modificarLinea(lineaDTO);
             return ResponseEntity.ok("El id linea " + lineaDTO.getId() + " ha sido modificado con exito");
         } catch (LineaNoEncontradaException e) {
-            return ResponseEntity.badRequest().body("El id linea " + lineaDTO.getId() + " no existe en la base de datos");
+            return ResponseEntity.badRequest()
+                    .body("El id linea " + lineaDTO.getId() + " no existe en la base de datos");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {

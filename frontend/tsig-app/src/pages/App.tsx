@@ -27,7 +27,7 @@ export default function App() {
             />
             <Route
               path="*"
-              element={<Navigate to="/" replace />}
+              element={<Navigate to="/map" replace />}
             />
           </Routes>
         </Router>

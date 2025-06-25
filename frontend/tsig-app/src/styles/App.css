@@ -40,16 +40,3 @@
 .read-the-docs {
   color: #888;
 }
-
-.popup-confirm {
-  position: fixed;
-  top: 30%;
-  left: 50%;
-  transform: translate(-50%, -30%);
-  background: white;
-  border: 2px solid #b00;
-  border-radius: 8px;
-  padding: 24px 32px;
-  z-index: 9999;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
-}

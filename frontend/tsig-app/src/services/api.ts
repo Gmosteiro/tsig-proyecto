@@ -1,6 +1,8 @@
 import axios from 'axios'
 // import { Stop } from '../lib/types/types'
 import { WMS_URL } from '../lib/constants'
+import { HorarioDTO } from './linea'
+
 export type ParadaDTO = {
     id: number
     nombre: string
@@ -10,6 +12,22 @@ export type ParadaDTO = {
     latitud: number
     longitud: number
 }
+
+export type ParadaLineaDTO = {
+    idParadaLinea: number
+    idParada: number
+    idLinea: number
+    horarios: HorarioDTO[]
+}
+
+export type LineaDTO = {
+    id: number;
+    nombre: string;
+    origen: string;
+    destino: string;
+    empresa: string;
+    observacion: string;
+};
 
 export type CrearParadaDTO = Omit<ParadaDTO, 'id'>
 
@@ -22,36 +40,7 @@ export type RoutingRequestDTO = {
     points: RoutingPointDTO[]
 }
 
-export type EstadoParada = 'HABILITADA' | 'DESHABILITADA';
-
-export type PuntoDTO = {
-    latitud: number
-    longitud: number
-}
-
-export type LineaDTO = {
-    id?: number
-    nombre: string
-    descripcion: string
-    empresa: string
-    observacion?: string
-    puntos: PuntoDTO[]
-    rutaGeoJSON: any
-}
-
-export type HorarioDTO = {
-    hora: string // formato "HH:mm", solo hora y minutos
-}
-
-export async function validateRoute(request: RoutingRequestDTO) {
-    const res = await axios.post('/apiurl/api/lineas/validar', request)
-    return res.data
-}
-
-export const saveLine = async (lineData: LineaDTO) => {
-    const res = await axios.post('/apiurl/api/lineas/guardar', lineData)
-    return res.data
-}
+export type EstadoParada = 0 | 1;
 
 export async function createStop(stopData: CrearParadaDTO) {
     const res = await axios.post('/apiurl/api/parada/crear', stopData)
@@ -60,13 +49,48 @@ export async function createStop(stopData: CrearParadaDTO) {
 
 export async function updateStop(stopData: ParadaDTO) {
     console.log('Updating stop:', stopData)
-
     const res = await axios.put(`/apiurl/api/parada/modificar`, stopData);
     return res.data;
 }
 
 export async function deleteStop(id: number) {
-    const res = await axios.delete(`/apiurl/api/parada/id/${id}`);
+    const res = await axios.delete(`/apiurl/api/parada/${id}`);
+    return res.data;
+}
+
+export async function getAllLines(): Promise<LineaDTO[]> {
+    const res = await axios.get('/apiurl/api/lineas/todas');
+    return res.data;
+}
+
+export async function associateStopWithLine(data: ParadaLineaDTO): Promise<any> {
+    const res = await axios.post('/apiurl/api/parada/asociar/linea', data);
+    return res.data;
+}
+
+export async function getAssociatedLinesForStop(paradaId: number): Promise<ParadaLineaDTO[]> {
+    const res = await axios.get('/apiurl/api/parada/linea/todas');
+    return res.data.filter((pl: ParadaLineaDTO) => Number(pl.idParada) === Number(paradaId));
+}
+
+export async function getSchedulesForLineAndStop(lineaId: number, paradaId: number): Promise<HorarioDTO[]> {
+    const res = await axios.get(`/apiurl/api/horarios?lineaId=${lineaId}&paradaId=${paradaId}`);
+    return res.data;
+}
+
+export async function addScheduleToLineStop(
+    lineaId: number,
+    paradaId: number,
+    horario: HorarioDTO,
+    idParadaLinea: number
+): Promise<any> {
+    const paradaLineaDTO = {
+        idParadaLinea: Number(idParadaLinea),
+        idParada: Number(paradaId),
+        idLinea: Number(lineaId),
+        horarios: [horario]
+    };
+    const res = await axios.post('/apiurl/api/parada/linea/horario', paradaLineaDTO);
     return res.data;
 }
 
@@ -78,6 +102,7 @@ export type WMSFeatureInfoParams = {
     point: { x: number, y: number },
     infoFormat?: string,
     tolerance?: number
+    featureCount?: number
 }
 
 // Puedes ajustar este tipo según la estructura real de la respuesta del WMS
@@ -94,7 +119,8 @@ export async function getWMSFeatureInfo({
     size,
     point,
     infoFormat = "application/json",
-    tolerance = 5
+    tolerance = 5,
+    featureCount = 5    // 👈 default a 5
 }: WMSFeatureInfoParams): Promise<WMSFeatureInfoResponse> {
     const url = new URL(WMS_URL);
     url.search = new URLSearchParams({
@@ -113,7 +139,7 @@ export async function getWMSFeatureInfo({
         INFO_FORMAT: infoFormat,
         X: Math.round(point.x).toString(),
         Y: Math.round(point.y).toString(),
-        FEATURE_COUNT: '5',
+        FEATURE_COUNT: featureCount.toString(),
         BUFFER: tolerance.toString()
     } as Record<string, string>).toString();
 

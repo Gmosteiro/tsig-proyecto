@@ -29,7 +29,7 @@ export default function StopForm({ onCancel, onSubmit, initialData }: StopFormPr
         initialData ? [initialData.latitud, initialData.longitud] : [-34.9011, -56.1645]
     )
     const [name, setName] = useState(initialData?.nombre ?? 'Nueva Parada')
-    const [estado, setEstado] = useState<EstadoParada>(initialData?.estado ?? 'HABILITADA')
+    const [estado, setEstado] = useState<EstadoParada>(initialData?.estado ?? 1)
     const [refugio, setRefugio] = useState(initialData?.refugio ?? false)
     const [observacion, setObservacion] = useState(initialData?.observacion ?? '')
 
@@ -92,7 +92,7 @@ export default function StopForm({ onCancel, onSubmit, initialData }: StopFormPr
                             id="stopEstado"
                             className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                             value={estado}
-                            onChange={e => setEstado(e.target.value as EstadoParada)}
+                            onChange={e => setEstado(e.target.value as unknown as EstadoParada)}
                         >
                             <option value="HABILITADA">HABILITADA</option>
                             <option value="DESHABILITADA">DESHABILITADA</option>
@@ -124,13 +124,13 @@ export default function StopForm({ onCancel, onSubmit, initialData }: StopFormPr
                     <div className="flex gap-2">
                         <button
                             type="submit"
-                            className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded shadow transition-colors duration-150"
+                            className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded shadow transition-colors duration-150 cursor-pointer"
                         >
                             {initialData ? 'Guardar cambios' : 'Crear parada'}
                         </button>
                         <button
                             type="button"
-                            className="bg-gray-400 text-white font-semibold px-4 py-2 rounded shadow transition-colors duration-150"
+                            className="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded shadow transition-colors duration-150 cursor-pointer"
                             onClick={onCancel}
                         >
                             Cancelar
