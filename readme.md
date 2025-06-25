@@ -19,9 +19,8 @@ docker-compose up --build
 
 docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/scripts/postgis/ft_departamentos.sql
 docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/scripts/postgis/ft_caminera_nacional.sql
-docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/scripts/postgis/ft_caminera_nacional_edges.sql
 docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/scripts/postgis/ft_postes.sql
-docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/scripts/postgis/usuario.sql
+docker exec -i tsig-proyecto-postgis-1 psql -U gisuser -d gisdb < backend/scripts/postgis/data.sql
 bash backend/scripts/geoserver/geoserver-setup.sh
 
 ((Para la capa de lineas, hay que modificar la configuración en GeoServer directamente))

@@ -1,12 +1,6 @@
 BEGIN;
 
-CREATE TABLE IF NOT EXISTS usuario (
-    email VARCHAR(255) PRIMARY KEY,
-    contrasenia VARCHAR(255),
-    nombre_usuario VARCHAR(255),
-    rol VARCHAR(255)
-);
-
+-- Insertar usuario admin si no existe
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -19,5 +13,19 @@ BEGIN
     END IF;
 END
 $$;
+
+-- Insertar empresas, si no existen
+INSERT INTO empresas (id, nombre) VALUES
+(1, 'COT'),
+(2, 'COPSA'),
+(3, 'TURIL'),
+(4, 'CYNSA'),
+(5, 'EGA'),
+(6, 'RUTAS DEL SOL'),
+(7, 'NUÑEZ'),
+(8, 'CITA'),
+(9, 'COTMI'),
+(10, 'TAMBORES')
+ON CONFLICT (id) DO NOTHING;
 
 COMMIT;
