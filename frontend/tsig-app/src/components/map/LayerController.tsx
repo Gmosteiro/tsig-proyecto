@@ -18,8 +18,8 @@ export default function LayerController({ onMoveStop }: { onMoveStop?: (parada: 
         paradaFiltro === 'habilitadas'
             ? 'estado=0'
             : paradaFiltro === 'deshabilitadas'
-            ? 'estado=1'
-            : undefined
+                ? 'estado=1'
+                : undefined
 
     return (
         <>
@@ -48,7 +48,7 @@ export default function LayerController({ onMoveStop }: { onMoveStop?: (parada: 
                 </LayersControl.Overlay>
                 <LayersControl.Overlay name="Paradas" checked={paradaVisible}>
                     <>
-                        <div style={{ position: 'absolute', zIndex: 1000, right: 60, top: 10, background: 'rgba(255,255,255,0.9)', padding: 6, borderRadius: 6 }}>
+                        <div style={{ position: 'absolute', zIndex: 1000, left: 60, top: 10, background: 'rgba(255,255,255,0.9)', padding: 6, borderRadius: 6 }}>
                             <label style={{ marginRight: 8 }}>Mostrar:</label>
                             <select
                                 value={paradaFiltro}

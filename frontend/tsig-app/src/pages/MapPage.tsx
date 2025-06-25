@@ -42,6 +42,7 @@ export default function MapPage() {
   const [movingStop, setMovingStop] = useState<any | null>(null);
   const [polygonCoords, setPolygonCoords] = useState<[number, number][]>([])
   const [polygonLines, setPolygonLines] = useState<any[] | null>(null)
+  const [drawingPolygon, setDrawingPolygon] = useState(false)
 
   useEffect(() => {
     if (selectedLinea && selectedLinea.rutaGeoJSON && mapRef.current) {
@@ -58,6 +59,19 @@ export default function MapPage() {
   const handleCreateStop = async (stopData: CrearParadaDTO) => {
     await createStop(stopData)
     setCreatingStop(false)
+  }
+
+  const handleCancelCreateStop = () => {
+    setCreatingStop(false)
+  }
+
+  const handleCancelPolygon = () => {
+    setDrawingPolygon(false)
+    setPolygonLines(null)
+    if (featureGroupRef.current) {
+      featureGroupRef.current.clearLayers()
+    }
+    setPolygonCoords([])
   }
 
   const handleAddPoint = (latlng: [number, number]) => {
@@ -247,6 +261,7 @@ export default function MapPage() {
       const lines = await getLinesByGeoJson(geoJson);
       setPolygonLines(lines);
       setShowSearcher(false); // Oculta el buscador normal si está abierto
+      setDrawingPolygon(false); // Ya no estamos dibujando
 
       if (featureGroupRef.current) {
         featureGroupRef.current.clearLayers();
@@ -272,7 +287,7 @@ export default function MapPage() {
             />
           )}
         </div>
-        {!creatingStop && !addingRoute && (
+        {!creatingStop && !addingRoute && !drawingPolygon && (
           <div className="flex gap-2 justify-center my-4">
             <button
               className="bg-yellow-600 text-white px-4 py-2 rounded cursor-pointer"
@@ -292,6 +307,12 @@ export default function MapPage() {
             >
               {showSearcher ? "Ocultar Buscador" : "Buscar Rutas"}
             </button>
+            <button
+              className="bg-green-600 text-white px-4 py-2 rounded cursor-pointer"
+              onClick={() => setDrawingPolygon(true)}
+            >
+              Dibujar Polígono
+            </button>
             {(showSearcher || selectedLinea) && (
               <button
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer"
@@ -303,6 +324,33 @@ export default function MapPage() {
                 Cancelar
               </button>
             )}
+          </div>
+        )}
+
+        {/* Botones de cancelar para creación de parada */}
+        {creatingStop && (
+          <div className="flex gap-2 justify-center my-4">
+            <button
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer"
+              onClick={handleCancelCreateStop}
+            >
+              Cancelar Creación de Parada
+            </button>
+          </div>
+        )}
+
+        {/* Botones de cancelar para dibujo de polígono */}
+        {drawingPolygon && (
+          <div className="flex gap-2 justify-center my-4">
+            <span className="text-lg font-medium text-gray-700">
+              Dibuja un polígono en el mapa para buscar rutas en esa área
+            </span>
+            <button
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer"
+              onClick={handleCancelPolygon}
+            >
+              Cancelar Polígono
+            </button>
           </div>
         )}
 
@@ -337,7 +385,7 @@ export default function MapPage() {
           <LayerController onMoveStop={handleMoveStop} />
           {creatingStop && (
             <StopForm
-              onCancel={() => setCreatingStop(false)}
+              onCancel={handleCancelCreateStop}
               onSubmit={handleCreateStop}
             />
           )}
@@ -405,12 +453,14 @@ export default function MapPage() {
             />
           )}
           {deleteStopMode && <DeleteStopControl />}
-          <PolygonDrawControl
-            featureGroupRef={featureGroupRef}
-            polygonCoords={polygonCoords}
-            setPolygonCoords={setPolygonCoords}
-            handleCreated={handleCreated}
-          />
+          {drawingPolygon && (
+            <PolygonDrawControl
+              featureGroupRef={featureGroupRef}
+              polygonCoords={polygonCoords}
+              setPolygonCoords={setPolygonCoords}
+              handleCreated={handleCreated}
+            />
+          )}
         </MapContainer>
       </main>
       <Footer />
