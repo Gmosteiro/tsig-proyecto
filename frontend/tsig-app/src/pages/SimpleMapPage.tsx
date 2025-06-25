@@ -146,15 +146,17 @@ export default function SimpleMapPage() {
 
       <div className="flex justify-center my-6">
         {(showSearcher || polygonLines) && (
-          <Searcher
-            onVerLinea={async (data: LineaDTO) => {
-              const line = await updateGeoJSON(data);
-              setSelectedLinea(line);
-              setShowSearcher(false);
-              setPolygonLines(null);
-            }}
-            initialLines={polygonLines}
-          />
+          <div className="w-full max-w-4xl mx-auto px-4">
+            <Searcher
+              onVerLinea={async (data: LineaDTO) => {
+                const line = await updateGeoJSON(data);
+                setSelectedLinea(line);
+                setShowSearcher(false);
+                setPolygonLines(null);
+              }}
+              initialLines={polygonLines}
+            />
+          </div>
         )}
       </div>
 
