@@ -208,5 +208,9 @@ public class LineaController {
             return ResponseEntity.internalServerError().build();
         }
     }
+    @GetMapping("/todas")
+    public ResponseEntity<List<LineaDTO>> mostrarTodas() {
+        return ResponseEntity.status(HttpStatus.OK).body(lineaService.obtenerTodas());
+    }
 
 }
