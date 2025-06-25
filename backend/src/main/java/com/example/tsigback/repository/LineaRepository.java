@@ -61,7 +61,7 @@ public interface LineaRepository extends JpaRepository<Linea, Integer> {
              :margen                              
            )
     """, nativeQuery = true)
-    Boolean esNuevaParadaCercaDeParada(
+    Boolean esParadaCercaDeNuevaLinea(
         @Param("nuevoRecorrido") MultiLineString nuevoRecorrido,
         @Param("punto") Point punto,
         @Param("margen") double margen);

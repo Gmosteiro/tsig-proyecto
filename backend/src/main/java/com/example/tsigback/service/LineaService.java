@@ -40,7 +40,7 @@ public class LineaService {
 
     private static final double MAX_DIST = 100.0; // metros
 
-    public void crearLinea(LineaDTO linea) {
+    public void crearLinea(LineaDTO linea) throws ParadaNoEncontradaException {
         try {
             validateGeoJson(linea.getRutaGeoJSON());
             MultiLineString recorrido = GeoUtils.geoJsonToMultiLineString(linea.getRutaGeoJSON());
