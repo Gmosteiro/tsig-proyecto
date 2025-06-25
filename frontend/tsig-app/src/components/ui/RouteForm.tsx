@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { getEmpresas } from '../../services/api'
 
 interface RouteFormProps {
     points: [number, number][]
@@ -10,10 +11,23 @@ export default function RouteForm({ onCancel, onSave }: RouteFormProps) {
     const [name, setName] = useState('')
     const [description, setDescription] = useState('')
     const [company, setCompany] = useState('')
+    const [empresas, setEmpresas] = useState<{ id: number, name: string }[]>([])
     const [observations, setObservations] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState(false)
+
+    useEffect(() => {
+        const fetchEmpresas = async () => {
+            try {
+                const empresasData = await getEmpresas()
+                setEmpresas(empresasData)
+            } catch (err) {
+                console.error('Error al cargar empresas:', err)
+            }
+        }
+        fetchEmpresas()
+    }, [])
 
     useEffect(() => {
         if (success) {
@@ -69,13 +83,19 @@ export default function RouteForm({ onCancel, onSave }: RouteFormProps) {
             </div>
             <div className="mb-4">
                 <label className="block mb-1 font-medium">Empresa</label>
-                <input
-                    type="text"
+                <select
                     className="w-full border px-3 py-2 rounded"
                     value={company}
                     onChange={e => setCompany(e.target.value)}
                     required
-                />
+                >
+                    <option value="">Seleccionar empresa</option>
+                    {empresas.map(empresa => (
+                        <option key={empresa.id} value={empresa.name}>
+                            {empresa.name}
+                        </option>
+                    ))}
+                </select>
             </div>
             <div className="mb-4">
                 <label className="block mb-1 font-medium">Observaciones</label>
