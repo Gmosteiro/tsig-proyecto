@@ -78,6 +78,12 @@ export async function getSchedulesForLineAndStop(lineaId: number, paradaId: numb
     return res.data;
 }
 
+export async function getEmpresas(): Promise<{ id: number, nombre: string }[]> {
+    const res = await axios.get('/apiurl/api/empresa');
+    console.log('Empresas:', res.data);
+    return res.data;
+}
+
 export async function addScheduleToLineStop(
     lineaId: number,
     paradaId: number,

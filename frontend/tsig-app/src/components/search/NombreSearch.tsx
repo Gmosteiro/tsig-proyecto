@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { LineaDTO, getLineaByNombreEmpresa } from '../../services/linea'
+import { getEmpresas } from '../../services/api'
 import LinesList from './LinesList'
 
 interface NombreSearchProps {
@@ -8,9 +9,22 @@ interface NombreSearchProps {
 
 const NombreSearch: React.FC<NombreSearchProps> = ({ onVerLinea }) => {
     const [nombre, setNombre] = useState('')
+    const [empresas, setEmpresas] = useState<{ id: number, nombre: string }[]>([])
     const [resultados, setResultados] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        const fetchEmpresas = async () => {
+            try {
+                const empresasData = await getEmpresas()
+                setEmpresas(empresasData)
+            } catch (err) {
+                console.error('Error al cargar empresas:', err)
+            }
+        }
+        fetchEmpresas()
+    }, [])
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -39,14 +53,20 @@ const NombreSearch: React.FC<NombreSearchProps> = ({ onVerLinea }) => {
             >
                 <div className="flex flex-col w-full md:w-auto">
                     <label htmlFor="nombre" className="font-semibold mb-1 text-gray-700">Nombre de Empresa</label>
-                    <input
+                    <select
                         id="nombre"
-                        type="text"
                         value={nombre}
                         onChange={e => setNombre(e.target.value)}
                         className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
                         required
-                    />
+                    >
+                        <option value="">Seleccionar empresa</option>
+                        {empresas.map(empresa => (
+                            <option key={empresa.id} value={empresa.nombre}>
+                                {empresa.nombre}
+                            </option>
+                        ))}
+                    </select>
                 </div>
                 <button
                     type="submit"
