@@ -168,12 +168,12 @@ export default function SimpleMapPage() {
           >
             {showSearcher ? "Ocultar Buscador" : "Buscar Rutas"}
           </button>
-          <button
+          {/* <button
             className="bg-green-600 text-white px-4 py-2 rounded cursor-pointer"
             onClick={() => setDrawingPolygon(true)}
           >
             Filtrar por Área
-          </button>
+          </button> */}
           {(showSearcher || selectedLinea || polygonLines) && (
             <button
               className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer"
