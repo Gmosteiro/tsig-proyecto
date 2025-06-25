@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet';
+import { MapContainer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet';
 import { useEffect, useState, useRef } from 'react';
 import L from 'leaflet';
 import NavigationBar from '../components/ui/NavigationBar';
@@ -9,6 +9,7 @@ import { getWMSFeatureInfo } from '../services/api';
 import { LineaDTO, updateGeoJSON, getLinesByGeoJson } from '../services/linea';
 import Searcher from '../components/search/Searcher';
 import PolygonDrawControl from '../components/map/PolygonDrawControl';
+import LayerController from '../components/map/LayerController';
 import React from 'react';
 
 const customIcon = new L.Icon({
@@ -211,10 +212,7 @@ export default function SimpleMapPage() {
           style={{ height: '75vh', width: '100%' }}
         >
           <SetMapRef mapRef={mapRef} />
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution="&copy; OpenStreetMap contributors"
-          />
+          <LayerController />
           <Marker position={position} icon={customIcon}>
             <Popup>¡Estás aquí!</Popup>
           </Marker>
