@@ -64,7 +64,7 @@ export async function getAllLines(): Promise<LineaDTO[]> {
 }
 
 export async function associateStopWithLine(data: ParadaLineaDTO): Promise<any> {
-    const res = await axios.post('/apiurl/api/parada/asociar/linea', data);
+    const res = await axios.post('/apiurl/api/parada/linea/asociar', data);
     return res.data;
 }
 

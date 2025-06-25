@@ -25,8 +25,8 @@ interface StopFormProps {
 }
 
 export default function StopForm({ onCancel, onSubmit, initialData }: StopFormProps) {
-    const [position, setPosition] = useState<LatLngTuple>(
-        initialData ? [initialData.latitud, initialData.longitud] : [-34.9011, -56.1645]
+    const [position, setPosition] = useState<LatLngTuple | null>(
+        initialData ? [initialData.latitud, initialData.longitud] : null
     )
     const [name, setName] = useState(initialData?.nombre ?? 'Nueva Parada')
     const [estado, setEstado] = useState<EstadoParada>(initialData?.estado ?? 1)
@@ -43,6 +43,11 @@ export default function StopForm({ onCancel, onSubmit, initialData }: StopFormPr
             setObservacion(initialData.observacion)
         }
     }, [initialData])
+
+    // Si no hay posición, mostrar un mensaje y no renderizar el marcador
+    if (!position) {
+        return null
+    }
 
     return (
         <Marker
@@ -61,6 +66,7 @@ export default function StopForm({ onCancel, onSubmit, initialData }: StopFormPr
                     className="flex flex-col gap-3 p-2"
                     onSubmit={async (e) => {
                         e.preventDefault()
+                        if (!position) return
                         await onSubmit({
                             nombre: name,
                             estado,

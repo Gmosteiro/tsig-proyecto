@@ -35,14 +35,21 @@ export default function MapPage() {
   const latestRouteGeoJSON = useRef<any>(null)
   const mapRef = useRef<any>(null)
   const [movingStop, setMovingStop] = useState<any | null>(null);
+  const [newStopPosition, setNewStopPosition] = useState<[number, number] | null>(null);
 
   const handleCreateStop = async (stopData: CrearParadaDTO) => {
     await createStop(stopData)
     setCreatingStop(false)
+    setNewStopPosition(null)
   }
 
   const handleCancelCreateStop = () => {
     setCreatingStop(false)
+    setNewStopPosition(null)
+  }
+
+  const handleMapClickForStop = (latlng: [number, number]) => {
+    setNewStopPosition(latlng)
   }
 
   const handleAddPoint = (latlng: [number, number]) => {
@@ -214,6 +221,15 @@ export default function MapPage() {
     return null
   }
 
+  function StopClickControl({ onMapClick }: { onMapClick: (latlng: [number, number]) => void }) {
+    useMapEvents({
+      click(e) {
+        onMapClick([e.latlng.lat, e.latlng.lng])
+      }
+    })
+    return null
+  }
+
   function SetMapRef({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null> }) {
     const map = useMap();
     React.useEffect(() => {
@@ -240,6 +256,14 @@ export default function MapPage() {
             >
               Crear Ruta
             </button>
+          </div>
+        )}
+
+        {creatingStop && !newStopPosition && (
+          <div className="flex justify-center my-4">
+            <div className="bg-blue-100 border border-blue-300 px-4 py-2 rounded">
+              <span className="text-blue-800">Haz clic en el mapa para crear una parada en esa ubicación</span>
+            </div>
           </div>
         )}
 
@@ -284,10 +308,21 @@ export default function MapPage() {
           <SetMapRef mapRef={mapRef} />
           <LayerController onMoveStop={handleMoveStop} />
           {creatingStop && (
-            <StopForm
-              onCancel={() => setCreatingStop(false)}
-              onSubmit={handleCreateStop}
-            />
+            <>
+              <StopClickControl onMapClick={handleMapClickForStop} />
+              <StopForm
+                onCancel={handleCancelCreateStop}
+                onSubmit={handleCreateStop}
+                initialData={newStopPosition ? {
+                  nombre: 'Nueva Parada',
+                  estado: 0,
+                  refugio: false,
+                  observacion: '',
+                  latitud: newStopPosition[0],
+                  longitud: newStopPosition[1]
+                } : undefined}
+              />
+            </>
           )}
           {addingRoute && !isValidated && <AddPointControl onAddPoint={handleAddPoint} />}
           {points.map((pt, idx) => (

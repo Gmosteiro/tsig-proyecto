@@ -30,7 +30,7 @@ const AssociateStopWithLinePopup: React.FC<AssociateStopWithLinePopupProps> = ({
 
     const fetchAssociatedLines = async () => {
         try {
-            const data = await getAssociatedLinesForStop(parada.id);
+            const data = await getAssociatedLinesForStop(Number(parada.id));
             setAssociatedLines(data);
         } catch {
             alert('Error al cargar líneas asociadas');
@@ -42,7 +42,7 @@ const AssociateStopWithLinePopup: React.FC<AssociateStopWithLinePopupProps> = ({
             try {
                 const paradaLinea: ParadaLineaDTO = {
                     idParadaLinea: 0,
-                    idParada: parada.id,
+                    idParada: Number(parada.id),
                     idLinea: selectedLine,
                     horarios: []
                 };
@@ -104,7 +104,7 @@ const AssociateStopWithLinePopup: React.FC<AssociateStopWithLinePopupProps> = ({
             </div>
             {showSchedulePopup && schedulePopupLineId !== null && (
                 <SchedulePopup
-                    paradaId={parada.id}
+                    paradaId={Number(parada.id)}
                     lineaId={schedulePopupLineId}
                     onClose={() => setShowSchedulePopup(false)}
                 />
