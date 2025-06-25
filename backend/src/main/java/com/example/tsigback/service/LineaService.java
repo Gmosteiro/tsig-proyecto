@@ -7,6 +7,7 @@ import com.example.tsigback.entities.dtos.LineaDTO;
 import com.example.tsigback.entities.dtos.PuntoDTO;
 import com.example.tsigback.entities.enums.EstadoParada;
 import com.example.tsigback.exception.LineaNoEncontradaException;
+import com.example.tsigback.exception.ParadaNoEncontradaException;
 import com.example.tsigback.repository.LineaRepository;
 import com.example.tsigback.repository.ParadaRepository;
 import com.example.tsigback.repository.RoutingRepository;
@@ -48,6 +49,11 @@ public class LineaService {
             Point puntoDestino = getPuntoDestino(linea.getPuntos());
             String origen = lineaRepository.obtenerDepartamentoOrigen(puntoOrigen);
             String destino = lineaRepository.obtenerDepartamentoDestino(puntoDestino);
+
+            if (!esParadaCercaDePunto(puntoOrigen, 50.0) 
+                && !esParadaCercaDePunto(puntoOrigen, 50.0)) {
+                throw new ParadaNoEncontradaException("El inicio o origen de la ruta no es valida");
+            }
 
             Linea nuevaLinea = Linea.builder()
                     .descripcion(linea.getDescripcion())
@@ -127,7 +133,7 @@ public class LineaService {
         Parada paradaAsociada = parada.getParada();
                 
         // Reviso si la parada esta cerca de la nueva linea
-        if (!lineaRepository.esNuevaParadaCercaDeParada(nuevoRecorrido, parada.getParada().getUbicacion(),100.0)) {
+        if (!lineaRepository.esParadaCercaDeNuevaLinea(nuevoRecorrido, parada.getParada().getUbicacion(),100.0)) {
             //Si es 1, es porque solamente esta asociada a una linea
             if (estaAsociadoUnicamenteAEstaLinea(paradaAsociada)) {
                 paradaAsociada.setEstado(EstadoParada.DESHABILITADA);        
@@ -167,5 +173,9 @@ public class LineaService {
                 .empresa(linea.getEmpresa())
                 .recorrido(linea.getRecorrido().toText())
                 .build();
+    }
+
+    private boolean esParadaCercaDePunto(Point puntoOrigen, Double distancia) {
+        return paradaRepository.esParadaCercaDePunto(puntoOrigen, distancia);
     }
 }

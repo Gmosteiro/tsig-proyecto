@@ -3,6 +3,7 @@ package com.example.tsigback.controller;
 import com.example.tsigback.entities.dtos.LineaDTO;
 import com.example.tsigback.entities.dtos.ListaPuntosDTO;
 import com.example.tsigback.exception.LineaNoEncontradaException;
+import com.example.tsigback.exception.ParadaNoEncontradaException;
 import com.example.tsigback.service.LineaService;
 
 import java.util.List;
@@ -34,9 +35,12 @@ public class LineaController {
         if (lineaDTO == null || lineaDTO.getPuntos() == null || lineaDTO.getPuntos().isEmpty()) {
             return ResponseEntity.badRequest().body("No se puede crear una línea nula o sin puntos.");
         }
-
-        lineaService.crearLinea(lineaDTO);
-        return ResponseEntity.ok("Linea creada correctamente");
+        try {
+            lineaService.crearLinea(lineaDTO);
+            return ResponseEntity.ok("Linea creada correctamente");
+        } catch (ParadaNoEncontradaException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
     }
 
     @PutMapping
@@ -67,15 +71,4 @@ public class LineaController {
             return ResponseEntity.internalServerError().build();
         }
     }
-    /*
-    //Estos metodos de aca abajo son para testing
-    @GetMapping("/todas")
-    public ResponseEntity<List<LineaDTO>> mostrarTodas() {
-        return ResponseEntity.status(HttpStatus.OK).body(lineaService.obtenerTodas());
-    }
-
-    @GetMapping("/todas/sin_recorrido")
-    public ResponseEntity<List<LineaDTO>> mostrarTodasSinRecorrido() {
-        return ResponseEntity.status(HttpStatus.OK).body(lineaService.obtenerTodasSinRecorrido());
-    }*/
 }
