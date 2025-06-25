@@ -1,13 +1,15 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap, GeoJSON} from 'react-leaflet';
-import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet';
+import { useEffect, useState, useRef } from 'react';
 import L from 'leaflet';
 import NavigationBar from '../components/ui/NavigationBar';
 import Footer from '../components/ui/Footer';
 import 'leaflet/dist/leaflet.css';
-import { FeatureGroup, Polygon } from 'react-leaflet';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import { getWMSFeatureInfo } from '../services/api';
-import { EditControl } from 'react-leaflet-draw';
+import { LineaDTO, updateGeoJSON, getLinesByGeoJson } from '../services/linea';
+import Searcher from '../components/search/Searcher';
+import PolygonDrawControl from '../components/map/PolygonDrawControl';
+import React from 'react';
 
 const customIcon = new L.Icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png',
@@ -21,206 +23,184 @@ const stopIcon = new L.Icon({
   iconAnchor: [12, 41],
 });
 
-function RecenterMap({ center }: { center: [number, number] }) {
-  const map = useMap();
-
-  useEffect(() => {
-    map.setView(center);
-  }, [center, map]);
-
-  return null;
-}
-
 export default function SimpleMapPage() {
   const [position, setPosition] = useState<[number, number]>([-34.9, -56.2]);
   const [nearbyStops, setNearbyStops] = useState<any[]>([]);
   const [nearbyLines, setNearbyLines] = useState<any[]>([]);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [polygon, setPolygon] = useState<any>(null); // Guardar el polígono dibujado
-  const [hideDisabled, setHideDisabled] = useState(false);
+  const [selectedLinea, setSelectedLinea] = useState<any | null>(null);
+  const [showSearcher, setShowSearcher] = useState(false);
+  const [polygonCoords, setPolygonCoords] = useState<[number, number][]>([]);
+  const [polygonLines, setPolygonLines] = useState<any[] | null>(null);
+  const [drawingPolygon, setDrawingPolygon] = useState(false);
+  const mapRef = useRef<any>(null);
+  const featureGroupRef = useRef<any>(null);
 
-
-
-useEffect(() => {
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      const latlng: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-      setPosition(latlng);
-
-      // Consulta WMS de paradas cercanas
-      const mapSize = { x: 1024, y: 768 };
-      const tolerance = 4000; // METROS de visualizacion de PARADAS y LINES alrededor de ubicaion actual
-      const featureCount = 200;
-
-      const data = await getWMSFeatureInfo({
-        layerName: "tsig:parada",
-        crsCode: "EPSG:4326",
-        bbox: `${latlng[1] - 0.01},${latlng[0] - 0.01},${latlng[1] + 0.01},${latlng[0] + 0.01}`,
-        size: mapSize,
-        point: { x: mapSize.x / 2, y: mapSize.y / 2 },
-        infoFormat: "application/json",
-        tolerance,
-        featureCount
-      });
-
-      console.log("WMS paradas:", data);
-
-      if (data && data.features) {
-        setNearbyStops(data.features);
-      } else {
-        setNearbyStops([]);
+  useEffect(() => {
+    if (selectedLinea && selectedLinea.rutaGeoJSON && mapRef.current) {
+      const geojson = JSON.parse(selectedLinea.rutaGeoJSON)
+      const coords = geojson.coordinates.flat(1)
+      const latlngs = coords.map(([lng, lat]: [number, number]) => [lat, lng])
+      if (latlngs.length > 0) {
+        mapRef.current.fitBounds(latlngs)
       }
-
-
-      // Consulta WMS de líneas cercanas
-      const linesData = await getWMSFeatureInfo({
-        layerName: "tsig:linea",
-        crsCode: "EPSG:4326",
-        bbox: `${latlng[1] - 0.01},${latlng[0] - 0.01},${latlng[1] + 0.01},${latlng[0] + 0.01}`,
-        size: mapSize,
-        point: { x: mapSize.x / 2, y: mapSize.y / 2 },
-        infoFormat: "application/json",
-        tolerance,
-        featureCount
-      });
-
-      console.log("WMS lineas:", linesData);
-
-      if (linesData && linesData.features) {
-        setNearbyLines(linesData.features);
-      } else {
-        setNearbyLines([]);
-      }
-
-    },
-    (err) => {
-      console.error("Error obteniendo geolocalización:", err);
     }
-  );
-  }, []);
+  }, [selectedLinea]);
 
-  const handleCreated = (e: any) => {
+  const handleCancelPolygon = () => {
+    setDrawingPolygon(false)
+    setPolygonLines(null)
+    if (featureGroupRef.current) {
+      featureGroupRef.current.clearLayers()
+    }
+    setPolygonCoords([])
+  }
+
+  function SetMapRef({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null> }) {
+    const map = useMap();
+    React.useEffect(() => {
+      mapRef.current = map;
+    }, [map, mapRef]);
+    return null;
+  }
+
+  const handleCreated = async (e: any) => {
     if (e.layerType === 'polygon') {
-      const layer = e.layer;
-      const geojson = layer.toGeoJSON();
-      setPolygon(geojson);
+      const latlngs = e.layer.getLatLngs()[0].map((latlng: any) => [latlng.lat, latlng.lng]);
+      setPolygonCoords(latlngs);
+
+      const geoJson = e.layer.toGeoJSON();
+
+      const lines = await getLinesByGeoJson(geoJson);
+      setPolygonLines(lines);
+      setShowSearcher(false); // Oculta el buscador normal si está abierto
+      setDrawingPolygon(false); // Ya no estamos dibujando
+
+      if (featureGroupRef.current) {
+        featureGroupRef.current.clearLayers();
+      }
+      setPolygonCoords([]);
     }
-  };
+  }
 
-  const handleDeleted = () => {
-    setPolygon(null);
-  };
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const latlng: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        setPosition(latlng);
 
-  const renderForm = () => {
-    return (
-      <div className="flex flex-col gap-4 p-4 bg-white shadow rounded-md w-full max-w-md mx-auto">
-        {selectedOption === 'Origen-Destino' && (
-          <>
-            <label>Origen:</label>
-            <input type="text" placeholder="Ej: Montevideo" className="border p-2 rounded" />
-            <label>Destino:</label>
-            <input type="text" placeholder="Ej: Maldonado" className="border p-2 rounded" />
-          </>
-        )}
-        {selectedOption === 'Por Horario' && (
-          <>
-            <label>Desde:</label>
-            <input type="time" className="border p-2 rounded" />
-            <label>Hasta:</label>
-            <input type="time" className="border p-2 rounded" />
-          </>
-        )}
-        {selectedOption === 'Por Ruta/KM' && (
-          <>
-            <label>Ruta o KM:</label>
-            <input type="text" placeholder="Ej: Ruta 8 km 29" className="border p-2 rounded" />
-          </>
-        )}
-        {selectedOption === 'Por Empresa' && (
-          <>
-            <label>Empresa:</label>
-            <input type="text" placeholder="Ej: CUTCSA" className="border p-2 rounded" />
-          </>
-        )}
-        {selectedOption === 'Corte Polígono' && (
-          <>
-            <p>Dibuje un polígono en el mapa.</p>
-          </>
-        )}
+        // Consulta WMS de paradas cercanas
+        const mapSize = { x: 1024, y: 768 };
+        const tolerance = 4000; // METROS de visualizacion de PARADAS y LINES alrededor de ubicaion actual
+        const featureCount = 200;
 
-        <div className="flex justify-between mt-4">
-          <button
-            onClick={() => {
-              setSelectedOption(null);
-              setPolygon(null);
-            }}
-            className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
-          >
-            Volver
-          </button>
-          <button
-            onClick={() => {
-              if (selectedOption === 'Corte Polígono') {
-                if (polygon) {
-                  alert('GeoJSON generado:\n' + JSON.stringify(polygon, null, 2));
-                } else {
-                  alert('Dibuje un polígono primero.');
-                }
-              } else {
-                alert('Confirmado (sin funcionalidad)');
-              }
-            }}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Confirmar
-          </button>
-        </div>
-      </div>
+        const data = await getWMSFeatureInfo({
+          layerName: "tsig:parada",
+          crsCode: "EPSG:4326",
+          bbox: `${latlng[1] - 0.01},${latlng[0] - 0.01},${latlng[1] + 0.01},${latlng[0] + 0.01}`,
+          size: mapSize,
+          point: { x: mapSize.x / 2, y: mapSize.y / 2 },
+          infoFormat: "application/json",
+          tolerance,
+          featureCount
+        });
+
+        console.log("WMS paradas:", data);
+
+        if (data && data.features) {
+          setNearbyStops(data.features);
+        } else {
+          setNearbyStops([]);
+        }
+
+
+        // Consulta WMS de líneas cercanas
+        const linesData = await getWMSFeatureInfo({
+          layerName: "tsig:linea",
+          crsCode: "EPSG:4326",
+          bbox: `${latlng[1] - 0.01},${latlng[0] - 0.01},${latlng[1] + 0.01},${latlng[0] + 0.01}`,
+          size: mapSize,
+          point: { x: mapSize.x / 2, y: mapSize.y / 2 },
+          infoFormat: "application/json",
+          tolerance,
+          featureCount
+        });
+
+        console.log("WMS lineas:", linesData);
+
+        if (linesData && linesData.features) {
+          setNearbyLines(linesData.features);
+        } else {
+          setNearbyLines([]);
+        }
+
+      },
+      (err) => {
+        console.error("Error obteniendo geolocalización:", err);
+      }
     );
-  };
+  }, []);
 
   return (
     <div className="min-h-screen">
       <NavigationBar />
 
-      {/* Selector o formulario */}
-      <div className="flex justify-between items-center px-6 py-4 bg-gray-100 shadow">
-        {!selectedOption ? (
-          <>
-          <div className="flex flex-wrap gap-4 justify-center flex-1">
-            
-            {['Origen-Destino', 'Por Horario', 'Por Ruta/KM', 'Por Empresa', 'Corte Polígono'].map((label) => (
-              <button
-                key={label}
-                onClick={() => setSelectedOption(label)}
-                className="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow hover:bg-gray-50 transition"
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center ml-4">
-            <input
-              type="checkbox"
-              id="toggleHideDisabled"
-              checked={hideDisabled}
-              onChange={() => setHideDisabled(prev => !prev)}
-              className="mr-2 scale-90"
-            />
-            <label htmlFor="toggleHideDisabled" className="text-sm font-small">
-              Líneas y Paradas Deshabilitadas
-            </label>
-          </div>
-
-          
-          </>
-        ) : (
-          renderForm()
+      <div className="flex justify-center my-6">
+        {(showSearcher || polygonLines) && (
+          <Searcher
+            onVerLinea={async (data: LineaDTO) => {
+              const line = await updateGeoJSON(data);
+              setSelectedLinea(line);
+              setShowSearcher(false);
+              setPolygonLines(null);
+            }}
+            initialLines={polygonLines}
+          />
         )}
       </div>
 
-      {/* Mapa */}
+      {!drawingPolygon && (
+        <div className="flex gap-2 justify-center my-4">
+          <button
+            className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer"
+            onClick={() => setShowSearcher(v => !v)}
+          >
+            {showSearcher ? "Ocultar Buscador" : "Buscar Rutas"}
+          </button>
+          <button
+            className="bg-green-600 text-white px-4 py-2 rounded cursor-pointer"
+            onClick={() => setDrawingPolygon(true)}
+          >
+            Filtrar por Área
+          </button>
+          {(showSearcher || selectedLinea || polygonLines) && (
+            <button
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer"
+              onClick={() => {
+                setShowSearcher(false);
+                setSelectedLinea(null);
+                setPolygonLines(null);
+              }}
+            >
+              Cancelar
+            </button>
+          )}
+        </div>
+      )}
+
+      {drawingPolygon && (
+        <div className="flex gap-2 justify-center my-4">
+          <div className="bg-blue-100 border border-blue-300 px-4 py-2 rounded">
+            <span className="text-blue-800">Dibuja un polígono en el mapa para filtrar rutas por área</span>
+          </div>
+          <button
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer"
+            onClick={handleCancelPolygon}
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
+
       {position ? (
         <MapContainer
           center={position}
@@ -228,6 +208,7 @@ useEffect(() => {
           scrollWheelZoom={true}
           style={{ height: '75vh', width: '100%' }}
         >
+          <SetMapRef mapRef={mapRef} />
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution="&copy; OpenStreetMap contributors"
@@ -235,7 +216,7 @@ useEffect(() => {
           <Marker position={position} icon={customIcon}>
             <Popup>¡Estás aquí!</Popup>
           </Marker>
-          
+
           {/* Paradas Cercanas */}
           {nearbyStops.map((feature: any, idx: number) => {
             const [lon, lat] = feature.geometry.coordinates;
@@ -267,34 +248,24 @@ useEffect(() => {
                 Destino: {feature.properties?.destino}<br />
                 Empresa: {feature.properties?.empresa}
               </Popup>
-
             </GeoJSON>
           ))}
 
-
-
-          {/* Solo mostrar el control de dibujo si está activa la opción */}
-          {selectedOption === 'Corte Polígono' && (
-            <FeatureGroup>
-              {/* <EditControl
-                position="topright"
-                onCreated={handleCreated}
-                onDeleted={handleDeleted}
-                draw={{
-                  rectangle: false,
-                  circle: false,
-                  circlemarker: false,
-                  marker: false,
-                  polyline: false,
-                  polygon: true,
-                }}
-              /> */}
-              {/* Mostrar el polígono si existe */}
-              {polygon && (
-                <Polygon positions={polygon.geometry.coordinates[0].map((coord: [number, number]) => [coord[1], coord[0]])} />
-              )}
-            </FeatureGroup>
+          {/* Línea seleccionada desde el buscador */}
+          {selectedLinea && selectedLinea.rutaGeoJSON && (
+            <GeoJSON
+              data={JSON.parse(selectedLinea.rutaGeoJSON)}
+              style={{ color: 'blue', weight: 5, opacity: 0.9 }}
+            />
           )}
+
+          <PolygonDrawControl
+            featureGroupRef={featureGroupRef}
+            polygonCoords={polygonCoords}
+            setPolygonCoords={setPolygonCoords}
+            handleCreated={handleCreated}
+          />
+
         </MapContainer>
       ) : (
         <div className="text-center text-gray-600 mt-10">Cargando ubicación...</div>

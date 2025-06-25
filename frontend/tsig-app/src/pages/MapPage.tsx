@@ -1,13 +1,13 @@
 import { MapContainer, Marker, useMapEvents, GeoJSON } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
 import L from 'leaflet'
 import RoutingControl from '../components/map/RoutingControl'
 import PointControls from '../components/map/PointsControls'
 import { v4 as uuidv4 } from 'uuid'
 import { createStop, getWMSFeatureInfo, deleteStop, CrearParadaDTO, updateStop } from '../services/api'
-import { validateRoute, saveLine, LineaDTO, updateGeoJSON, getLinesByGeoJson } from '../services/linea'
+import { validateRoute, saveLine } from '../services/linea'
 import StopMarker from '../components/map/StopMarker'
 import useMapData from '../hooks/useMapData'
 import NavigationBar from '../components/ui/NavigationBar'
@@ -18,10 +18,8 @@ import markerShadow from '../assets/marker-shadow.png'
 import LayerController from '../components/map/LayerController'
 import RouteForm from '../components/ui/RouteForm'
 import StopForm from '../components/map/StopForm'
-import Searcher from '../components/search/Searcher'
 import { useMap } from 'react-leaflet'
 import EditStopPopup from '../components/map/EditStopPopup'
-import PolygonDrawControl from '../components/map/PolygonDrawControl'
 
 export default function MapPage() {
   const { stops } = useMapData()
@@ -34,27 +32,9 @@ export default function MapPage() {
   const [routeGeoJSON, setRouteGeoJSON] = useState<any>(null)
   const [editingStop, setEditingStop] = useState<any | null>(null);
   const [deleteStopMode, setDeleteStopMode] = useState(false);
-  const [selectedLinea, setSelectedLinea] = useState<any | null>(null)
-  const [showSearcher, setShowSearcher] = useState(false);
   const latestRouteGeoJSON = useRef<any>(null)
   const mapRef = useRef<any>(null)
-  const featureGroupRef = useRef<any>(null)
   const [movingStop, setMovingStop] = useState<any | null>(null);
-  const [polygonCoords, setPolygonCoords] = useState<[number, number][]>([])
-  const [polygonLines, setPolygonLines] = useState<any[] | null>(null)
-  const [drawingPolygon, setDrawingPolygon] = useState(false)
-
-  useEffect(() => {
-    if (selectedLinea && selectedLinea.rutaGeoJSON && mapRef.current) {
-      const geojson = JSON.parse(selectedLinea.rutaGeoJSON)
-      const coords = geojson.coordinates.flat(1)
-      const latlngs = coords.map(([lng, lat]: [number, number]) => [lat, lng])
-      if (latlngs.length > 0) {
-        mapRef.current.fitBounds(latlngs)
-      }
-    }
-  }, [selectedLinea])
-
 
   const handleCreateStop = async (stopData: CrearParadaDTO) => {
     await createStop(stopData)
@@ -63,15 +43,6 @@ export default function MapPage() {
 
   const handleCancelCreateStop = () => {
     setCreatingStop(false)
-  }
-
-  const handleCancelPolygon = () => {
-    setDrawingPolygon(false)
-    setPolygonLines(null)
-    if (featureGroupRef.current) {
-      featureGroupRef.current.clearLayers()
-    }
-    setPolygonCoords([])
   }
 
   const handleAddPoint = (latlng: [number, number]) => {
@@ -251,43 +222,11 @@ export default function MapPage() {
     return null;
   }
 
-  const handleCreated = async (e: any) => {
-    if (e.layerType === 'polygon') {
-      const latlngs = e.layer.getLatLngs()[0].map((latlng: any) => [latlng.lat, latlng.lng]);
-      setPolygonCoords(latlngs);
-
-      const geoJson = e.layer.toGeoJSON();
-
-      const lines = await getLinesByGeoJson(geoJson);
-      setPolygonLines(lines);
-      setShowSearcher(false); // Oculta el buscador normal si está abierto
-      setDrawingPolygon(false); // Ya no estamos dibujando
-
-      if (featureGroupRef.current) {
-        featureGroupRef.current.clearLayers();
-      }
-      setPolygonCoords([]);
-    }
-  }
-
   return (
     <div className="flex flex-col min-h-screen">
       <NavigationBar />
       <main className="flex-1">
-        <div className="flex justify-center my-6">
-          {(showSearcher || polygonLines) && (
-            <Searcher
-              onVerLinea={async (data: LineaDTO) => {
-                const line = await updateGeoJSON(data);
-                setSelectedLinea(line);
-                setShowSearcher(false);
-                setPolygonLines(null);
-              }}
-              initialLines={polygonLines}
-            />
-          )}
-        </div>
-        {!creatingStop && !addingRoute && !drawingPolygon && (
+        {!creatingStop && !addingRoute && (
           <div className="flex gap-2 justify-center my-4">
             <button
               className="bg-yellow-600 text-white px-4 py-2 rounded cursor-pointer"
@@ -301,33 +240,9 @@ export default function MapPage() {
             >
               Crear Ruta
             </button>
-            <button
-              className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer"
-              onClick={() => setShowSearcher(v => !v)}
-            >
-              {showSearcher ? "Ocultar Buscador" : "Buscar Rutas"}
-            </button>
-            <button
-              className="bg-green-600 text-white px-4 py-2 rounded cursor-pointer"
-              onClick={() => setDrawingPolygon(true)}
-            >
-              Dibujar Polígono
-            </button>
-            {(showSearcher || selectedLinea) && (
-              <button
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer"
-                onClick={() => {
-                  setShowSearcher(false);
-                  setSelectedLinea(null);
-                }}
-              >
-                Cancelar
-              </button>
-            )}
           </div>
         )}
 
-        {/* Botones de cancelar para creación de parada */}
         {creatingStop && (
           <div className="flex gap-2 justify-center my-4">
             <button
@@ -335,21 +250,6 @@ export default function MapPage() {
               onClick={handleCancelCreateStop}
             >
               Cancelar Creación de Parada
-            </button>
-          </div>
-        )}
-
-        {/* Botones de cancelar para dibujo de polígono */}
-        {drawingPolygon && (
-          <div className="flex gap-2 justify-center my-4">
-            <span className="text-lg font-medium text-gray-700">
-              Dibuja un polígono en el mapa para buscar rutas en esa área
-            </span>
-            <button
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer"
-              onClick={handleCancelPolygon}
-            >
-              Cancelar Polígono
             </button>
           </div>
         )}
@@ -385,7 +285,7 @@ export default function MapPage() {
           <LayerController onMoveStop={handleMoveStop} />
           {creatingStop && (
             <StopForm
-              onCancel={handleCancelCreateStop}
+              onCancel={() => setCreatingStop(false)}
               onSubmit={handleCreateStop}
             />
           )}
@@ -446,21 +346,7 @@ export default function MapPage() {
           {routeGeoJSON && (
             <GeoJSON data={routeGeoJSON} style={{ color: 'red', weight: 5, opacity: 0.9 }} />
           )}
-          {selectedLinea && selectedLinea.rutaGeoJSON && (
-            <GeoJSON
-              data={JSON.parse(selectedLinea.rutaGeoJSON)}
-              style={{ color: 'blue', weight: 5, opacity: 0.9 }}
-            />
-          )}
           {deleteStopMode && <DeleteStopControl />}
-          {drawingPolygon && (
-            <PolygonDrawControl
-              featureGroupRef={featureGroupRef}
-              polygonCoords={polygonCoords}
-              setPolygonCoords={setPolygonCoords}
-              handleCreated={handleCreated}
-            />
-          )}
         </MapContainer>
       </main>
       <Footer />
