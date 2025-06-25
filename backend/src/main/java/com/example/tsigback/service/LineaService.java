@@ -3,14 +3,19 @@ package com.example.tsigback.service;
 import com.example.tsigback.entities.Linea;
 import com.example.tsigback.entities.Parada;
 import com.example.tsigback.entities.ParadaLinea;
+import com.example.tsigback.entities.HorarioParadaLinea;
 import com.example.tsigback.entities.dtos.LineaDTO;
 import com.example.tsigback.entities.dtos.PuntoDTO;
+import com.example.tsigback.entities.dtos.ParadaLineaDTO;
+import com.example.tsigback.entities.dtos.HorarioDTO;
 import com.example.tsigback.entities.enums.EstadoParada;
 import com.example.tsigback.exception.LineaNoEncontradaException;
+import com.example.tsigback.exception.ParadaNoEncontradaException;
 import com.example.tsigback.repository.LineaRepository;
 import com.example.tsigback.repository.ParadaRepository;
 import com.example.tsigback.repository.RoutingRepository;
 import com.example.tsigback.repository.ParadaLineaRepository;
+import com.example.tsigback.repository.HorarioParadaLineaRepository;
 import com.example.tsigback.utils.GeoUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +49,9 @@ public class LineaService {
 
     @Autowired
     private ParadaLineaRepository paradaLineaRepository;
+
+    @Autowired
+    private HorarioParadaLineaRepository horarioParadaLineaRepository;
 
     private static final double MAX_DIST = 100.0; // metros
 
@@ -183,12 +191,12 @@ public class LineaService {
 
         return LineaDTO.builder()
                 .id(linea.getId())
-                .nombre(linea.getDescripcion())
-                .descripcion(linea.getObservacion())
+                .descripcion(linea.getDescripcion())
                 .empresa(linea.getEmpresa())
                 .observacion(linea.getObservacion())
                 .origen(linea.getOrigen())
                 .destino(linea.getDestino())
+                .estaHabilitada(linea.isEstaHabilitada())
                 .puntos(listaPuntos)
                 .rutaGeoJSON(rutaGeoJSON)
                 .recorrido(recorridoWKT)
@@ -210,33 +218,40 @@ public class LineaService {
 
         return LineaDTO.builder()
                 .id(linea.getId())
-                .nombre(linea.getDescripcion())
-                .descripcion(linea.getObservacion())
+                .descripcion(linea.getDescripcion())
                 .empresa(linea.getEmpresa())
                 .observacion(linea.getObservacion())
                 .origen(linea.getOrigen())
                 .destino(linea.getDestino())
+                .estaHabilitada(linea.isEstaHabilitada())
                 .paradaLineaIds(paradaLineaIds)
                 // No incluye puntos, rutaGeoJSON ni recorrido
                 .build();
     }
 
-    public void eliminarLineaYRelaciones(int id) throws LineaNoEncontradaException {
-        Linea linea = lineaRepository.findById(id)
-                .orElseThrow(() -> new LineaNoEncontradaException("Línea con id " + id + " no encontrada"));
-
-        List<ParadaLinea> paradaLineas = linea.getParadasLineas();
-        for (ParadaLinea pl : paradaLineas) {
-            Parada parada = pl.getParada();
-            paradaLineaRepository.delete(pl);
-
-            List<ParadaLinea> restantes = paradaLineaRepository.findByParadaId(parada.getId());
-            if (restantes.isEmpty()) {
-                parada.setEstado(EstadoParada.DESHABILITADA);
-                paradaRepository.save(parada);
-            }
+    /**
+     * Calcula si una línea debe estar habilitada basado en:
+     * 1. Si la línea está marcada como habilitada
+     * 2. Si tiene paradas asociadas habilitadas
+     * 3. Si tiene al menos una asociación parada-línea habilitada
+     */
+    private boolean calcularEstadoLinea(Linea linea) {
+        // Si la línea está marcada como deshabilitada, no importa el resto
+        if (!linea.isEstaHabilitada()) {
+            return false;
         }
-        lineaRepository.delete(linea);
+
+        // Si no tiene paradas asociadas, está deshabilitada
+        if (linea.getParadasLineas() == null || linea.getParadasLineas().isEmpty()) {
+            return false;
+        }
+
+        // Verificar si tiene al menos una parada habilitada con asociación habilitada
+        boolean tieneParadaHabilitada = linea.getParadasLineas().stream()
+                .anyMatch(pl -> pl.isEstaHabilitada() && 
+                              pl.getParada().getEstado() == EstadoParada.HABILITADA);
+
+        return tieneParadaHabilitada;
     }
 
     public List<LineaDTO> obtenerLineasActivasEnRango(LocalTime horaDesde, LocalTime horaHasta) {
@@ -252,6 +267,7 @@ public class LineaService {
                 .orElseThrow(() -> new LineaNoEncontradaException(
                         "La linea con id " + lineaDTO.getId() + " no ha sido encontrada"));
 
+        // Actualizar campos básicos
         linea.setDescripcion(lineaDTO.getDescripcion() != null ? lineaDTO.getDescripcion() : linea.getDescripcion());
         linea.setEmpresa(lineaDTO.getEmpresa() != null ? lineaDTO.getEmpresa() : linea.getEmpresa());
         linea.setObservacion(lineaDTO.getObservacion() != null ? lineaDTO.getObservacion() : linea.getObservacion());
@@ -259,38 +275,58 @@ public class LineaService {
         List<PuntoDTO> puntosDtos = lineaDTO.getPuntos();
 
         if (puntosDtos != null && puntosDtos.size() > 1) {
-            MultiLineString nuevoRecorrido = GeoUtils.geoJsonToMultiLineString(lineaDTO.getRutaGeoJSON());
+            // Validar que el GeoJSON esté presente
+            if (lineaDTO.getRutaGeoJSON() != null && !lineaDTO.getRutaGeoJSON().trim().isEmpty()) {
+                MultiLineString nuevoRecorrido = GeoUtils.geoJsonToMultiLineString(lineaDTO.getRutaGeoJSON());
+                MultiPoint nuevosPuntos = GeoUtils.crearMultiPointDesdeDTOs(puntosDtos);
 
-            List<ParadaLinea> paradas = linea.getParadasLineas();
-            // Itero por todas las paradas que estan asociadas en la lineas
-            /*
-             * for (ParadaLinea parada : paradas) {
-             * procesamientoDeParadaLinea(parada, linea, nuevoRecorrido);
-             * }
-             */
+                // Procesar paradas existentes antes de actualizar el recorrido
+                List<ParadaLinea> paradasExistentes = new ArrayList<>(linea.getParadasLineas());
+                for (ParadaLinea paradaLinea : paradasExistentes) {
+                    procesamientoDeParadaLinea(paradaLinea, linea, nuevoRecorrido);
+                }
 
-            String origen = lineaRepository.obtenerDepartamentoOrigen(getPuntoDeOrigen(puntosDtos));
-            String destino = lineaRepository.obtenerDepartamentoDestino(getPuntoDestino(puntosDtos));
-            linea.setOrigen(origen);
-            linea.setDestino(destino);
+                // Actualizar geometrías
+                linea.setRecorrido(nuevoRecorrido);
+                linea.setPuntos(nuevosPuntos);
+
+                // Actualizar origen y destino
+                String origen = lineaRepository.obtenerDepartamentoOrigen(getPuntoDeOrigen(puntosDtos));
+                String destino = lineaRepository.obtenerDepartamentoDestino(getPuntoDestino(puntosDtos));
+                linea.setOrigen(origen);
+                linea.setDestino(destino);
+
+                // Recalcular el estado de la línea después de modificar el recorrido
+                linea.setEstaHabilitada(calcularEstadoLinea(linea));
+            }
         }
 
         lineaRepository.save(linea);
     }
 
-    private void procesamientoDeParadaLinea(ParadaLinea parada, Linea linea, MultiLineString nuevoRecorrido) {
-        Parada paradaAsociada = parada.getParada();
+    private void procesamientoDeParadaLinea(ParadaLinea paradaLinea, Linea linea, MultiLineString nuevoRecorrido) {
+        Parada parada = paradaLinea.getParada();
 
-        // Reviso si la parada esta cerca de la nueva linea
-        if (!lineaRepository.esNuevaParadaCercaDeParada(nuevoRecorrido, parada.getParada().getUbicacion(), 100.0)) {
-            // Si es 1, es porque solamente esta asociada a una linea
-            if (estaAsociadoUnicamenteAEstaLinea(paradaAsociada)) {
-                paradaAsociada.setEstado(EstadoParada.DESHABILITADA);
+        // Verificar si la parada está cerca del nuevo recorrido (menos de 100 metros)
+        if (!lineaRepository.esNuevaParadaCercaDeParada(nuevoRecorrido, parada.getUbicacion(), 100.0)) {
+            // La parada queda huérfana del nuevo recorrido, deshabilitar la asociación
+            paradaLinea.setEstaHabilitada(false);
+            
+            // Verificar si esta parada tiene otras líneas habilitadas
+            List<ParadaLinea> otrasLineasHabilitadas = paradaLineaRepository.findByParadaId(parada.getId())
+                .stream()
+                .filter(pl -> pl.getId() != paradaLinea.getId() && pl.isEstaHabilitada())
+                .toList();
+            
+            // Si no tiene otras líneas habilitadas, deshabilitar la parada completa
+            if (otrasLineasHabilitadas.isEmpty()) {
+                parada.setEstado(EstadoParada.DESHABILITADA);
+                paradaRepository.save(parada);
             }
-            paradaRepository.save(paradaAsociada);
+            
+            // Guardar la paradaLinea deshabilitada
+            paradaLineaRepository.save(paradaLinea);
         }
-
-        parada.setEstaHabilitada(false);
     }
 
     private void validateGeoJson(String rutaGeoJSON) {
@@ -322,6 +358,183 @@ public class LineaService {
         return lineaRepository.findAll()
                 .stream().map(this::toSimpleDTO)
                 .collect(Collectors.toList());
+    }
+
+    public void eliminarLineaYRelaciones(int id) throws LineaNoEncontradaException {
+        Linea linea = lineaRepository.findById(id)
+                .orElseThrow(() -> new LineaNoEncontradaException("La línea con id " + id + " no ha sido encontrada"));
+
+        // Obtener todas las asociaciones parada-línea antes de eliminar la línea
+        List<ParadaLinea> paradasLineas = new ArrayList<>(linea.getParadasLineas());
+        
+        // Procesar cada parada asociada para verificar si debe ser deshabilitada
+        for (ParadaLinea paradaLinea : paradasLineas) {
+            Parada parada = paradaLinea.getParada();
+            
+            // Verificar si esta parada tiene otras líneas habilitadas (excluyendo la que se va a eliminar)
+            List<ParadaLinea> otrasLineasHabilitadas = paradaLineaRepository.findByParadaId(parada.getId())
+                .stream()
+                .filter(pl -> pl.getLinea().getId() != linea.getId() && pl.isEstaHabilitada())
+                .toList();
+            
+            // Si no tiene otras líneas habilitadas, deshabilitar la parada
+            if (otrasLineasHabilitadas.isEmpty()) {
+                parada.setEstado(EstadoParada.DESHABILITADA);
+                paradaRepository.save(parada);
+            }
+        }
+        
+        // Eliminar la línea (las asociaciones se eliminan en cascada)
+        lineaRepository.delete(linea);
+    }
+
+    /**
+     * Obtiene las líneas que están dentro de una distancia específica de una parada
+     * @param paradaId ID de la parada de referencia
+     * @param distanciaMetros Distancia máxima en metros
+     * @return Lista de líneas cercanas a la parada
+     * @throws ParadaNoEncontradaException Si la parada no existe
+     */
+    public List<LineaDTO> obtenerLineasCercanasAParada(int paradaId, double distanciaMetros) throws ParadaNoEncontradaException {
+        // Verificar que la parada existe
+        Parada parada = paradaRepository.findById(paradaId)
+                .orElseThrow(() -> new ParadaNoEncontradaException("Parada con id " + paradaId + " no encontrada"));
+        
+        // Obtener todas las líneas
+        List<Linea> todasLasLineas = lineaRepository.findAll();
+        
+        // Filtrar líneas que estén dentro de la distancia especificada
+        List<Linea> lineasCercanas = todasLasLineas.stream()
+                .filter(linea -> {
+                    // Usar el método del repositorio para verificar si la parada está cerca del recorrido
+                    return lineaRepository.esParadaCercaDelRecorrido(parada.getUbicacion(), linea.getId(), distanciaMetros);
+                })
+                .toList();
+        
+        // Convertir a DTO y retornar
+        return lineasCercanas.stream()
+                .map(this::toSimpleDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtiene todas las paradas asociadas a una línea con sus horarios
+     * Ordenadas por distancia desde el origen de la línea
+     * @param lineaId ID de la línea
+     * @return Lista de paradas con horarios ordenadas por posición en la ruta
+     * @throws LineaNoEncontradaException Si la línea no existe
+     */
+    public List<ParadaLineaDTO> obtenerParadasDeLineaConHorarios(int lineaId) throws LineaNoEncontradaException {
+        // Verificar que la línea existe
+        Linea linea = lineaRepository.findById(lineaId)
+                .orElseThrow(() -> new LineaNoEncontradaException("Línea con id " + lineaId + " no encontrada"));
+        
+        // Obtener todas las asociaciones parada-línea para esta línea
+        List<ParadaLinea> paradasLinea = paradaLineaRepository.findByLineaId(lineaId);
+        
+        // Convertir a DTO y calcular orden por distancia desde el origen
+        return paradasLinea.stream()
+                .map(this::paradaLineaToDTO)
+                .sorted((pl1, pl2) -> {
+                    // Ordenar por distancia desde el origen de la línea
+                    // Se puede usar la latitud o un campo de orden si existe
+                    // Por ahora ordenamos por ID de parada como aproximación
+                    return Integer.compare(pl1.getIdParada(), pl2.getIdParada());
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Convierte una entidad ParadaLinea a DTO incluyendo horarios
+     */
+    private ParadaLineaDTO paradaLineaToDTO(ParadaLinea paradaLinea) {
+        ParadaLineaDTO dto = new ParadaLineaDTO();
+        dto.setIdParadaLinea(paradaLinea.getId());
+        dto.setIdLinea(paradaLinea.getLinea().getId());
+        dto.setIdParada(paradaLinea.getParada().getId());
+        dto.setEstaHabilitada(paradaLinea.isEstaHabilitada());
+        
+        // Agregar información de la parada
+        dto.setNombreParada(paradaLinea.getParada().getNombre());
+        dto.setLatitudParada(paradaLinea.getParada().getUbicacion().getY());
+        dto.setLongitudParada(paradaLinea.getParada().getUbicacion().getX());
+        
+        // Obtener horarios
+        List<HorarioParadaLinea> horariosEntity = horarioParadaLineaRepository.findByParadaLinea(paradaLinea);
+        List<HorarioDTO> horarios = horariosEntity.stream()
+                .map(h -> {
+                    HorarioDTO horario = new HorarioDTO();
+                    horario.setId(h.getId());
+                    horario.setHora(h.getHorario());
+                    return horario;
+                })
+                .collect(Collectors.toList());
+        
+        dto.setHorarios(horarios);
+        
+        return dto;
+    }
+
+    /**
+     * Cambia el estado de una línea y gestiona automáticamente las asociaciones parada-línea
+     * @param lineaId ID de la línea
+     * @param habilitada Nuevo estado de la línea
+     * @throws LineaNoEncontradaException Si la línea no existe
+     */
+    public void cambiarEstadoLinea(int lineaId, boolean habilitada) throws LineaNoEncontradaException {
+        Linea linea = lineaRepository.findById(lineaId)
+                .orElseThrow(() -> new LineaNoEncontradaException("Línea con id " + lineaId + " no encontrada"));
+        
+        linea.setEstaHabilitada(habilitada);
+        lineaRepository.save(linea);
+        
+        // Obtener todas las asociaciones parada-línea para esta línea
+        List<ParadaLinea> paradasLinea = paradaLineaRepository.findByLineaId(lineaId);
+        
+        if (!habilitada) {
+            // Si se deshabilita la línea, deshabilitar todas las asociaciones
+            for (ParadaLinea paradaLinea : paradasLinea) {
+                paradaLinea.setEstaHabilitada(false);
+                paradaLineaRepository.save(paradaLinea);
+            }
+        } else {
+            // Si se habilita la línea, habilitar solo las asociaciones que estén a menos de 100m
+            for (ParadaLinea paradaLinea : paradasLinea) {
+                // Verificar distancia antes de habilitar
+                if (lineaRepository.esParadaCercaDelRecorrido(
+                        paradaLinea.getParada().getUbicacion(), 
+                        lineaId, 
+                        100.0)) {
+                    paradaLinea.setEstaHabilitada(true);
+                    paradaLineaRepository.save(paradaLinea);
+                }
+            }
+        }
+        
+        // Verificar el estado de todas las paradas afectadas
+        for (ParadaLinea paradaLinea : paradasLinea) {
+            verificarYActualizarEstadoParada(paradaLinea.getParada());
+        }
+    }
+
+    /**
+     * Verifica y actualiza el estado de una parada basado en sus líneas asociadas
+     */
+    private void verificarYActualizarEstadoParada(Parada parada) {
+        List<ParadaLinea> lineasHabilitadas = paradaLineaRepository.findByParadaId(parada.getId())
+                .stream()
+                .filter(ParadaLinea::isEstaHabilitada)
+                .toList();
+        
+        if (lineasHabilitadas.isEmpty()) {
+            // Si no tiene líneas habilitadas, deshabilitar la parada
+            parada.setEstado(EstadoParada.DESHABILITADA);
+        } else {
+            // Si tiene al menos una línea habilitada, habilitar la parada
+            parada.setEstado(EstadoParada.HABILITADA);
+        }
+        
+        paradaRepository.save(parada);
     }
 
 }

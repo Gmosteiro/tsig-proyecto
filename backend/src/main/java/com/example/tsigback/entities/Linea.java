@@ -34,6 +34,10 @@ public class Linea {
     private String origen;
     private String destino;
     private String observacion;
+    
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean estaHabilitada = true; // Por defecto habilitada
 
     @Column(columnDefinition = "geometry(MultiPoint, 4326)")
     private MultiPoint puntos;

@@ -157,7 +157,25 @@ export default function SimpleMapPage() {
           style={{ height: '75vh', width: '100%' }}
         >
           <SetMapRef mapRef={mapRef} />
-          <LayerController />
+          <LayerController 
+            selectedLineaFromParent={selectedLinea}
+            onViewLine={async (linea: LineaDTO) => {
+              const line = await updateGeoJSON(linea);
+              setSelectedLinea(line);
+            }}
+            onCenterMap={(latitud: number, longitud: number) => {
+              console.log('SimpleMapPage - Centrando mapa en:', latitud, longitud);
+              if (mapRef.current) {
+                mapRef.current.setView([latitud, longitud], 16);
+                console.log('Mapa centrado exitosamente');
+              } else {
+                console.warn('mapRef.current no disponible');
+              }
+            }}
+            onClearSelectedLine={() => {
+              setSelectedLinea(null);
+            }}
+          />
           <Marker position={position} icon={customIcon}>
             <Popup>¡Estás aquí!</Popup>
           </Marker>
@@ -178,7 +196,7 @@ export default function SimpleMapPage() {
               style={{ color: 'red', weight: 3, opacity: 0.8 }}
             >
               <Popup>
-                <strong>Línea:</strong> {linea.nombre}<br />
+                <strong>Línea:</strong> {linea.descripcion}<br />
                 <strong>Empresa:</strong> {linea.empresa}<br />
                 <strong>Origen:</strong> {linea.origen}<br />
                 <strong>Destino:</strong> {linea.destino}

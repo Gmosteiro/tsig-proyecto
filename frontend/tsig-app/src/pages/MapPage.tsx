@@ -4,10 +4,9 @@ import 'leaflet-draw/dist/leaflet.draw.css'
 import React, { useState, useRef } from 'react'
 import L from 'leaflet'
 import RoutingControl from '../components/map/RoutingControl'
-import PointControls from '../components/map/PointsControls'
 import { v4 as uuidv4 } from 'uuid'
 import { createStop, getWMSFeatureInfo, deleteStop, CrearParadaDTO, updateStop } from '../services/api'
-import { validateRoute, saveLine } from '../services/linea'
+import { validateRoute, saveLine, LineaDTO, updateLine } from '../services/linea'
 import StopMarker from '../components/map/StopMarker'
 import useMapData from '../hooks/useMapData'
 import NavigationBar from '../components/ui/NavigationBar'
@@ -32,6 +31,7 @@ export default function MapPage() {
   const [routeGeoJSON, setRouteGeoJSON] = useState<any>(null)
   const [editingStop, setEditingStop] = useState<any | null>(null);
   const [deleteStopMode, setDeleteStopMode] = useState(false);
+  const [modifyingLineRoute, setModifyingLineRoute] = useState<LineaDTO | null>(null);
   const latestRouteGeoJSON = useRef<any>(null)
   const mapRef = useRef<any>(null)
   const [movingStop, setMovingStop] = useState<any | null>(null);
@@ -105,10 +105,10 @@ export default function MapPage() {
       return;
     }
     const lineData = {
-      nombre: formData.nombre,
       descripcion: formData.descripcion,
       empresa: formData.empresa,
       observacion: formData.observacion,
+      estaHabilitada: true, // Por defecto habilitada
       puntos: points.map(pt => ({ latitud: pt.lat, longitud: pt.lng })),
       rutaGeoJSON: JSON.stringify(routeGeoJSON)
     };
@@ -162,6 +162,66 @@ export default function MapPage() {
       alert("Error al mover la parada: " + (err?.response?.data || err.message));
     }
     setMovingStop(null);
+  };
+
+  // Handler para iniciar la modificación del recorrido de una línea
+  const handleModifyLineRoute = (linea: LineaDTO) => {
+    console.log('Iniciando modificación de recorrido para línea:', linea);
+    setModifyingLineRoute(linea);
+    
+    // Si hay puntos en la línea, cargarlos
+    if (linea.puntos && linea.puntos.length > 0) {
+      const newPoints = linea.puntos.map((punto) => ({
+        id: uuidv4(),
+        lat: punto.latitud,
+        lng: punto.longitud
+      }));
+      setPoints(newPoints);
+      
+      // Fit map to line bounds
+      if (mapRef.current && newPoints.length > 0) {
+        const latlngs = newPoints.map(p => [p.lat, p.lng] as [number, number]);
+        const bounds = L.latLngBounds(latlngs);
+        mapRef.current.fitBounds(bounds, { padding: [20, 20] });
+      }
+    }
+    
+    // Entrar en modo de edición de ruta
+    setAddingRoute(true);
+    setIsValidated(false);
+  };
+
+  // Cancelar modificación de recorrido
+  const handleCancelModifyRoute = () => {
+    setModifyingLineRoute(null);
+    setAddingRoute(false);
+    setPoints([]);
+    setSelectedIdx(null);
+    setIsValidated(false);
+    setRouteGeoJSON(null);
+    setShowRouteForm(false);
+  };
+
+  // Guardar modificación de recorrido  
+  const handleSaveModifiedRoute = async (formData: { descripcion: string, empresa: string, observacion?: string }) => {
+    if (!modifyingLineRoute) return;
+    
+    try {
+      const routeData = {
+        ...modifyingLineRoute,
+        descripcion: formData.descripcion,
+        empresa: formData.empresa,
+        observacion: formData.observacion,
+        puntos: points.map(pt => ({ latitud: pt.lat, longitud: pt.lng })),
+        rutaGeoJSON: JSON.stringify(latestRouteGeoJSON.current)
+      };
+      
+      await updateLine(routeData);
+      alert('Recorrido de línea modificado correctamente');
+      handleCancelModifyRoute();
+    } catch (err: any) {
+      alert('Error al modificar el recorrido: ' + (err?.response?.data || err.message));
+    }
   };
 
   function DeleteStopControl() {
@@ -242,7 +302,8 @@ export default function MapPage() {
     <div className="flex flex-col min-h-screen">
       <NavigationBar />
       <main className="flex-1">
-        {!creatingStop && !addingRoute && (
+        {/* Main Controls - Only show when not in any creation/modification mode */}
+        {!creatingStop && !addingRoute && !modifyingLineRoute && (
           <div className="flex gap-2 justify-center my-4">
             <button
               className="bg-yellow-600 text-white px-4 py-2 rounded cursor-pointer"
@@ -259,6 +320,7 @@ export default function MapPage() {
           </div>
         )}
 
+        {/* Stop Creation Flow */}
         {creatingStop && !newStopPosition && (
           <div className="flex justify-center my-4">
             <div className="bg-blue-100 border border-blue-300 px-4 py-2 rounded">
@@ -278,25 +340,139 @@ export default function MapPage() {
           </div>
         )}
 
-        {addingRoute && !showRouteForm && (
-          <PointControls
-            adding={addingRoute}
-            setAdding={setAddingRoute}
-            selectedIdx={selectedIdx}
-            handleDeleteSelected={handleDeleteSelected}
-            handleVerifyRoute={handleVerifyRoute}
-            handleSaveRoute={() => setShowRouteForm(true)}
-            pointsLength={points.length}
-            handleCancelAdd={handleCancelAddRoute}
-            isValidated={isValidated}
-            handleCancelValidation={handleCancelValidation}
-          />
+        {/* Line Creation Flow */}
+        {addingRoute && !showRouteForm && !modifyingLineRoute && (
+          <div className="flex flex-col items-center gap-2 my-4">
+            <div className="bg-green-100 border border-green-300 px-4 py-2 rounded">
+              <span className="text-green-800">Creando nueva ruta. Haz clic en el mapa para agregar puntos.</span>
+            </div>
+            <div className="flex gap-2">
+              {selectedIdx !== null && (
+                <button
+                  className="bg-red-400 text-white px-4 py-2 rounded"
+                  onClick={handleDeleteSelected}
+                >
+                  Eliminar Punto Seleccionado
+                </button>
+              )}
+              {points.length > 1 && !isValidated && (
+                <button
+                  className="bg-yellow-500 text-white px-4 py-2 rounded"
+                  onClick={handleVerifyRoute}
+                >
+                  Verificar Ruta
+                </button>
+              )}
+              {isValidated && (
+                <>
+                  <button
+                    className="bg-green-500 text-white px-4 py-2 rounded"
+                    onClick={() => setShowRouteForm(true)}
+                  >
+                    Guardar Ruta
+                  </button>
+                  <button
+                    className="bg-gray-400 text-white px-4 py-2 rounded"
+                    onClick={handleCancelValidation}
+                  >
+                    Cancelar Validación
+                  </button>
+                </>
+              )}
+              <button
+                className="bg-red-600 text-white px-4 py-2 rounded"
+                onClick={handleCancelAddRoute}
+              >
+                Cancelar Creación
+              </button>
+            </div>
+          </div>
         )}
-        {addingRoute && isValidated && showRouteForm && (
+
+        {/* Line Modification Flow */}
+        {modifyingLineRoute && !showRouteForm && (
+          <div className="flex flex-col items-center gap-2 my-4">
+            <div className="bg-orange-100 border border-orange-300 px-4 py-2 rounded">
+              <span className="text-orange-800">
+                Modificando recorrido de "{modifyingLineRoute.descripcion}". Edita los puntos en el mapa.
+              </span>
+            </div>
+            <div className="flex gap-2">
+              {selectedIdx !== null && (
+                <button
+                  className="bg-red-400 text-white px-4 py-2 rounded"
+                  onClick={handleDeleteSelected}
+                >
+                  Eliminar Punto Seleccionado
+                </button>
+              )}
+              {points.length > 1 && !isValidated && (
+                <button
+                  className="bg-yellow-500 text-white px-4 py-2 rounded"
+                  onClick={handleVerifyRoute}
+                >
+                  Verificar Ruta
+                </button>
+              )}
+              {isValidated && (
+                <>
+                  <button
+                    className="bg-green-500 text-white px-4 py-2 rounded"
+                    onClick={() => setShowRouteForm(true)}
+                  >
+                    Guardar Modificación
+                  </button>
+                  <button
+                    className="bg-gray-400 text-white px-4 py-2 rounded"
+                    onClick={handleCancelValidation}
+                  >
+                    Cancelar Validación
+                  </button>
+                </>
+              )}
+              <button
+                className="bg-red-600 text-white px-4 py-2 rounded"
+                onClick={handleCancelModifyRoute}
+              >
+                Cancelar Modificación
+              </button>
+            </div>
+          </div>
+        )}
+        
+        {addingRoute && isValidated && showRouteForm && !modifyingLineRoute && (
           <RouteForm
             points={points.map(pt => [pt.lat, pt.lng])}
-            onCancel={handleCancelValidation}
+            onCancel={() => {
+              setShowRouteForm(false)
+              setIsValidated(false)
+              setRouteGeoJSON(null)
+              setAddingRoute(false)
+              setPoints([])
+              setSelectedIdx(null)
+            }}
             onSave={handleSaveRoute}
+          />
+        )}
+        
+        {addingRoute && isValidated && showRouteForm && modifyingLineRoute && (
+          <RouteForm
+            points={points.map(pt => [pt.lat, pt.lng])}
+            onCancel={() => {
+              setShowRouteForm(false)
+              setIsValidated(false)
+              setRouteGeoJSON(null)
+              setModifyingLineRoute(null)
+              setAddingRoute(false)
+              setPoints([])
+              setSelectedIdx(null)
+            }}
+            onSave={handleSaveModifiedRoute}
+            initialData={{
+              descripcion: modifyingLineRoute.descripcion,
+              empresa: modifyingLineRoute.empresa,
+              observacion: modifyingLineRoute.observacion
+            }}
           />
         )}
 
@@ -306,8 +482,20 @@ export default function MapPage() {
           style={{ height: '80vh', width: '100%' }}
         >
           <SetMapRef mapRef={mapRef} />
-          <LayerController onMoveStop={handleMoveStop} />
-          {creatingStop && (
+          <LayerController 
+            onMoveStop={handleMoveStop} 
+            onModifyLineRoute={handleModifyLineRoute}
+            onCenterMap={(latitud: number, longitud: number) => {
+              console.log('MapPage - Centrando mapa en:', latitud, longitud);
+              if (mapRef.current) {
+                mapRef.current.setView([latitud, longitud], 16);
+                console.log('Mapa centrado exitosamente');
+              } else {
+                console.warn('mapRef.current no disponible');
+              }
+            }}
+          />
+          {creatingStop && !modifyingLineRoute && (
             <>
               <StopClickControl onMapClick={handleMapClickForStop} />
               <StopForm
@@ -315,7 +503,7 @@ export default function MapPage() {
                 onSubmit={handleCreateStop}
                 initialData={newStopPosition ? {
                   nombre: 'Nueva Parada',
-                  estado: 0,
+                  estado: 1, // Por defecto habilitada
                   refugio: false,
                   observacion: '',
                   latitud: newStopPosition[0],
@@ -324,15 +512,15 @@ export default function MapPage() {
               />
             </>
           )}
-          {addingRoute && !isValidated && <AddPointControl onAddPoint={handleAddPoint} />}
+          {(addingRoute || !!modifyingLineRoute) && !isValidated && <AddPointControl onAddPoint={handleAddPoint} />}
           {points.map((pt, idx) => (
             <Marker
               key={pt.id}
               position={[pt.lat, pt.lng]}
-              draggable={addingRoute && !isValidated}
+              draggable={(addingRoute || !!modifyingLineRoute) && !isValidated}
               eventHandlers={{
-                dragend: (e) => addingRoute && !isValidated && handleMarkerDrag(idx, e),
-                click: () => addingRoute && !isValidated && setSelectedIdx(idx)
+                dragend: (e) => (addingRoute || !!modifyingLineRoute) && !isValidated && handleMarkerDrag(idx, e),
+                click: () => (addingRoute || !!modifyingLineRoute) && !isValidated && setSelectedIdx(idx)
               }}
               icon={L.icon({
                 iconUrl: selectedIdx === idx ? markerIconRed : markerIcon,
@@ -344,7 +532,7 @@ export default function MapPage() {
               })}
             />
           ))}
-          {addingRoute && points.length >= 2 && (
+          {(addingRoute || !!modifyingLineRoute) && points.length >= 2 && (
             <RoutingControl
               waypoints={points.map(pt => [pt.lat, pt.lng])}
               serviceUrl="https://router.project-osrm.org/route/v1"

@@ -1,19 +1,34 @@
 import { TileLayer, WMSTileLayer, LayersControl } from 'react-leaflet'
 import { useState, useEffect } from 'react'
-import { ParadaDTO } from '../../services/api'
+import { ParadaDTO, ParadaLineaDTO } from '../../services/api'
+import { LineaDTO, getLineById } from '../../services/linea'
 import WMSFeatureInfoHandler from './WMSFeatureInfoHandler'
 import StopInfoPopupContainer from './StopInfoPopupContainer'
+import LineInfoPopupContainer from './LineInfoPopupContainer'
+import StopInfoReadOnlyPopup from './StopInfoReadOnlyPopup'
+import LineInfoReadOnlyPopup from './LineInfoReadOnlyPopup'
+import LineStopsPopup from './LineStopsPopup'
 import { WMS_URL, DEFAULT_TILE_SIZE } from '../../lib/constants'
 import { useAuth } from '../../context/authContext'
 import L from 'leaflet'
 
-export default function LayerController({ onMoveStop }: { onMoveStop?: (parada: ParadaDTO) => void }) {
+export default function LayerController({ onMoveStop, onModifyLineRoute, onViewLine, onCenterMap, selectedLineaFromParent, onClearSelectedLine }: { 
+    onMoveStop?: (parada: ParadaDTO) => void
+    onModifyLineRoute?: (linea: LineaDTO) => void 
+    onViewLine?: (linea: LineaDTO) => void
+    onCenterMap?: (latitud: number, longitud: number) => void
+    selectedLineaFromParent?: LineaDTO | null
+    onClearSelectedLine?: () => void
+}) {
     const { isAuthenticated } = useAuth()
     const [camineraVisible, setCamineraVisible] = useState(false)
     const [paradaVisible, setParadaVisible] = useState(true)
-    const [lineaVisible, setLineaVisible] = useState(false)
+    const [lineaVisible, setLineaVisible] = useState(true)
     const [selectedParada, setSelectedParada] = useState<ParadaDTO | null>(null)
+    const [selectedLinea, setSelectedLinea] = useState<LineaDTO | null>(null)
+    const [showLineStops, setShowLineStops] = useState<{ lineaId: number; lineaDescripcion: string } | null>(null)
     const [paradaFiltro, setParadaFiltro] = useState<'todos' | 'habilitadas' | 'deshabilitadas'>('todos')
+    const [lineaFiltro, setLineaFiltro] = useState<'todos' | 'habilitadas' | 'deshabilitadas'>('todos')
     const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
 
     // Obtener geolocalización para usuarios no autenticados
@@ -33,22 +48,25 @@ export default function LayerController({ onMoveStop }: { onMoveStop?: (parada: 
         }
     }, [isAuthenticated])
 
+    // Sincronizar línea seleccionada desde el componente padre
+    useEffect(() => {
+        setSelectedLinea(selectedLineaFromParent || null)
+    }, [selectedLineaFromParent])
+
     /**
      * Construye el filtro CQL para paradas según el tipo de usuario:
      * - Usuarios no autenticados: filtro por estado (habilitadas/deshabilitadas) + filtro geográfico de 4km
-     * - Usuarios admin autenticados: sin filtros (ven todo)
+     * - Usuarios admin autenticados: filtro por estado (habilitadas/deshabilitadas)
      * - Sin geolocalización: solo filtro por estado, sin restricción de distancia
      */
     const buildCqlFilter = () => {
         const filters = []
 
-        // Para usuarios no autenticados, aplicar filtro de estado
-        if (!isAuthenticated) {
-            if (paradaFiltro === 'habilitadas') {
-                filters.push('estado=0')
-            } else if (paradaFiltro === 'deshabilitadas') {
-                filters.push('estado=1')
-            }
+        // Aplicar filtro de estado para todos los usuarios
+        if (paradaFiltro === 'habilitadas') {
+            filters.push('estado=1')  // 1 = Habilitada
+        } else if (paradaFiltro === 'deshabilitadas') {
+            filters.push('estado=0')  // 0 = Deshabilitada
         }
 
         // Para usuarios no autenticados, aplicar filtro geográfico de 4km si hay geolocalización
@@ -65,17 +83,28 @@ export default function LayerController({ onMoveStop }: { onMoveStop?: (parada: 
 
     /**
      * Construye el filtro CQL para líneas:
-     * - Usuarios no autenticados: filtro geográfico de 4km si hay geolocalización
-     * - Usuarios admin autenticados: sin filtros (ven todas las líneas)
+     * - Usuarios no autenticados: filtro geográfico de 4km si hay geolocalización + filtro por estado
+     * - Usuarios admin autenticados: solo filtro por estado si se especifica
      * - Sin geolocalización: sin filtros de distancia
      */
     const buildLineaCqlFilter = () => {
+        const filters = []
+
+        // Para usuarios no autenticados o autenticados, aplicar filtro de estado si no es 'todos'
+        if (lineaFiltro === 'habilitadas') {
+            filters.push('esta_habilitada=true')
+        } else if (lineaFiltro === 'deshabilitadas') {
+            filters.push('esta_habilitada=false')
+        }
+
+        // Para usuarios no autenticados, aplicar filtro geográfico de 4km si hay geolocalización
         if (!isAuthenticated && userLocation) {
             const [lat, lng] = userLocation
             // Buffer de 4km = 4000 metros
-            return `DWITHIN(recorrido, POINT(${lng} ${lat}), 4000, meters)`
+            filters.push(`DWITHIN(recorrido, POINT(${lng} ${lat}), 4000, meters)`)
         }
-        return undefined
+
+        return filters.length > 0 ? filters.join(' AND ') : undefined
     }
 
     const lineaCqlFilter = buildLineaCqlFilter()
@@ -95,33 +124,34 @@ export default function LayerController({ onMoveStop }: { onMoveStop?: (parada: 
                         attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
                     />
                 </LayersControl.BaseLayer>
-                <LayersControl.Overlay name="Caminera Nacional" checked={camineraVisible}>
-                    <WMSTileLayer
-                        eventHandlers={{ add: () => setCamineraVisible(true), remove: () => setCamineraVisible(false) }}
-                        url={WMS_URL}
-                        layers="tsig:ft_caminera_nacional"
-                        format="image/png"
-                        transparent={true}
-                        tileSize={DEFAULT_TILE_SIZE}
-                    />
-                </LayersControl.Overlay>
+                {/* Solo mostrar caminera nacional para usuarios autenticados */}
+                {isAuthenticated && (
+                    <LayersControl.Overlay name="Caminera Nacional" checked={camineraVisible}>
+                        <WMSTileLayer
+                            eventHandlers={{ add: () => setCamineraVisible(true), remove: () => setCamineraVisible(false) }}
+                            url={WMS_URL}
+                            layers="tsig:ft_caminera_nacional"
+                            format="image/png"
+                            transparent={true}
+                            tileSize={DEFAULT_TILE_SIZE}
+                        />
+                    </LayersControl.Overlay>
+                )}
                 <LayersControl.Overlay name="Paradas" checked={paradaVisible}>
                     <>
-                        {/* Solo mostrar filtro para usuarios no autenticados */}
-                        {!isAuthenticated && (
-                            <div style={{ position: 'absolute', zIndex: 1000, left: 60, top: 10, background: 'rgba(255,255,255,0.9)', padding: 6, borderRadius: 6 }}>
-                                <label style={{ marginRight: 8 }}>Mostrar:</label>
-                                <select
-                                    value={paradaFiltro}
-                                    onChange={e => setParadaFiltro(e.target.value as any)}
-                                    style={{ fontSize: 14 }}
-                                >
-                                    <option value="todos">Todos</option>
-                                    <option value="habilitadas">Habilitadas</option>
-                                    <option value="deshabilitadas">Deshabilitadas</option>
-                                </select>
-                            </div>
-                        )}
+                        {/* Mostrar filtro para todos los usuarios */}
+                        <div style={{ position: 'absolute', zIndex: 1000, left: 60, top: 10, background: 'rgba(255,255,255,0.9)', padding: 6, borderRadius: 6 }}>
+                            <label style={{ marginRight: 8 }}>Mostrar:</label>
+                            <select
+                                value={paradaFiltro}
+                                onChange={e => setParadaFiltro(e.target.value as any)}
+                                style={{ fontSize: 14 }}
+                            >
+                                <option value="todos">Todos</option>
+                                <option value="habilitadas">Habilitadas</option>
+                                <option value="deshabilitadas">Deshabilitadas</option>
+                            </select>
+                        </div>
                         <WMSTileLayer
                             key={`${paradaFiltro}-${userLocation ? `${userLocation[0]}-${userLocation[1]}` : 'no-location'}-${isAuthenticated}`}
                             eventHandlers={{ add: () => setParadaVisible(true), remove: () => setParadaVisible(false) }}
@@ -136,16 +166,31 @@ export default function LayerController({ onMoveStop }: { onMoveStop?: (parada: 
                     </>
                 </LayersControl.Overlay>
                 <LayersControl.Overlay name="Líneas" checked={lineaVisible}>
-                    <WMSTileLayer
-                        key={`lineas-${userLocation ? `${userLocation[0]}-${userLocation[1]}` : 'no-location'}-${isAuthenticated}`}
-                        eventHandlers={{ add: () => setLineaVisible(true), remove: () => setLineaVisible(false) }}
-                        url={WMS_URL}
-                        layers="tsig:linea"
-                        format="image/png"
-                        transparent={true}
-                        tileSize={DEFAULT_TILE_SIZE}
-                        params={lineaCqlFilter ? ({ CQL_FILTER: lineaCqlFilter } as any) : {}}
-                    />
+                    <>
+                        {/* Filtro para líneas habilitadas/deshabilitadas - disponible para todos los usuarios */}
+                        <div style={{ position: 'absolute', zIndex: 1000, left: 60, top: 60, background: 'rgba(255,255,255,0.9)', padding: 6, borderRadius: 6 }}>
+                            <label style={{ marginRight: 8 }}>Líneas:</label>
+                            <select
+                                value={lineaFiltro}
+                                onChange={e => setLineaFiltro(e.target.value as any)}
+                                style={{ fontSize: 14 }}
+                            >
+                                <option value="todos">Todas</option>
+                                <option value="habilitadas">Habilitadas</option>
+                                <option value="deshabilitadas">Deshabilitadas</option>
+                            </select>
+                        </div>
+                        <WMSTileLayer
+                            key={`lineas-${lineaFiltro}-${userLocation ? `${userLocation[0]}-${userLocation[1]}` : 'no-location'}-${isAuthenticated}`}
+                            eventHandlers={{ add: () => setLineaVisible(true), remove: () => setLineaVisible(false) }}
+                            url={WMS_URL}
+                            layers="tsig:linea"
+                            format="image/png"
+                            transparent={true}
+                            tileSize={DEFAULT_TILE_SIZE}
+                            params={lineaCqlFilter ? ({ CQL_FILTER: lineaCqlFilter } as any) : {}}
+                        />
+                    </>
                 </LayersControl.Overlay>
             </LayersControl>
 
@@ -170,20 +215,175 @@ export default function LayerController({ onMoveStop }: { onMoveStop?: (parada: 
                             latitud: latlng.lat,
                             longitud: latlng.lng,
                         })
+                        // Siempre cerrar el popup de línea cuando se selecciona una parada
+                        setSelectedLinea(null)
                     } else {
                         setSelectedParada(null)
                     }
                 }}
             />
 
-            <StopInfoPopupContainer
-                parada={selectedParada}
-                onClose={() => setSelectedParada(null)}
-                onMove={parada => {
-                    if (onMoveStop) onMoveStop(parada)
-                    setSelectedParada(null)
+            {/* Handler para clics en líneas */}
+            <WMSFeatureInfoHandler
+                visible={lineaVisible}
+                layerName="tsig:linea"
+                tolerance={12}
+                onFeatureInfo={async data => {
+                    if (data && data.features && data.features.length > 0) {
+                        const lineaFeature = data.features[0]
+                        const props = lineaFeature.properties
+                        const lineaId = lineaFeature.id.split('.')[1]
+
+                        try {
+                            // Obtener la línea completa del servidor
+                            const linea = await getLineById(parseInt(lineaId))
+                            setSelectedLinea(linea)
+                            // Siempre cerrar el popup de parada cuando se selecciona una línea
+                            setSelectedParada(null)
+                        } catch (error) {
+                            console.error('Error al obtener la línea:', error)
+                            // Fallback: crear LineaDTO básica con la info del WMS
+                            setSelectedLinea({
+                                id: parseInt(lineaId),
+                                descripcion: props.descripcion || `Línea ${lineaId}`,
+                                empresa: props.empresa || '',
+                                observacion: props.observacion || '',
+                                origen: props.origen || '',
+                                destino: props.destino || '',
+                                estaHabilitada: true, // Default value
+                                puntos: [],
+                                rutaGeoJSON: ''
+                            })
+                            setSelectedParada(null)
+                        }
+                    } else {
+                        setSelectedLinea(null)
+                    }
                 }}
             />
+
+            {/* Popups condicionales según autenticación */}
+            {isAuthenticated ? (
+                <>
+                    <StopInfoPopupContainer
+                        parada={selectedParada}
+                        onClose={() => setSelectedParada(null)}
+                        onMove={parada => {
+                            if (onMoveStop) onMoveStop(parada)
+                            setSelectedParada(null)
+                        }}
+                    />
+
+                    <LineInfoPopupContainer
+                        linea={selectedLinea}
+                        onClose={() => setSelectedLinea(null)}
+                        onModifyRoute={linea => {
+                            if (onModifyLineRoute) onModifyLineRoute(linea)
+                            setSelectedLinea(null)
+                        }}
+                        onShowStops={(lineaId, lineaDescripcion) => {
+                            setShowLineStops({ lineaId, lineaDescripcion });
+                        }}
+                    />
+
+                    {/* LineStopsPopup también disponible para usuarios autenticados */}
+                    {showLineStops && (
+                        <LineStopsPopup
+                            lineaId={showLineStops.lineaId}
+                            lineaDescripcion={showLineStops.lineaDescripcion}
+                            onClose={() => setShowLineStops(null)}
+                            onViewStop={onCenterMap}
+                            onSelectStop={(parada: ParadaLineaDTO) => {
+                                // Crear un ParadaDTO a partir de ParadaLineaDTO para mostrar el popup de parada
+                                if (parada.nombreParada && parada.latitudParada && parada.longitudParada) {
+                                    const paradaDTO: ParadaDTO = {
+                                        id: parada.idParada,
+                                        nombre: parada.nombreParada,
+                                        estado: 1, // Asumimos habilitada por defecto
+                                        refugio: false, // No tenemos esta info
+                                        observacion: '', // No tenemos esta info
+                                        latitud: parada.latitudParada,
+                                        longitud: parada.longitudParada
+                                    };
+                                    setSelectedParada(paradaDTO);
+                                    // Cerrar el popup de línea cuando se selecciona una parada
+                                    setSelectedLinea(null);
+                                    // Limpiar línea seleccionada del padre si existe la función
+                                    if (onClearSelectedLine) {
+                                        onClearSelectedLine();
+                                    }
+                                }
+                            }}
+                        />
+                    )}
+                </>
+            ) : (
+                <>
+                    {selectedParada && (
+                        <StopInfoReadOnlyPopup
+                            parada={selectedParada}
+                            onClose={() => setSelectedParada(null)}
+                            onViewRoute={async (lineaId: number) => {
+                                try {
+                                    const linea = await getLineById(lineaId);
+                                    setSelectedLinea(linea);
+                                    // Cerrar el popup de parada y LineStopsPopup cuando se ve una línea
+                                    setSelectedParada(null);
+                                    setShowLineStops(null);
+                                    
+                                    // Usar onViewLine para pintar la línea y centrar el mapa
+                                    if (onViewLine) {
+                                        onViewLine(linea);
+                                    }
+                                } catch (error) {
+                                    console.error('Error al obtener la línea:', error);
+                                    alert('Error al cargar la información de la línea');
+                                }
+                            }}
+                        />
+                    )}
+
+                    {selectedLinea && (
+                        <LineInfoReadOnlyPopup
+                            linea={selectedLinea}
+                            onClose={() => setSelectedLinea(null)}
+                            onShowStops={(lineaId, lineaDescripcion) => {
+                                setShowLineStops({ lineaId, lineaDescripcion });
+                            }}
+                        />
+                    )}
+
+                    {showLineStops && (
+                        <LineStopsPopup
+                            lineaId={showLineStops.lineaId}
+                            lineaDescripcion={showLineStops.lineaDescripcion}
+                            onClose={() => setShowLineStops(null)}
+                            onViewStop={onCenterMap}
+                            onSelectStop={(parada: ParadaLineaDTO) => {
+                                // Crear un ParadaDTO a partir de ParadaLineaDTO para mostrar el popup de parada
+                                if (parada.nombreParada && parada.latitudParada && parada.longitudParada) {
+                                    const paradaDTO: ParadaDTO = {
+                                        id: parada.idParada,
+                                        nombre: parada.nombreParada,
+                                        estado: 1, // Asumimos habilitada por defecto
+                                        refugio: false, // No tenemos esta info
+                                        observacion: '', // No tenemos esta info
+                                        latitud: parada.latitudParada,
+                                        longitud: parada.longitudParada
+                                    };
+                                    setSelectedParada(paradaDTO);
+                                    // Cerrar SOLO el popup de línea, mantener LineStopsPopup
+                                    setSelectedLinea(null);
+                                    // Limpiar la línea dibujada en el mapa (ocultar botón cancelar)
+                                    if (onClearSelectedLine) {
+                                        onClearSelectedLine();
+                                    }
+                                }
+                            }}
+                        />
+                    )}
+                </>
+            )}
         </>
     )
 }

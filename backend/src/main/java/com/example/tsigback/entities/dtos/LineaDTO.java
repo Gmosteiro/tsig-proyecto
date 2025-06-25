@@ -15,12 +15,12 @@ import lombok.ToString;
 @ToString
 public class LineaDTO {
     private int id;
-    private String nombre;
     private String descripcion;
     private String empresa;
     private String observacion;
     private String origen;
     private String destino;
+    private boolean estaHabilitada;
     private List<PuntoDTO> puntos;
     private String rutaGeoJSON;
     private String recorrido;
