@@ -36,7 +36,7 @@ const AssociateStopWithLinePopup: React.FC<AssociateStopWithLinePopupProps> = ({
                 const nearby = await getLineasCercanasAParada(Number(parada.id), 100);
                 setFilteredLines(nearby);
             } catch (error) {
-                console.error('Error al cargar líneas:', error);
+                console.error('Error al cargar lineas:', error);
             }
         };
         
@@ -105,7 +105,7 @@ const AssociateStopWithLinePopup: React.FC<AssociateStopWithLinePopupProps> = ({
     };
 
     return (
-        <div className={styles.popupContainer} onClick={e => e.stopPropagation()}>
+        <div className={styles.popupContainerSafe} onClick={e => e.stopPropagation()}>
             <button onClick={onClose} aria-label="Cerrar" className={styles.closeButton}>×</button>
             <div className={styles.title}>Asociar Parada con Línea</div>
             <div className={styles.inputGroup}>

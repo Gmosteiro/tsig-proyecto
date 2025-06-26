@@ -1,5 +1,5 @@
 <featureType>
-  <id>FeatureTypeInfoImpl--5d1364e8:1977b808c91:-8000</id>
+  <id>FeatureTypeInfoImpl-51d10201:197aae432ae:-7f94</id>
   <name>linea</name>
   <nativeName>linea</nativeName>
   <namespace>
@@ -12,24 +12,21 @@
   </keywords>
   <srs>EPSG:4326</srs>
   <nativeBoundingBox>
-    <minx>-56.21518</minx>
+    <minx>-57.84921348094941</minx>
     <maxx>-56.19472</maxx>
-    <miny>-34.91046</miny>
-    <maxy>-34.88975952103216</maxy>
+    <miny>-34.90251</miny>
+    <maxy>-33.87434</maxy>
     <crs>EPSG:4326</crs>
   </nativeBoundingBox>
   <latLonBoundingBox>
-    <minx>-56.21518</minx>
+    <minx>-57.84921348094941</minx>
     <maxx>-56.19472</maxx>
-    <miny>-34.91046</miny>
-    <maxy>-34.88975952103216</maxy>
+    <miny>-34.90251</miny>
+    <maxy>-33.87434</maxy>
     <crs>EPSG:4326</crs>
   </latLonBoundingBox>
   <projectionPolicy>FORCE_DECLARED</projectionPolicy>
   <enabled>true</enabled>
-  <metadata>
-    <entry key="cachingEnabled">false</entry>
-  </metadata>
   <store class="dataStore">
     <id>DataStoreInfoImpl--5b0256c0:1970f882771:-8000</id>
   </store>
@@ -61,6 +58,13 @@
       <maxOccurs>1</maxOccurs>
       <nillable>true</nillable>
       <binding>java.lang.String</binding>
+    </attribute>
+    <attribute>
+      <name>esta_habilitada</name>
+      <minOccurs>1</minOccurs>
+      <maxOccurs>1</maxOccurs>
+      <nillable>false</nillable>
+      <binding>java.lang.Boolean</binding>
     </attribute>
     <attribute>
       <name>observacion</name>

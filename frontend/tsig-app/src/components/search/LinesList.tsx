@@ -8,7 +8,13 @@ type LinesListProps = {
 }
 
 const LinesList: React.FC<LinesListProps> = ({ lineas, onVerLinea }) => {
-    if (!lineas.length) return null
+    if (!lineas.length) {
+        return (
+            <div className="text-gray-400 text-center py-8">
+                No se encontraron líneas.
+            </div>
+        )
+    }
 
     return (
         <ul className="mt-4 bg-white rounded-lg shadow divide-y divide-gray-200 border">

@@ -1,0 +1,43 @@
+<featureType>
+  <id>FeatureTypeInfoImpl-51d10201:197aae432ae:-7f96</id>
+  <name>parada</name>
+  <nativeName>parada</nativeName>
+  <namespace>
+    <id>NamespaceInfoImpl-6de0af8c:19709c42a0b:-7fff</id>
+  </namespace>
+  <title>parada</title>
+  <keywords>
+    <string>features</string>
+    <string>parada</string>
+  </keywords>
+  <srs>EPSG:4326</srs>
+  <nativeBoundingBox>
+    <minx>-57.84921348094941</minx>
+    <maxx>-56.20501935482026</maxx>
+    <miny>-34.90249166554687</miny>
+    <maxy>-33.88124587505191</maxy>
+    <crs>EPSG:4326</crs>
+  </nativeBoundingBox>
+  <latLonBoundingBox>
+    <minx>-57.84921348094941</minx>
+    <maxx>-56.20501935482026</maxx>
+    <miny>-34.90249166554687</miny>
+    <maxy>-33.88124587505191</maxy>
+    <crs>EPSG:4326</crs>
+  </latLonBoundingBox>
+  <projectionPolicy>FORCE_DECLARED</projectionPolicy>
+  <enabled>true</enabled>
+  <store class="dataStore">
+    <id>DataStoreInfoImpl--5b0256c0:1970f882771:-8000</id>
+  </store>
+  <serviceConfiguration>false</serviceConfiguration>
+  <internationalTitle/>
+  <internationalAbstract/>
+  <maxFeatures>0</maxFeatures>
+  <numDecimals>0</numDecimals>
+  <padWithZeros>false</padWithZeros>
+  <forcedDecimal>false</forcedDecimal>
+  <overridingServiceSRS>false</overridingServiceSRS>
+  <skipNumberMatched>false</skipNumberMatched>
+  <circularArcPresent>false</circularArcPresent>
+</featureType>

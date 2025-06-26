@@ -51,14 +51,30 @@ export type RoutingRequestDTO = {
 export type EstadoParada = 0 | 1;
 
 export async function createStop(stopData: CrearParadaDTO) {
-    const res = await axios.post('/apiurl/api/parada/crear', stopData)
-    return res.data
+    try {
+        const res = await axios.post('/apiurl/api/parada/crear', stopData)
+        return res.data
+    } catch (error: any) {
+        // Si el error tiene una respuesta del servidor, extraer el mensaje
+        if (error.response && error.response.data) {
+            throw new Error(error.response.data)
+        }
+        throw error
+    }
 }
 
 export async function updateStop(stopData: ParadaDTO) {
     console.log('Updating stop:', stopData)
-    const res = await axios.put(`/apiurl/api/parada/modificar`, stopData);
-    return res.data;
+    try {
+        const res = await axios.put(`/apiurl/api/parada/modificar`, stopData);
+        return res.data;
+    } catch (error: any) {
+        // Si el error tiene una respuesta del servidor, extraer el mensaje
+        if (error.response && error.response.data) {
+            throw new Error(error.response.data)
+        }
+        throw error
+    }
 }
 
 export async function deleteStop(id: number) {
@@ -132,6 +148,7 @@ export type WMSFeatureInfoParams = {
     infoFormat?: string,
     tolerance?: number
     featureCount?: number
+    styles?: string
 }
 
 // Puedes ajustar este tipo según la estructura real de la respuesta del WMS
@@ -149,7 +166,8 @@ export async function getWMSFeatureInfo({
     point,
     infoFormat = "application/json",
     tolerance = 5,
-    featureCount = 5    // 👈 default a 5
+    featureCount = 5,
+    styles = ''
 }: WMSFeatureInfoParams): Promise<WMSFeatureInfoResponse> {
     const url = new URL(WMS_URL);
     url.search = new URLSearchParams({
@@ -160,7 +178,7 @@ export async function getWMSFeatureInfo({
         TRANSPARENT: 'true',
         QUERY_LAYERS: layerName,
         LAYERS: layerName,
-        STYLES: '',
+        STYLES: styles,
         SRS: crsCode,
         BBOX: bbox,
         WIDTH: size.x.toString(),

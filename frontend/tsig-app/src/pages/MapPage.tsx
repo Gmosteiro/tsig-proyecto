@@ -38,9 +38,21 @@ export default function MapPage() {
   const [newStopPosition, setNewStopPosition] = useState<[number, number] | null>(null);
 
   const handleCreateStop = async (stopData: CrearParadaDTO) => {
-    await createStop(stopData)
-    setCreatingStop(false)
-    setNewStopPosition(null)
+    try {
+      await createStop(stopData)
+      alert('Parada creada exitosamente')
+      setCreatingStop(false)
+      setNewStopPosition(null)
+    } catch (error) {
+      console.error('Error al crear parada:', error)
+      // Mostrar mensaje de error pero no cerrar el componente
+      if (error instanceof Error) {
+        alert(`Error al crear la parada: ${error.message}`)
+      } else {
+        alert('Error al crear la parada. Por favor, inténtelo nuevamente.')
+      }
+      // No cerrar el componente para que el usuario pueda corregir los datos
+    }
   }
 
   const handleCancelCreateStop = () => {
@@ -144,8 +156,20 @@ export default function MapPage() {
 
   // Handler para guardar cambios de parada
   const handleEditStop = async (stopData: any) => {
-    console.log("Parada editada:", stopData);
-    setEditingStop(null);
+    try {
+      await updateStop(stopData);
+      alert('Parada actualizada exitosamente');
+      setEditingStop(null);
+    } catch (error) {
+      console.error('Error al actualizar parada:', error);
+      // Mostrar mensaje de error pero no cerrar el componente
+      if (error instanceof Error) {
+        alert(`Error al actualizar la parada: ${error.message}`);
+      } else {
+        alert('Error al actualizar la parada. Por favor, inténtelo nuevamente.');
+      }
+      // No cerrar el componente para que el usuario pueda corregir los datos
+    }
   };
 
   // Handler para mover parada
@@ -158,10 +182,18 @@ export default function MapPage() {
   const handleMoveStopSubmit = async (stopData: any) => {
     try {
       await updateStop(stopData);
-    } catch (err: any) {
-      alert("Error al mover la parada: " + (err?.response?.data || err.message));
+      alert('Parada movida exitosamente');
+      setMovingStop(null);
+    } catch (error) {
+      console.error('Error al mover parada:', error);
+      // Mostrar mensaje de error pero no cerrar el componente
+      if (error instanceof Error) {
+        alert(`Error al mover la parada: ${error.message}`);
+      } else {
+        alert('Error al mover la parada. Por favor, inténtelo nuevamente.');
+      }
+      // No cerrar el componente para que el usuario pueda corregir los datos
     }
-    setMovingStop(null);
   };
 
   // Handler para iniciar la modificación del recorrido de una línea
@@ -477,18 +509,18 @@ export default function MapPage() {
         )}
 
         <MapContainer
-          center={[-34.9, -56.2]}
-          zoom={13}
+          center={[-32.5, -56.0]}
+          zoom={7}
           style={{ height: '80vh', width: '100%' }}
         >
           <SetMapRef mapRef={mapRef} />
           <LayerController 
             onMoveStop={handleMoveStop} 
             onModifyLineRoute={handleModifyLineRoute}
-            onCenterMap={(latitud: number, longitud: number) => {
-              console.log('MapPage - Centrando mapa en:', latitud, longitud);
+            onCenterMap={(latitud: number, longitud: number, zoom?: number) => {
+              console.log('MapPage - Centrando mapa en:', latitud, longitud, 'zoom:', zoom);
               if (mapRef.current) {
-                mapRef.current.setView([latitud, longitud], 16);
+                mapRef.current.setView([latitud, longitud], zoom || 16);
                 console.log('Mapa centrado exitosamente');
               } else {
                 console.warn('mapRef.current no disponible');

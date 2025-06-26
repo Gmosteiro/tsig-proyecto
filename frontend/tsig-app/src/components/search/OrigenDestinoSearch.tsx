@@ -31,7 +31,11 @@ const OrigenDestinoSearch: React.FC<OrigenDestinoSearchProps> = ({ onVerLinea })
                     idDepartamentoDestino: destino
                 }
                 const res = await getLineaOrigenDestino(data)
-                setResultados(res)
+                if (res.length === 0) {
+                    setError('No se encontraron líneas para el origen y destino especificados')
+                } else {
+                    setResultados(res)
+                }
             }
         } catch (err) {
             setError('Error al buscar líneas por origen y destino')

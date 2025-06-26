@@ -1,5 +1,5 @@
 import { TileLayer, WMSTileLayer, LayersControl } from 'react-leaflet'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ParadaDTO, ParadaLineaDTO } from '../../services/api'
 import { LineaDTO, getLineById } from '../../services/linea'
 import WMSFeatureInfoHandler from './WMSFeatureInfoHandler'
@@ -16,7 +16,7 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
     onMoveStop?: (parada: ParadaDTO) => void
     onModifyLineRoute?: (linea: LineaDTO) => void 
     onViewLine?: (linea: LineaDTO) => void
-    onCenterMap?: (latitud: number, longitud: number) => void
+    onCenterMap?: (latitud: number, longitud: number, zoom?: number) => void
     selectedLineaFromParent?: LineaDTO | null
     onClearSelectedLine?: () => void
 }) {
@@ -29,24 +29,42 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
     const [showLineStops, setShowLineStops] = useState<{ lineaId: number; lineaDescripcion: string } | null>(null)
     const [paradaFiltro, setParadaFiltro] = useState<'todos' | 'habilitadas' | 'deshabilitadas'>('todos')
     const [lineaFiltro, setLineaFiltro] = useState<'todos' | 'habilitadas' | 'deshabilitadas'>('todos')
-    const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
+    const [mapaBaseActivo, setMapaBaseActivo] = useState<'claro' | 'oscuro'>('claro')
+    const hasInitializedMap = useRef(false) // Para evitar centrar el mapa múltiples veces
 
-    // Obtener geolocalización para usuarios no autenticados
-    // Esto permite aplicar filtros geográficos de proximidad
+    // Obtener geolocalización para centrar el mapa (sin filtrar contenido) - SOLO EN LA CARGA INICIAL
     useEffect(() => {
+        // Solo ejecutar si no se ha inicializado antes
+        if (hasInitializedMap.current) return
+        
         if (!isAuthenticated) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    setUserLocation([position.coords.latitude, position.coords.longitude])
+                    const lat = position.coords.latitude
+                    const lng = position.coords.longitude
+                    // Centrar mapa en la ubicación del usuario con zoom para ver ~4km de radio
+                    if (onCenterMap) {
+                        onCenterMap(lat, lng, 13) // Zoom 13 aproximadamente muestra 4km de radio
+                    }
+                    hasInitializedMap.current = true
                 },
                 (error) => {
                     console.error("Error obteniendo geolocalización:", error)
-                    // Si no se puede obtener geolocalización, se mantiene como null 
-                    // y se muestran todos los resultados independientemente de la distancia
+                    // Si no se puede obtener geolocalización, centrar en Uruguay
+                    if (onCenterMap) {
+                        onCenterMap(-32.5, -56.0, 7) // Centro de Uruguay con zoom para ver todo el país
+                    }
+                    hasInitializedMap.current = true
                 }
             )
+        } else {
+            // Para usuarios autenticados, siempre mostrar todo Uruguay
+            if (onCenterMap) {
+                onCenterMap(-32.5, -56.0, 7) // Centro de Uruguay con zoom para ver todo el país
+            }
+            hasInitializedMap.current = true
         }
-    }, [isAuthenticated])
+    }, [isAuthenticated]) // Remover onCenterMap de las dependencias
 
     // Sincronizar línea seleccionada desde el componente padre
     useEffect(() => {
@@ -54,57 +72,29 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
     }, [selectedLineaFromParent])
 
     /**
-     * Construye el filtro CQL para paradas según el tipo de usuario:
-     * - Usuarios no autenticados: filtro por estado (habilitadas/deshabilitadas) + filtro geográfico de 4km
-     * - Usuarios admin autenticados: filtro por estado (habilitadas/deshabilitadas)
-     * - Sin geolocalización: solo filtro por estado, sin restricción de distancia
+     * Construye el filtro CQL para paradas según el estado seleccionado
      */
     const buildCqlFilter = () => {
-        const filters = []
-
-        // Aplicar filtro de estado para todos los usuarios
         if (paradaFiltro === 'habilitadas') {
-            filters.push('estado=1')  // 1 = Habilitada
+            return 'estado=1'  // 1 = Habilitada
         } else if (paradaFiltro === 'deshabilitadas') {
-            filters.push('estado=0')  // 0 = Deshabilitada
+            return 'estado=0'  // 0 = Deshabilitada
         }
-
-        // Para usuarios no autenticados, aplicar filtro geográfico de 4km si hay geolocalización
-        if (!isAuthenticated && userLocation) {
-            const [lat, lng] = userLocation
-            // Buffer de 4km = 4000 metros
-            filters.push(`DWITHIN(ubicacion, POINT(${lng} ${lat}), 4000, meters)`)
-        }
-
-        return filters.length > 0 ? filters.join(' AND ') : undefined
+        return undefined
     }
 
     const paradaCqlFilter = buildCqlFilter()
 
     /**
-     * Construye el filtro CQL para líneas:
-     * - Usuarios no autenticados: filtro geográfico de 4km si hay geolocalización + filtro por estado
-     * - Usuarios admin autenticados: solo filtro por estado si se especifica
-     * - Sin geolocalización: sin filtros de distancia
+     * Construye el filtro CQL para lineas según el estado seleccionado
      */
     const buildLineaCqlFilter = () => {
-        const filters = []
-
-        // Para usuarios no autenticados o autenticados, aplicar filtro de estado si no es 'todos'
         if (lineaFiltro === 'habilitadas') {
-            filters.push('esta_habilitada=true')
+            return 'esta_habilitada=true'
         } else if (lineaFiltro === 'deshabilitadas') {
-            filters.push('esta_habilitada=false')
+            return 'esta_habilitada=false'
         }
-
-        // Para usuarios no autenticados, aplicar filtro geográfico de 4km si hay geolocalización
-        if (!isAuthenticated && userLocation) {
-            const [lat, lng] = userLocation
-            // Buffer de 4km = 4000 metros
-            filters.push(`DWITHIN(recorrido, POINT(${lng} ${lat}), 4000, meters)`)
-        }
-
-        return filters.length > 0 ? filters.join(' AND ') : undefined
+        return undefined
     }
 
     const lineaCqlFilter = buildLineaCqlFilter()
@@ -114,12 +104,18 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
             <LayersControl position="bottomright">
                 <LayersControl.BaseLayer checked name="Mapa Base Claro">
                     <TileLayer
+                        eventHandlers={{ 
+                            add: () => setMapaBaseActivo('claro'),
+                        }}
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         attribution="&copy; OpenStreetMap contributors"
                     />
                 </LayersControl.BaseLayer>
                 <LayersControl.BaseLayer name="Mapa Base Oscuro">
                     <TileLayer
+                        eventHandlers={{ 
+                            add: () => setMapaBaseActivo('oscuro'),
+                        }}
                         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                         attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
                     />
@@ -137,62 +133,66 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
                         />
                     </LayersControl.Overlay>
                 )}
-                <LayersControl.Overlay name="Paradas" checked={paradaVisible}>
-                    <>
-                        {/* Mostrar filtro para todos los usuarios */}
-                        <div style={{ position: 'absolute', zIndex: 1000, left: 60, top: 10, background: 'rgba(255,255,255,0.9)', padding: 6, borderRadius: 6 }}>
-                            <label style={{ marginRight: 8 }}>Mostrar:</label>
-                            <select
-                                value={paradaFiltro}
-                                onChange={e => setParadaFiltro(e.target.value as any)}
-                                style={{ fontSize: 14 }}
-                            >
-                                <option value="todos">Todos</option>
-                                <option value="habilitadas">Habilitadas</option>
-                                <option value="deshabilitadas">Deshabilitadas</option>
-                            </select>
-                        </div>
-                        <WMSTileLayer
-                            key={`${paradaFiltro}-${userLocation ? `${userLocation[0]}-${userLocation[1]}` : 'no-location'}-${isAuthenticated}`}
-                            eventHandlers={{ add: () => setParadaVisible(true), remove: () => setParadaVisible(false) }}
-                            url={WMS_URL}
-                            layers="tsig:parada"
-                            styles="Parada"
-                            format="image/png"
-                            transparent={true}
-                            tileSize={DEFAULT_TILE_SIZE}
-                            params={paradaCqlFilter ? ({ CQL_FILTER: paradaCqlFilter } as any) : {}}
-                        />
-                    </>
-                </LayersControl.Overlay>
+                {/* IMPORTANTE: Las líneas van ANTES de las paradas para que las paradas se rendericen por encima */}
                 <LayersControl.Overlay name="Líneas" checked={lineaVisible}>
-                    <>
-                        {/* Filtro para líneas habilitadas/deshabilitadas - disponible para todos los usuarios */}
-                        <div style={{ position: 'absolute', zIndex: 1000, left: 60, top: 60, background: 'rgba(255,255,255,0.9)', padding: 6, borderRadius: 6 }}>
-                            <label style={{ marginRight: 8 }}>Líneas:</label>
-                            <select
-                                value={lineaFiltro}
-                                onChange={e => setLineaFiltro(e.target.value as any)}
-                                style={{ fontSize: 14 }}
-                            >
-                                <option value="todos">Todas</option>
-                                <option value="habilitadas">Habilitadas</option>
-                                <option value="deshabilitadas">Deshabilitadas</option>
-                            </select>
-                        </div>
-                        <WMSTileLayer
-                            key={`lineas-${lineaFiltro}-${userLocation ? `${userLocation[0]}-${userLocation[1]}` : 'no-location'}-${isAuthenticated}`}
-                            eventHandlers={{ add: () => setLineaVisible(true), remove: () => setLineaVisible(false) }}
-                            url={WMS_URL}
-                            layers="tsig:linea"
-                            format="image/png"
-                            transparent={true}
-                            tileSize={DEFAULT_TILE_SIZE}
+                    <WMSTileLayer
+                        key={`lineas-${lineaFiltro}-${mapaBaseActivo}-${isAuthenticated}`}
+                        eventHandlers={{ add: () => setLineaVisible(true), remove: () => setLineaVisible(false) }}
+                        url={WMS_URL}
+                        layers="tsig:linea"
+                        styles={mapaBaseActivo === 'claro' ? 'tsig:lineas_claro' : 'tsig:lineas_oscuro'}
+                        format="image/png"
+                        transparent={true}
+                        tileSize={DEFAULT_TILE_SIZE}
                             params={lineaCqlFilter ? ({ CQL_FILTER: lineaCqlFilter } as any) : {}}
                         />
-                    </>
+                </LayersControl.Overlay>
+                <LayersControl.Overlay name="Paradas" checked={paradaVisible}>
+                    <WMSTileLayer
+                        key={`paradas-${paradaFiltro}-${isAuthenticated}`}
+                        eventHandlers={{ add: () => setParadaVisible(true), remove: () => setParadaVisible(false) }}
+                        url={WMS_URL}
+                        layers="tsig:parada"
+                        styles="tsig:parada_condicional"
+                        format="image/png"
+                        transparent={true}
+                        tileSize={DEFAULT_TILE_SIZE}
+                        params={paradaCqlFilter ? ({ CQL_FILTER: paradaCqlFilter } as any) : {}}
+                    />
                 </LayersControl.Overlay>
             </LayersControl>
+
+            {/* Filtro para líneas habilitadas/deshabilitadas - disponible para todos los usuarios */}
+            {lineaVisible && (
+                <div style={{ position: 'absolute', zIndex: 1000, left: 60, top: 60, background: 'rgba(255,255,255,0.9)', padding: 6, borderRadius: 6 }}>
+                    <label style={{ marginRight: 8 }}>Ver líneas:</label>
+                    <select
+                        value={lineaFiltro}
+                        onChange={e => setLineaFiltro(e.target.value as any)}
+                        style={{ fontSize: 14 }}
+                    >
+                        <option value="todos">Todas</option>
+                        <option value="habilitadas">Habilitadas</option>
+                        <option value="deshabilitadas">Deshabilitadas</option>
+                    </select>
+                </div>
+            )}
+
+            {/* Filtro para paradas habilitadas/deshabilitadas - disponible para todos los usuarios */}
+            {paradaVisible && (
+                <div style={{ position: 'absolute', zIndex: 1000, left: 60, top: 10, background: 'rgba(255,255,255,0.9)', padding: 6, borderRadius: 6 }}>
+                    <label style={{ marginRight: 8 }}>Ver paradas:</label>
+                    <select
+                        value={paradaFiltro}
+                        onChange={e => setParadaFiltro(e.target.value as any)}
+                        style={{ fontSize: 14 }}
+                    >
+                        <option value="todos">Todas</option>
+                        <option value="habilitadas">Habilitadas</option>
+                        <option value="deshabilitadas">Deshabilitadas</option>
+                    </select>
+                </div>
+            )}
 
             <WMSFeatureInfoHandler
                 visible={paradaVisible}
@@ -228,6 +228,7 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
                 visible={lineaVisible}
                 layerName="tsig:linea"
                 tolerance={12}
+                styles={mapaBaseActivo === 'claro' ? 'tsig:lineas_claro' : 'tsig:lineas_oscuro'}
                 onFeatureInfo={async data => {
                     if (data && data.features && data.features.length > 0) {
                         const lineaFeature = data.features[0]

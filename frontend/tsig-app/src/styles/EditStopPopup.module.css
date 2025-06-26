@@ -5,6 +5,8 @@
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
     min-width: 400px;
     max-width: 600px;
+    max-height: 70vh; /* Altura máxima del 70% de la ventana para no tapar otros controles */
+    overflow-y: auto; /* Scroll si el contenido excede la altura máxima */
     position: absolute;
     bottom: 20px;
     left: 20px;
@@ -14,6 +16,67 @@
     font-size: 15px;
     color: #222;
     line-height: 1.5;
+}
+
+/* Clase para popups que deben mantenerse completamente dentro de la ventana */
+.popupContainerSafe {
+    background: #fff;
+    padding: 28px 28px 18px 28px;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+    min-width: 400px;
+    max-width: 600px;
+    max-height: 70vh; /* Altura máxima del 70% de la ventana para no tapar otros controles */
+    height: auto;
+    overflow-y: auto; /* Scroll si el contenido excede la altura máxima */
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    top: auto;
+    z-index: 1000;
+    border: 1px solid #bbb;
+    font-family: system-ui, sans-serif;
+    font-size: 15px;
+    color: #222;
+    line-height: 1.5;
+}
+
+/* Personalizar el scrollbar del popup safe */
+.popupContainerSafe::-webkit-scrollbar {
+    width: 8px;
+}
+
+.popupContainerSafe::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.popupContainerSafe::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.popupContainerSafe::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Personalizar el scrollbar del popup principal */
+.popupContainer::-webkit-scrollbar {
+    width: 8px;
+}
+
+.popupContainer::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.popupContainer::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.popupContainer::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
 }
 
 .closeButton {
@@ -193,6 +256,28 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    max-height: 300px; /* Altura máxima antes de mostrar scroll */
+    overflow-y: auto; /* Scroll vertical cuando sea necesario */
+    padding-right: 8px; /* Espacio para el scrollbar */
+}
+
+/* Personalizar el scrollbar para mejor apariencia */
+.stopsList::-webkit-scrollbar {
+    width: 6px;
+}
+
+.stopsList::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.stopsList::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.stopsList::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
 }
 
 .stopItem {
@@ -402,4 +487,44 @@
     color: #999;
     font-style: italic;
     font-size: 12px;
+}
+
+/* Estilos para la lista de líneas asociadas */
+.associatedLines {
+    margin-top: 20px;
+}
+
+.associatedLines h3 {
+    margin: 0 0 12px 0;
+    color: #333;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.associatedLines ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 300px; /* Altura máxima antes de mostrar scroll */
+    overflow-y: auto; /* Scroll vertical cuando sea necesario */
+    padding-right: 8px; /* Espacio para el scrollbar */
+}
+
+/* Personalizar el scrollbar para la lista de líneas asociadas */
+.associatedLines ul::-webkit-scrollbar {
+    width: 6px;
+}
+
+.associatedLines ul::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.associatedLines ul::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.associatedLines ul::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
 }

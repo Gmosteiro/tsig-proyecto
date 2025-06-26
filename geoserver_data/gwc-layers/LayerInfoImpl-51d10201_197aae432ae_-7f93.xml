@@ -1,8 +1,8 @@
 <GeoServerTileLayer>
-  <id>LayerInfoImpl--1cff24c2:1970f7d3aac:-7ffc</id>
+  <id>LayerInfoImpl-51d10201:197aae432ae:-7f93</id>
   <enabled>true</enabled>
   <inMemoryCached>true</inMemoryCached>
-  <name>tsig:ft_caminera_nacional</name>
+  <name>tsig:linea</name>
   <mimeFormats>
     <string>application/vnd.mapbox-vector-tile</string>
     <string>image/png</string>
@@ -33,7 +33,7 @@
       <key>STYLES</key>
       <defaultValue></defaultValue>
       <availableStyles class="sorted-set"/>
-      <defaultStyle>line</defaultStyle>
+      <defaultStyle>point</defaultStyle>
     </styleParameterFilter>
   </parameterFilters>
   <gutter>0</gutter>

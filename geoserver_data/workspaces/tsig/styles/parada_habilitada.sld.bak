@@ -15,10 +15,9 @@
           <PointSymbolizer>
             <Graphic>
               <ExternalGraphic>
-                <OnlineResource xlink:type="simple"
-                  xlink:href="https://e7.pngegg.com/pngimages/1/896/png-clipart-public-transport-bus-service-bus-stop-school-bus-traffic-stop-laws-bus-bus-public-transport-bus-service-thumbnail.png"/>
-                <Format>image/png</Format>
-              </ExternalGraphic>
+        	  	<OnlineResource xlink:href="file:styles/icons/parada.png" xlink:type="simple"/>
+        		<Format>image/png</Format>
+      		  </ExternalGraphic>
               <Size>24</Size>
             </Graphic>
           </PointSymbolizer>

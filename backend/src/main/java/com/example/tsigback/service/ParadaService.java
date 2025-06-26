@@ -55,7 +55,7 @@ public class ParadaService {
         }
 
         if (!paradaRepository.isRutaCercana(ubicacion,DEFAULT_BUFFER)) {
-            throw new ParadaLejosDeRutaException("Esta ingresando una parada a una distancia mayor de " + DEFAULT_BUFFER + "mt de una ruta nacional ");
+            throw new ParadaLejosDeRutaException("La parada debe ubicarse a menos de " + DEFAULT_BUFFER.intValue() + " metros de una ruta nacional. Por favor, seleccione una ubicación más cercana a la caminera.");
         }
 
         Parada nuevaParada = Parada.builder()
@@ -79,7 +79,7 @@ public class ParadaService {
         }
 
         if (!paradaRepository.isRutaCercana(ubicacion,DEFAULT_BUFFER)) {
-            throw new ParadaLejosDeRutaException("Esta ingresando una parada a una distancia mayor de " + DEFAULT_BUFFER + "mt de una ruta nacional ");
+            throw new ParadaLejosDeRutaException("La parada debe ubicarse a menos de " + DEFAULT_BUFFER.intValue() + " metros de una ruta nacional. Por favor, seleccione una ubicación más cercana a la caminera.");
         }
 
         if (ubicacion != null) {

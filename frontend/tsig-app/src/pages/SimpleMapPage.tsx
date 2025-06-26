@@ -18,7 +18,8 @@ const customIcon = new L.Icon({
 });
 
 export default function SimpleMapPage() {
-  const [position, setPosition] = useState<[number, number]>([-34.9, -56.2]);
+  const [position, setPosition] = useState<[number, number]>([-32.5, -56.0]); // Centro de Uruguay
+  const [hasUserLocation, setHasUserLocation] = useState(false); // Para saber si se obtuvo geolocalización
   const [selectedLinea, setSelectedLinea] = useState<any | null>(null);
   const [showSearcher, setShowSearcher] = useState(false);
   const [polygonCoords, setPolygonCoords] = useState<[number, number][]>([]);
@@ -29,14 +30,20 @@ export default function SimpleMapPage() {
 
   useEffect(() => {
     if (selectedLinea && selectedLinea.rutaGeoJSON && mapRef.current) {
-      const geojson = JSON.parse(selectedLinea.rutaGeoJSON)
-      const coords = geojson.coordinates.flat(1)
-      const latlngs = coords.map(([lng, lat]: [number, number]) => [lat, lng])
-      if (latlngs.length > 0) {
-        mapRef.current.fitBounds(latlngs)
+      try {
+        const geojson = JSON.parse(selectedLinea.rutaGeoJSON)
+        const coords = geojson.coordinates.flat(1)
+        const latlngs = coords.map(([lng, lat]: [number, number]) => [lat, lng])
+        if (latlngs.length > 0) {
+          // Centrar el mapa en la nueva línea
+          mapRef.current.fitBounds(latlngs)
+          console.log('Mapa centrado en línea:', selectedLinea.descripcion)
+        }
+      } catch (error) {
+        console.error('Error al procesar GeoJSON de la línea:', error)
       }
     }
-  }, [selectedLinea]);
+  }, [selectedLinea?.id, selectedLinea?.rutaGeoJSON]); // Dependencias más específicas
 
   const handleCancelPolygon = () => {
     setDrawingPolygon(false)
@@ -79,9 +86,12 @@ export default function SimpleMapPage() {
       async (pos) => {
         const latlng: [number, number] = [pos.coords.latitude, pos.coords.longitude];
         setPosition(latlng);
+        setHasUserLocation(true);
       },
       (err) => {
         console.error("Error obteniendo geolocalización:", err);
+        // Mantener la posición por defecto de Uruguay [-32.5, -56.0]
+        setHasUserLocation(false);
       }
     );
   }, []);
@@ -152,7 +162,7 @@ export default function SimpleMapPage() {
       {position ? (
         <MapContainer
           center={position}
-          zoom={15}
+          zoom={hasUserLocation ? 13 : 7} // Zoom 13 si hay geolocalización (~4km radio), zoom 7 para todo Uruguay
           scrollWheelZoom={true}
           style={{ height: '75vh', width: '100%' }}
         >
@@ -160,29 +170,48 @@ export default function SimpleMapPage() {
           <LayerController 
             selectedLineaFromParent={selectedLinea}
             onViewLine={async (linea: LineaDTO) => {
-              const line = await updateGeoJSON(linea);
-              setSelectedLinea(line);
+              console.log('onViewLine llamado para línea:', linea.descripcion, 'ID:', linea.id);
+              try {
+                // Limpiar línea anterior si existe
+                if (selectedLinea && selectedLinea.id !== linea.id) {
+                  console.log('Limpiando línea anterior:', selectedLinea.descripcion);
+                  setSelectedLinea(null);
+                  // Esperar un tick para asegurar que el estado se limpie
+                  await new Promise(resolve => setTimeout(resolve, 0));
+                }
+                
+                const line = await updateGeoJSON(linea);
+                console.log('Línea actualizada con GeoJSON:', line.descripcion);
+                setSelectedLinea(line);
+              } catch (error) {
+                console.error('Error al actualizar línea:', error);
+              }
             }}
-            onCenterMap={(latitud: number, longitud: number) => {
-              console.log('SimpleMapPage - Centrando mapa en:', latitud, longitud);
+            onCenterMap={(latitud: number, longitud: number, zoom?: number) => {
+              console.log('SimpleMapPage - Centrando mapa en:', latitud, longitud, 'zoom:', zoom);
               if (mapRef.current) {
-                mapRef.current.setView([latitud, longitud], 16);
+                mapRef.current.setView([latitud, longitud], zoom || 16);
                 console.log('Mapa centrado exitosamente');
               } else {
                 console.warn('mapRef.current no disponible');
               }
             }}
             onClearSelectedLine={() => {
+              console.log('Limpiando línea seleccionada');
               setSelectedLinea(null);
             }}
           />
-          <Marker position={position} icon={customIcon}>
-            <Popup>¡Estás aquí!</Popup>
-          </Marker>
+          {/* Mostrar marcador de ubicación solo si se obtuvo geolocalización */}
+          {hasUserLocation && (
+            <Marker position={position} icon={customIcon}>
+              <Popup>¡Estás aquí!</Popup>
+            </Marker>
+          )}
 
           {/* Línea seleccionada desde el buscador */}
           {selectedLinea && selectedLinea.rutaGeoJSON && (
             <GeoJSON
+              key={`selected-line-${selectedLinea.id}`}
               data={JSON.parse(selectedLinea.rutaGeoJSON)}
               style={{ color: 'blue', weight: 5, opacity: 0.9 }}
             />

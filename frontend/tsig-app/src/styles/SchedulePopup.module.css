@@ -10,6 +10,8 @@
     z-index: 1000;
     width: 400px;
     max-width: 90vw;
+    max-height: 60vh; /* Altura máxima del 60% para el modal de horarios */
+    overflow-y: auto;
 }
 
 .closeButton {

@@ -6,6 +6,7 @@ interface WMSFeatureInfoHandlerProps {
     visible: boolean
     layerName: string
     tolerance?: number
+    styles?: string
     onFeatureInfo: (data: any) => void
 }
 
@@ -13,6 +14,7 @@ export default function WMSFeatureInfoHandler({
     visible,
     layerName,
     tolerance = 8,
+    styles,
     onFeatureInfo,
 }: WMSFeatureInfoHandlerProps) {
     useMapEvent('click', async (e) => {
@@ -41,7 +43,8 @@ export default function WMSFeatureInfoHandler({
                 size,
                 point,
                 infoFormat,
-                tolerance
+                tolerance,
+                styles
             })
             if (data.features && data.features.length > 0) {
                 onFeatureInfo(data)

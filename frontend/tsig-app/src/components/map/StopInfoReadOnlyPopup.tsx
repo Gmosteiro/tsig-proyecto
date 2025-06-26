@@ -50,7 +50,7 @@ const StopInfoReadOnlyPopup: React.FC<StopInfoReadOnlyPopupProps> = ({ parada, o
     if (!parada) return null;
 
     return (
-        <div className={styles.popupContainer} onClick={e => e.stopPropagation()}>
+        <div className={styles.popupContainerSafe} onClick={e => e.stopPropagation()}>
             <button onClick={onClose} aria-label="Cerrar" className={styles.closeButton}>×</button>
             <div className={styles.title}>Información de Parada</div>
             
