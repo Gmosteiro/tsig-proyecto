@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setToken(newToken);
         setUser(newUser);
 
-        setTimeout(logout, 5 * 60 * 1000);
+        setTimeout(logout, 300 * 60 * 1000); //5 horas
     };
 
     const logout = () => {

@@ -18,8 +18,8 @@
           <Title>Paradas Habilitadas</Title>
           <ogc:Filter>
             <ogc:PropertyIsEqualTo>
-              <ogc:PropertyName>estado</ogc:PropertyName>
-              <ogc:Literal>0</ogc:Literal>
+              <ogc:PropertyName>habilitada</ogc:PropertyName>
+              <ogc:Literal>1</ogc:Literal>
             </ogc:PropertyIsEqualTo>
           </ogc:Filter>
           <PointSymbolizer>
@@ -39,8 +39,8 @@
           <Title>Paradas Deshabilitadas</Title>
           <ogc:Filter>
             <ogc:PropertyIsEqualTo>
-              <ogc:PropertyName>estado</ogc:PropertyName>
-              <ogc:Literal>1</ogc:Literal>
+              <ogc:PropertyName>habilitada</ogc:PropertyName>
+              <ogc:Literal>0</ogc:Literal>
             </ogc:PropertyIsEqualTo>
           </ogc:Filter>
           <PointSymbolizer>

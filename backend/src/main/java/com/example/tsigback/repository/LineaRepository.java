@@ -17,8 +17,6 @@ public interface LineaRepository extends JpaRepository<Linea, Integer> {
 
         Optional<Linea> findById(int id);
 
-        List<Linea> findByDestino(String destino);
-
         @Query(value = """
                         SELECT nombre
                         FROM ft_departamentos

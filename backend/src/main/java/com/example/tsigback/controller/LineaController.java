@@ -3,7 +3,7 @@ package com.example.tsigback.controller;
 import com.example.tsigback.entities.request.RutaKilometroRequest;
 import com.example.tsigback.entities.request.OrigenDestinoRequest;
 import com.example.tsigback.entities.dtos.LineaDTO;
-import com.example.tsigback.entities.dtos.ListaPuntosDTO;
+import com.example.tsigback.entities.dtos.ValidarRutaDTO;
 import com.example.tsigback.entities.dtos.ParadaLineaDTO;
 import com.example.tsigback.exception.LineaNoEncontradaException;
 import com.example.tsigback.exception.ParadaNoEncontradaException;
@@ -28,9 +28,15 @@ public class LineaController {
 
     // Base implementation for route validation
     @PostMapping("/validar")
-    public ResponseEntity<?> validarRuta(@RequestBody ListaPuntosDTO request) {
+    public ResponseEntity<?> validarRuta(@RequestBody ValidarRutaDTO request) {
         try {
-            lineaService.validarDistanciaPuntosARed(request.getPoints());
+            // Validar que el request tenga GeoJSON válido
+            if (request.getRouteGeoJSON() == null || request.getRouteGeoJSON().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Debe proporcionar el GeoJSON de la ruta");
+            }
+            
+            // Validar que toda la ruta esté dentro de la caminera nacional
+            lineaService.validarRutaCompleta(request.getRouteGeoJSON());
             return ResponseEntity.ok("OK");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -202,18 +208,6 @@ public class LineaController {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Internal error: " + e.getMessage());
-        }
-    }
-
-    @GetMapping("/destino/{destino}")
-    public ResponseEntity<List<LineaDTO>> buscarLineaPorDestino(@PathVariable("destino") String destino) {
-        try {
-            if (destino == null || destino.isEmpty()) {
-                return ResponseEntity.badRequest().build();
-            }
-            return ResponseEntity.ok(lineaService.buscarLineaPorDestino(destino));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
         }
     }
 

@@ -1,7 +1,6 @@
 package com.example.tsigback.entities;
 
 import com.example.tsigback.entities.dtos.ParadaDTO;
-import com.example.tsigback.entities.enums.EstadoParada;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,7 +26,7 @@ public class Parada {
     private Point ubicacion;
 
     private String nombre;
-    private EstadoParada estado;
+    private boolean habilitada; // true = habilitada, false = deshabilitada
     private boolean refugio;
     private String observacion;
 

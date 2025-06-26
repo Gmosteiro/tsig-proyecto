@@ -13,14 +13,13 @@ interface EditStopPopupProps {
 
 const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, onMove, onDelete }) => {
     if (!parada) return null;
-    console.log('EditStopPopup parada:', parada);
 
     const [isAssociating, setIsAssociating] = useState(false);
     const [form, setForm] = useState({
         nombre: parada.nombre,
         observacion: parada.observacion,
         refugio: parada.refugio,
-        estado: parada.estado,
+        habilitada: parada.habilitada,
     });
 
     useEffect(() => {
@@ -29,7 +28,7 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, 
                 nombre: parada.nombre,
                 observacion: parada.observacion,
                 refugio: parada.refugio,
-                estado: parada.estado,
+                habilitada: parada.habilitada,
             });
         }
     }, [parada]);
@@ -39,8 +38,8 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, 
         let newValue: string | boolean | number = value;
         if (type === 'checkbox' && e.target instanceof HTMLInputElement) {
             newValue = e.target.checked;
-        } else if (name === 'estado') {
-            newValue = parseInt(value, 10) as 0 | 1;
+        } else if (name === 'habilitada') {
+            newValue = value === 'true';
         }
         setForm(prev => ({
             ...prev,
@@ -50,25 +49,72 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, 
 
     const handleSave = async () => {
         try {
+            // Validar campos requeridos
+            if (!form.nombre.trim()) {
+                alert("El nombre de la parada es obligatorio");
+                return;
+            }
+
+            // Confirmación antes de guardar
+            const confirmMessage = `¿Confirma que desea guardar los cambios en la parada "${form.nombre}"?`;
+            
+            if (!window.confirm(confirmMessage)) {
+                return; // El usuario canceló
+            }
+
             await updateStop({ ...parada, ...form });
+            
+            // Alerta de éxito
+            alert(`Parada "${form.nombre}" modificada correctamente`);
+            
             if (onSave) onSave({ ...parada, ...form });
             if (onClose) onClose();
-        } catch (err) {
-            alert("Error al guardar los cambios");
+        } catch (err: any) {
+            // Manejo detallado de errores
+            console.error('Error al guardar parada:', err);
+            
+            let errorMessage = "Error al guardar los cambios de la parada";
+            
+            if (err.response?.data) {
+                errorMessage = `Error: ${err.response.data}`;
+            } else if (err.message) {
+                errorMessage = `Error: ${err.message}`;
+            }
+            
+            alert(errorMessage);
         }
     };
 
     const handleDelete = async () => {
-        if (window.confirm(`¿Seguro que quieres eliminar la parada "${parada.nombre}"?`)) {
-            try {
-                console.log('Parada eliminada:', parada.id);
-                await deleteStop(parada.id);
-                if (onDelete) onDelete(parada.id);
-                if (onClose) onClose();
-                alert('Parada eliminada correctamente.');
-            } catch (err) {
-                alert("Error al eliminar la parada");
+        // Confirmación antes de eliminar
+        const confirmMessage = `¿Está seguro que desea eliminar la parada "${parada.nombre}"?\n\nEsta acción no se puede deshacer.`;
+        
+        if (!window.confirm(confirmMessage)) {
+            return; // El usuario canceló
+        }
+
+        try {
+            console.log('Eliminando parada:', parada.id);
+            await deleteStop(parada.id);
+            
+            // Alerta de éxito
+            alert(`Parada "${parada.nombre}" eliminada correctamente`);
+            
+            if (onDelete) onDelete(parada.id);
+            if (onClose) onClose();
+        } catch (err: any) {
+            // Manejo detallado de errores
+            console.error('Error al eliminar parada:', err);
+            
+            let errorMessage = "Error al eliminar la parada";
+            
+            if (err.response?.data) {
+                errorMessage = `Error: ${err.response.data}`;
+            } else if (err.message) {
+                errorMessage = `Error: ${err.message}`;
             }
+            
+            alert(errorMessage);
         }
     };
 
@@ -143,13 +189,13 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, 
                         <label>
                             Estado:
                             <select
-                                name="estado"
-                                value={form.estado.toString()}
+                                name="habilitada"
+                                value={form.habilitada.toString()}
                                 onChange={handleChange}
                                 className={styles.selectInput}
                             >
-                                <option value="1">Habilitada</option>
-                                <option value="0">Deshabilitada</option>
+                                <option value="true">Habilitada</option>
+                                <option value="false">Deshabilitada</option>
                             </select>
                         </label>
                     </div>
@@ -164,7 +210,12 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, 
                             type="button"
                             className={styles.moveButton}
                             onClick={() => {
-                                if (onMove) onMove({ ...parada, ...form });
+                                // Confirmación antes de mover
+                                const confirmMessage = `¿Desea cambiar la ubicación de la parada "${form.nombre}"?\n\nPodrá hacer clic en el mapa para seleccionar la nueva ubicación.`;
+                                
+                                if (window.confirm(confirmMessage)) {
+                                    if (onMove) onMove({ ...parada, ...form });
+                                }
                             }}
                         >
                             Mover

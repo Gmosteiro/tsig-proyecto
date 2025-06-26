@@ -65,10 +65,10 @@ const StopInfoReadOnlyPopup: React.FC<StopInfoReadOnlyPopupProps> = ({ parada, o
                     <span style={{ 
                         padding: '2px 8px', 
                         borderRadius: '4px',
-                        backgroundColor: parada.estado === 1 ? '#d4edda' : '#f8d7da',
-                        color: parada.estado === 1 ? '#155724' : '#721c24'
+                        backgroundColor: parada.habilitada ? '#d4edda' : '#f8d7da',
+                        color: parada.habilitada ? '#155724' : '#721c24'
                     }}>
-                        {parada.estado === 1 ? 'Habilitada' : 'Deshabilitada'}
+                        {parada.habilitada ? 'Habilitada' : 'Deshabilitada'}
                     </span>
                 </div>
             </div>

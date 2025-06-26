@@ -76,9 +76,9 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
      */
     const buildCqlFilter = () => {
         if (paradaFiltro === 'habilitadas') {
-            return 'estado=1'  // 1 = Habilitada
+            return 'habilitada=true'  // true = Habilitada
         } else if (paradaFiltro === 'deshabilitadas') {
-            return 'estado=0'  // 0 = Deshabilitada
+            return 'habilitada=false'  // false = Deshabilitada
         }
         return undefined
     }
@@ -209,7 +209,7 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
                         setSelectedParada({
                             id: paradaId,
                             nombre: props.nombre,
-                            estado: props.estado,
+                            habilitada: props.habilitada === true || props.habilitada === 1, // Convertir 1/0 o true/false a boolean
                             refugio: props.refugio,
                             observacion: props.observacion,
                             latitud: latlng.lat,
@@ -300,7 +300,7 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
                                     const paradaDTO: ParadaDTO = {
                                         id: parada.idParada,
                                         nombre: parada.nombreParada,
-                                        estado: 1, // Asumimos habilitada por defecto
+                                        habilitada: true, // Asumimos habilitada por defecto
                                         refugio: false, // No tenemos esta info
                                         observacion: '', // No tenemos esta info
                                         latitud: parada.latitudParada,
@@ -366,7 +366,7 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
                                     const paradaDTO: ParadaDTO = {
                                         id: parada.idParada,
                                         nombre: parada.nombreParada,
-                                        estado: 1, // Asumimos habilitada por defecto
+                                        habilitada: true, // Asumimos habilitada por defecto
                                         refugio: false, // No tenemos esta info
                                         observacion: '', // No tenemos esta info
                                         latitud: parada.latitudParada,

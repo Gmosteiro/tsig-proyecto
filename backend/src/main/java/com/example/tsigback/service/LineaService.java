@@ -8,7 +8,6 @@ import com.example.tsigback.entities.dtos.LineaDTO;
 import com.example.tsigback.entities.dtos.PuntoDTO;
 import com.example.tsigback.entities.dtos.ParadaLineaDTO;
 import com.example.tsigback.entities.dtos.HorarioDTO;
-import com.example.tsigback.entities.enums.EstadoParada;
 import com.example.tsigback.exception.LineaNoEncontradaException;
 import com.example.tsigback.exception.ParadaNoEncontradaException;
 import com.example.tsigback.repository.LineaRepository;
@@ -98,23 +97,6 @@ public class LineaService {
 
     public List<PuntoDTO> crearPuntoDTO(double lon, double lat) {
         return List.of(new PuntoDTO(lon, lat));
-    }
-
-    public void validarDistanciaPuntosARed(List<PuntoDTO> puntos) {
-        if (puntos == null || puntos.isEmpty()) {
-            throw new IllegalArgumentException("Debe enviar al menos un punto.");
-        }
-        for (PuntoDTO pt : puntos) {
-            Double dist = routingRepository.findNearestDistance(pt.getLongitud(), pt.getLatitud());
-            if (dist == null) {
-                throw new IllegalArgumentException("No se pudo calcular la distancia para el punto (" + pt.getLatitud()
-                        + ", " + pt.getLongitud() + ").");
-            }
-            if (dist > MAX_DIST) {
-                throw new IllegalArgumentException("El punto (" + pt.getLatitud() + ", " + pt.getLongitud()
-                        + ") está a más de 100 metros de la red.");
-            }
-        }
     }
 
     public List<LineaDTO> obtenerLineasPorOrigenDestino(int idDepartamentoOrigen, int idDepartamentoDestino)
@@ -249,7 +231,7 @@ public class LineaService {
         // Verificar si tiene al menos una parada habilitada con asociación habilitada
         boolean tieneParadaHabilitada = linea.getParadasLineas().stream()
                 .anyMatch(pl -> pl.isEstaHabilitada() && 
-                              pl.getParada().getEstado() == EstadoParada.HABILITADA);
+                              pl.getParada().isHabilitada());
 
         return tieneParadaHabilitada;
     }
@@ -320,7 +302,7 @@ public class LineaService {
             
             // Si no tiene otras líneas habilitadas, deshabilitar la parada completa
             if (otrasLineasHabilitadas.isEmpty()) {
-                parada.setEstado(EstadoParada.DESHABILITADA);
+                parada.setHabilitada(false);
                 paradaRepository.save(parada);
             }
             
@@ -342,10 +324,6 @@ public class LineaService {
                 .stream()
                 .filter(paradaLinea -> paradaLinea.isEstaHabilitada())
                 .count() == 1;
-    }
-
-    public List<LineaDTO> buscarLineaPorDestino(String destino) {
-        return lineaRepository.findByDestino(destino).stream().map(linea -> toDTO(linea)).collect(Collectors.toList());
     }
 
     public List<LineaDTO> obtenerTodas() {
@@ -379,7 +357,7 @@ public class LineaService {
             
             // Si no tiene otras líneas habilitadas, deshabilitar la parada
             if (otrasLineasHabilitadas.isEmpty()) {
-                parada.setEstado(EstadoParada.DESHABILITADA);
+                parada.setHabilitada(false);
                 paradaRepository.save(parada);
             }
         }
@@ -528,13 +506,55 @@ public class LineaService {
         
         if (lineasHabilitadas.isEmpty()) {
             // Si no tiene líneas habilitadas, deshabilitar la parada
-            parada.setEstado(EstadoParada.DESHABILITADA);
+            parada.setHabilitada(false);
         } else {
             // Si tiene al menos una línea habilitada, habilitar la parada
-            parada.setEstado(EstadoParada.HABILITADA);
+            parada.setHabilitada(true);
         }
         
         paradaRepository.save(parada);
+    }
+
+    /**
+     * Valida que una ruta cumple con todos los criterios requeridos:
+     * 1. Está completamente sobre la caminera nacional (con buffer)
+     * 2. Los puntos inicial y final están cerca de paradas existentes
+     * @param routeGeoJSON GeoJSON LineString de la ruta
+     * @throws IllegalArgumentException si la ruta no cumple con algún criterio
+     */
+    public void validarRutaCompleta(String routeGeoJSON) {
+        if (routeGeoJSON == null || routeGeoJSON.trim().isEmpty()) {
+            throw new IllegalArgumentException("El GeoJSON de la ruta no puede estar vacío.");
+        }
+        
+        try {
+            // 1. Validar que la ruta esté sobre la caminera nacional
+            double bufferCaminera = 40.0; // Buffer para caminera
+            Boolean isWithinBuffer = routingRepository.validateRouteWithinBuffer(routeGeoJSON, bufferCaminera);
+            
+            if (!isWithinBuffer) {
+                throw new IllegalArgumentException("La ruta generada se sale de los límites de la caminera nacional. " +
+                    "Por favor, modifique los puntos para que la ruta se mantenga dentro de la red vial autorizada.");
+            }
+            
+            // 2. Validar que los extremos estén cerca de paradas
+            double bufferParadas = 50.0; // Buffer para paradas (50 metros)
+            Boolean endpointsNearStops = routingRepository.validateRouteEndpointsNearStops(routeGeoJSON, bufferParadas);
+            
+            if (!endpointsNearStops) {
+                // Obtener información detallada para dar un mensaje más específico
+                String endpointsInfo = routingRepository.getRouteEndpointsStopsInfo(routeGeoJSON, bufferParadas);
+                throw new IllegalArgumentException("Los puntos inicial y final de la ruta deben estar cerca (50 metros) de paradas existentes. " +
+                    "Estado actual: " + endpointsInfo + ". " +
+                    "Por favor, asegúrese de que el recorrido comience y termine cerca de paradas habilitadas.");
+            }
+            
+        } catch (Exception e) {
+            if (e instanceof IllegalArgumentException) {
+                throw e;
+            }
+            throw new IllegalArgumentException("Error al validar la ruta: " + e.getMessage());
+        }
     }
 
 }

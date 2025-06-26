@@ -84,16 +84,26 @@ export default function MapPage() {
 
   const handleVerifyRoute = async () => {
     setRouteGeoJSON(null);
+    
+    // Primero verificar que tenemos la ruta generada
+    if (!latestRouteGeoJSON.current) {
+      alert("Primero debe generar la ruta usando el botón de routing en el mapa.");
+      return;
+    }
+    
+    // Enviar la ruta original sin simplificación para preservar todos los puntos críticos
+    console.log(`Puntos en la ruta: ${latestRouteGeoJSON.current.coordinates?.length || 0}`);
+    
     const payload = {
-      points: points.map(pt => ({ latitud: pt.lat, longitud: pt.lng }))
+      routeGeoJSON: JSON.stringify(latestRouteGeoJSON.current)
     };
+    
     try {
+      console.time('validarRuta');
       const response = await validateRoute(payload);
+      console.timeEnd('validarRuta');
+      
       if (typeof response === 'string' && response.includes('OK')) {
-        if (!latestRouteGeoJSON.current) {
-          alert("No se pudo obtener la ruta calculada (GeoJSON no disponible).");
-          return;
-        }
         setRouteGeoJSON(latestRouteGeoJSON.current);
         setIsValidated(true);
         setShowRouteForm(true);
@@ -535,7 +545,7 @@ export default function MapPage() {
                 onSubmit={handleCreateStop}
                 initialData={newStopPosition ? {
                   nombre: 'Nueva Parada',
-                  estado: 1, // Por defecto habilitada
+                  habilitada: true, // Por defecto habilitada
                   refugio: false,
                   observacion: '',
                   latitud: newStopPosition[0],

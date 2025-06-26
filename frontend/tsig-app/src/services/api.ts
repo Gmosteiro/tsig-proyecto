@@ -10,7 +10,7 @@ export type HorarioDTO = {
 export type ParadaDTO = {
     id: number
     nombre: string
-    estado: EstadoParada
+    habilitada: boolean // true = habilitada, false = deshabilitada
     refugio: boolean
     observacion: string
     latitud: number
@@ -47,8 +47,6 @@ export type RoutingPointDTO = {
 export type RoutingRequestDTO = {
     points: RoutingPointDTO[]
 }
-
-export type EstadoParada = 0 | 1;
 
 export async function createStop(stopData: CrearParadaDTO) {
     try {

@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Marker, Popup } from 'react-leaflet'
 import { LatLngTuple } from 'leaflet'
-import { EstadoParada } from '../../services/api'
 
 interface StopFormProps {
     onCancel: () => void
     onSubmit: (stopData: {
         nombre: string
-        estado: EstadoParada
+        habilitada: boolean
         refugio: boolean
         observacion: string
         latitud: number
@@ -16,7 +15,7 @@ interface StopFormProps {
     initialData?: {
         id?: number | string // <--- agregar esto
         nombre: string
-        estado: EstadoParada
+        habilitada: boolean
         refugio: boolean
         observacion: string
         latitud: number
@@ -29,7 +28,7 @@ export default function StopForm({ onCancel, onSubmit, initialData }: StopFormPr
         initialData ? [initialData.latitud, initialData.longitud] : null
     )
     const [name, setName] = useState(initialData?.nombre ?? 'Nueva Parada')
-    const [estado, setEstado] = useState<EstadoParada>(initialData?.estado ?? 1)
+    const [habilitada, setHabilitada] = useState<boolean>(initialData?.habilitada ?? true)
     const [refugio, setRefugio] = useState(initialData?.refugio ?? false)
     const [observacion, setObservacion] = useState(initialData?.observacion ?? '')
 
@@ -38,7 +37,7 @@ export default function StopForm({ onCancel, onSubmit, initialData }: StopFormPr
         if (initialData) {
             setPosition([initialData.latitud, initialData.longitud])
             setName(initialData.nombre)
-            setEstado(initialData.estado)
+            setHabilitada(initialData.habilitada)
             setRefugio(initialData.refugio)
             setObservacion(initialData.observacion)
         }
@@ -69,7 +68,7 @@ export default function StopForm({ onCancel, onSubmit, initialData }: StopFormPr
                         if (!position) return
                         await onSubmit({
                             nombre: name,
-                            estado,
+                            habilitada,
                             refugio,
                             observacion,
                             latitud: position[0],
@@ -97,11 +96,11 @@ export default function StopForm({ onCancel, onSubmit, initialData }: StopFormPr
                         <select
                             id="stopEstado"
                             className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            value={estado}
-                            onChange={e => setEstado(e.target.value as unknown as EstadoParada)}
+                            value={habilitada ? "true" : "false"}
+                            onChange={e => setHabilitada(e.target.value === "true")}
                         >
-                            <option value={1}>Habilitada</option>
-                            <option value={0}>Deshabilitada</option>
+                            <option value="true">Habilitada</option>
+                            <option value="false">Deshabilitada</option>
                         </select>
                     </div>
                     <div className="flex items-center gap-2">

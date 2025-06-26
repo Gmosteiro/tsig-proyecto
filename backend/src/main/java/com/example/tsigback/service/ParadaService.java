@@ -7,7 +7,6 @@ import com.example.tsigback.entities.ParadaLinea;
 import com.example.tsigback.entities.dtos.HorarioDTO;
 import com.example.tsigback.entities.dtos.ParadaDTO;
 import com.example.tsigback.entities.dtos.ParadaLineaDTO;
-import com.example.tsigback.entities.enums.EstadoParada;
 import com.example.tsigback.exception.EntidadYaExistenteException;
 import com.example.tsigback.exception.LineaNoEncontradaException;
 import com.example.tsigback.exception.ParadaLejosDeRutaException;
@@ -61,7 +60,7 @@ public class ParadaService {
         Parada nuevaParada = Parada.builder()
                 .ubicacion(ubicacion)
                 .nombre(paradaDTO.getNombre())
-                .estado(paradaDTO.getEstado())
+                .habilitada(paradaDTO.isHabilitada())
                 .refugio(paradaDTO.isRefugio())
                 .observacion(paradaDTO.getObservacion())
                 .build();
@@ -87,9 +86,8 @@ public class ParadaService {
         }
 
         parada.setNombre(paradaDTO.getNombre());
-        parada.setEstado(paradaDTO.getEstado());
+        parada.setHabilitada(paradaDTO.isHabilitada());
         parada.setRefugio(paradaDTO.isRefugio());
-        parada.setEstado(paradaDTO.getEstado());
         parada.setObservacion(paradaDTO.getObservacion());
 
         paradaRepository.save(parada);
@@ -100,7 +98,7 @@ public class ParadaService {
               .orElseThrow(() -> new ParadaNoEncontradaException("Parada con id " + id + " no encontrada"));
 
         paradaLineaRepository.deshabilitarPorParadaId(parada.getId());
-        parada.setEstado(EstadoParada.HABILITADA);
+        parada.setHabilitada(true);
         paradaRepository.delete(parada);
     }
 
@@ -139,8 +137,8 @@ public class ParadaService {
 
         nuevaParadaLinea.setHorarios(horarios);
 
-        if (parada.getEstado() == EstadoParada.DESHABILITADA) {
-            parada.setEstado(EstadoParada.HABILITADA);
+        if (!parada.isHabilitada()) {
+            parada.setHabilitada(true);
         }
 
         paradaLineaRepository.save(nuevaParadaLinea);
@@ -179,7 +177,7 @@ public class ParadaService {
         return ParadaDTO.builder()
                     .id(parada.getId())
                     .nombre(parada.getNombre())
-                    .estado(parada.getEstado())
+                    .habilitada(parada.isHabilitada())
                     .refugio(parada.isRefugio())
                     .observacion(parada.getObservacion())
                     .latitud(parada.getUbicacion().getY())   
@@ -277,7 +275,7 @@ public class ParadaService {
         
         // Si no tiene líneas habilitadas, deshabilitar la parada
         if (lineasHabilitadas.isEmpty()) {
-            parada.setEstado(EstadoParada.DESHABILITADA);
+            parada.setHabilitada(false);
             paradaRepository.save(parada);
         }
     }

@@ -26,6 +26,10 @@ export type RoutingRequestDTO = {
     points: RoutingPointDTO[]
 }
 
+export type ValidateRouteRequestDTO = {
+    routeGeoJSON: string // GeoJSON LineString de la ruta generada
+}
+
 export const saveLine = async (lineData: LineaDTO) => {
     const res = await axios.post('/apiurl/api/lineas/guardar', lineData)
     return res.data
@@ -49,7 +53,7 @@ export async function getLineById(id: number): Promise<LineaDTO> {
     return res.data
 }
 
-export async function validateRoute(request: RoutingRequestDTO) {
+export async function validateRoute(request: ValidateRouteRequestDTO) {
     const res = await axios.post('/apiurl/api/lineas/validar', request)
     return res.data
 }
