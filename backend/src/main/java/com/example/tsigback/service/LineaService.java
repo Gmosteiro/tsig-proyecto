@@ -31,6 +31,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -53,6 +54,7 @@ public class LineaService {
     private HorarioParadaLineaRepository horarioParadaLineaRepository;
 
     private static final double MAX_DIST = 100.0; // metros
+    private static final double PARADA_ASOCIACION_DIST = 50.0; // metros para asociación automática
 
     public void crearLinea(LineaDTO linea) {
         try {
@@ -79,7 +81,15 @@ public class LineaService {
                     .recorrido(recorrido)
                     .build();
 
-            lineaRepository.save(nuevaLinea);
+            Linea lineaGuardada = lineaRepository.save(nuevaLinea);
+            
+            // Asociar automáticamente las paradas de inicio y fin
+            asociarParadasAutomaticamente(lineaGuardada, puntoOrigen, puntoDestino);
+
+            // Recalcular el estado de la línea después de las asociaciones
+            lineaGuardada = lineaRepository.findById(lineaGuardada.getId()).orElse(lineaGuardada);
+            lineaGuardada.setEstaHabilitada(calcularEstadoLinea(lineaGuardada));
+            lineaRepository.save(lineaGuardada);
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Error al crear la línea: " + e.getMessage(), e);
         }
@@ -97,6 +107,86 @@ public class LineaService {
 
     public List<PuntoDTO> crearPuntoDTO(double lon, double lat) {
         return List.of(new PuntoDTO(lon, lat));
+    }    /**
+     * Asocia automáticamente las paradas de inicio y fin de una línea basándose en los puntos extremos
+     * @param linea La línea a la que se asociarán las paradas
+     * @param puntoOrigen Punto de origen de la línea
+     * @param puntoDestino Punto de destino de la línea
+     */
+    private void asociarParadasAutomaticamente(Linea linea, Point puntoOrigen, Point puntoDestino) {
+        try {
+            log.info("Iniciando asociación automática de paradas para línea {}", linea.getId());
+            
+            // Buscar parada cercana al punto de origen
+            Parada paradaOrigen = buscarParadaCercana(puntoOrigen, PARADA_ASOCIACION_DIST);
+            if (paradaOrigen != null) {
+                crearAsociacionParadaLinea(paradaOrigen, linea);
+                // Habilitar la parada automáticamente si no está habilitada
+                habilitarParadaAutomaticamente(paradaOrigen);
+                log.info("Parada de origen {} asociada y habilitada automáticamente a la línea {}", paradaOrigen.getId(), linea.getId());
+            } else {
+                log.warn("No se encontró parada cercana al punto de origen dentro de {} metros", PARADA_ASOCIACION_DIST);
+            }
+            
+            // Buscar parada cercana al punto de destino (evitar duplicados)
+            Parada paradaDestino = buscarParadaCercana(puntoDestino, PARADA_ASOCIACION_DIST);
+            if (paradaDestino != null && (paradaOrigen == null || paradaDestino.getId() != paradaOrigen.getId())) {
+                crearAsociacionParadaLinea(paradaDestino, linea);
+                // Habilitar la parada automáticamente si no está habilitada
+                habilitarParadaAutomaticamente(paradaDestino);
+                log.info("Parada de destino {} asociada y habilitada automáticamente a la línea {}", paradaDestino.getId(), linea.getId());
+            } else if (paradaDestino == null) {
+                log.warn("No se encontró parada cercana al punto de destino dentro de {} metros", PARADA_ASOCIACION_DIST);
+            } else {
+                log.info("Parada de destino es la misma que la de origen (ruta circular)");
+            }
+        } catch (Exception e) {
+            log.error("Error al asociar paradas automáticamente: {}", e.getMessage(), e);
+            // No lanzar excepción para no interrumpir la creación/modificación de la línea
+        }
+    }
+
+    /**
+     * Busca una parada cercana a un punto
+     * @param punto El punto de referencia
+     * @param distancia La distancia máxima de búsqueda
+     * @return La parada más cercana o null si no se encuentra ninguna
+     */
+    private Parada buscarParadaCercana(Point punto, double distancia) {
+        return paradaRepository.findNearestParadaToPoint(punto, distancia);
+    }
+
+    /**
+     * Crea una asociación entre una parada y una línea si no existe ya
+     * @param parada La parada a asociar
+     * @param linea La línea a la que asociar la parada
+     */
+    private void crearAsociacionParadaLinea(Parada parada, Linea linea) {
+        try {
+            // Verificar si ya existe la asociación
+            ParadaLinea asociacionExistente = paradaLineaRepository.findByParadaIdAndLineaId(parada.getId(), linea.getId());
+            
+            if (asociacionExistente == null) {
+                // Crear nueva asociación
+                ParadaLinea nuevaAsociacion = ParadaLinea.builder()
+                        .parada(parada)
+                        .linea(linea)
+                        .estaHabilitada(true)
+                        .build();
+                
+                paradaLineaRepository.save(nuevaAsociacion);
+                log.info("Nueva asociación creada entre parada {} y línea {}", parada.getId(), linea.getId());
+            } else if (!asociacionExistente.isEstaHabilitada()) {
+                // Si existe pero está deshabilitada, habilitarla
+                asociacionExistente.setEstaHabilitada(true);
+                paradaLineaRepository.save(asociacionExistente);
+                log.info("Asociación existente entre parada {} y línea {} reactivada", parada.getId(), linea.getId());
+            } else {
+                log.debug("Asociación entre parada {} y línea {} ya existe y está habilitada", parada.getId(), linea.getId());
+            }
+        } catch (Exception e) {
+            log.error("Error al crear/actualizar asociación parada-línea: {}", e.getMessage(), e);
+        }
     }
 
     public List<LineaDTO> obtenerLineasPorOrigenDestino(int idDepartamentoOrigen, int idDepartamentoDestino)
@@ -213,27 +303,34 @@ public class LineaService {
 
     /**
      * Calcula si una línea debe estar habilitada basado en:
-     * 1. Si la línea está marcada como habilitada
-     * 2. Si tiene paradas asociadas habilitadas
-     * 3. Si tiene al menos una asociación parada-línea habilitada
+     * Debe tener al menos dos asociaciones parada-línea habilitadas con paradas habilitadas
      */
     private boolean calcularEstadoLinea(Linea linea) {
-        // Si la línea está marcada como deshabilitada, no importa el resto
-        if (!linea.isEstaHabilitada()) {
-            return false;
-        }
-
+        // Obtener las asociaciones parada-línea desde la base de datos para evitar problemas de lazy loading
+        List<ParadaLinea> paradasLineas = paradaLineaRepository.findByLineaId(linea.getId());
+        
         // Si no tiene paradas asociadas, está deshabilitada
-        if (linea.getParadasLineas() == null || linea.getParadasLineas().isEmpty()) {
+        if (paradasLineas == null || paradasLineas.isEmpty()) {
+            log.debug("Línea {} deshabilitada: no tiene paradas asociadas", linea.getId());
             return false;
         }
 
-        // Verificar si tiene al menos una parada habilitada con asociación habilitada
-        boolean tieneParadaHabilitada = linea.getParadasLineas().stream()
-                .anyMatch(pl -> pl.isEstaHabilitada() && 
-                              pl.getParada().isHabilitada());
+        // Contar asociaciones habilitadas con paradas habilitadas
+        long count = paradasLineas.stream()
+                .filter(pl -> {
+                    boolean asociacionHabilitada = pl.isEstaHabilitada();
+                    boolean paradaHabilitada = pl.getParada().isHabilitada();
+                    log.debug("ParadaLinea {}: asociación habilitada={}, parada habilitada={}", 
+                            pl.getId(), asociacionHabilitada, paradaHabilitada);
+                    return asociacionHabilitada && paradaHabilitada;
+                })
+                .count();
 
-        return tieneParadaHabilitada;
+        boolean resultado = count >= 2;
+        log.info("Línea {}: {} asociaciones válidas encontradas, línea habilitada: {}", 
+                linea.getId(), count, resultado);
+        
+        return resultado;
     }
 
     public List<LineaDTO> obtenerLineasActivasEnRango(LocalTime horaDesde, LocalTime horaHasta) {
@@ -273,17 +370,29 @@ public class LineaService {
                 linea.setPuntos(nuevosPuntos);
 
                 // Actualizar origen y destino
-                String origen = lineaRepository.obtenerDepartamentoOrigen(getPuntoDeOrigen(puntosDtos));
-                String destino = lineaRepository.obtenerDepartamentoDestino(getPuntoDestino(puntosDtos));
+                Point nuevoOrigenPunto = getPuntoDeOrigen(puntosDtos);
+                Point nuevoDestinoPunto = getPuntoDestino(puntosDtos);
+                String origen = lineaRepository.obtenerDepartamentoOrigen(nuevoOrigenPunto);
+                String destino = lineaRepository.obtenerDepartamentoDestino(nuevoDestinoPunto);
                 linea.setOrigen(origen);
                 linea.setDestino(destino);
 
+                // Guardar la línea primero
+                Linea lineaGuardada = lineaRepository.save(linea);
+
+                // Asociar automáticamente las paradas de los nuevos puntos de inicio y fin
+                asociarParadasAutomaticamente(lineaGuardada, nuevoOrigenPunto, nuevoDestinoPunto);
+                
                 // Recalcular el estado de la línea después de modificar el recorrido
-                linea.setEstaHabilitada(calcularEstadoLinea(linea));
+                // (usamos el ID para evitar problemas de lazy loading)
+                boolean estadoCalculado = calcularEstadoLinea(lineaGuardada);
+                lineaGuardada.setEstaHabilitada(estadoCalculado);
+                lineaRepository.save(lineaGuardada);
+            } else {
+                // Si no hay cambios en la geometría, solo guardar los cambios básicos
+                lineaRepository.save(linea);
             }
         }
-
-        lineaRepository.save(linea);
     }
 
     private void procesamientoDeParadaLinea(ParadaLinea paradaLinea, Linea linea, MultiLineString nuevoRecorrido) {
@@ -407,18 +516,12 @@ public class LineaService {
         Linea linea = lineaRepository.findById(lineaId)
                 .orElseThrow(() -> new LineaNoEncontradaException("Línea con id " + lineaId + " no encontrada"));
         
-        // Obtener todas las asociaciones parada-línea para esta línea
-        List<ParadaLinea> paradasLinea = paradaLineaRepository.findByLineaId(lineaId);
+        // Obtener todas las asociaciones parada-línea para esta línea ordenadas por posición en el recorrido
+        List<ParadaLinea> paradasLinea = paradaLineaRepository.findByLineaIdOrderedByRecorrido(lineaId);
         
-        // Convertir a DTO y calcular orden por distancia desde el origen
+        // Convertir a DTO
         return paradasLinea.stream()
                 .map(this::paradaLineaToDTO)
-                .sorted((pl1, pl2) -> {
-                    // Ordenar por distancia desde el origen de la línea
-                    // Se puede usar la latitud o un campo de orden si existe
-                    // Por ahora ordenamos por ID de parada como aproximación
-                    return Integer.compare(pl1.getIdParada(), pl2.getIdParada());
-                })
                 .collect(Collectors.toList());
     }
 
@@ -546,7 +649,7 @@ public class LineaService {
                 String endpointsInfo = routingRepository.getRouteEndpointsStopsInfo(routeGeoJSON, bufferParadas);
                 throw new IllegalArgumentException("Los puntos inicial y final de la ruta deben estar cerca (50 metros) de paradas existentes. " +
                     "Estado actual: " + endpointsInfo + ". " +
-                    "Por favor, asegúrese de que el recorrido comience y termine cerca de paradas habilitadas.");
+                    "Por favor, asegúrese de que el recorrido comience y termine cerca de paradas.");
             }
             
         } catch (Exception e) {
@@ -554,6 +657,53 @@ public class LineaService {
                 throw e;
             }
             throw new IllegalArgumentException("Error al validar la ruta: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Habilita automáticamente una parada que está siendo usada como punto extremo de una línea
+     * @param parada La parada a habilitar
+     */
+    private void habilitarParadaAutomaticamente(Parada parada) {
+        if (!parada.isHabilitada()) {
+            parada.setHabilitada(true);
+            paradaRepository.save(parada);
+            log.info("Parada {} habilitada automáticamente por ser punto extremo de línea", parada.getId());
+        }
+    }
+
+    // Asocia y habilita automáticamente las paradas de los extremos de la línea
+    private void asociarParadasExtremos(Linea linea, Point puntoOrigen, Point puntoDestino) {
+        // Origen
+        Parada paradaOrigen = buscarParadaCercana(puntoOrigen, PARADA_ASOCIACION_DIST);
+        if (paradaOrigen != null) {
+            asociarYHabilitarParadaLinea(paradaOrigen, linea);
+        }
+
+        // Destino (evitar duplicado si es la misma parada)
+        Parada paradaDestino = buscarParadaCercana(puntoDestino, PARADA_ASOCIACION_DIST);
+        if (paradaDestino != null && (paradaOrigen == null || !Objects.equals(paradaDestino.getId(), paradaOrigen.getId()))) {
+            asociarYHabilitarParadaLinea(paradaDestino, linea);
+        }
+    }
+
+    // Crea o habilita la asociación Parada-Línea y habilita la parada si es necesario
+    private void asociarYHabilitarParadaLinea(Parada parada, Linea linea) {
+        ParadaLinea asociacion = paradaLineaRepository.findByParadaIdAndLineaId(parada.getId(), linea.getId());
+        if (asociacion == null) {
+            ParadaLinea nueva = ParadaLinea.builder()
+                .parada(parada)
+                .linea(linea)
+                .estaHabilitada(true)
+                .build();
+            paradaLineaRepository.save(nueva);
+        } else if (!asociacion.isEstaHabilitada()) {
+            asociacion.setEstaHabilitada(true);
+            paradaLineaRepository.save(asociacion);
+        }
+        if (!parada.isHabilitada()) {
+            parada.setHabilitada(true);
+            paradaRepository.save(parada);
         }
     }
 

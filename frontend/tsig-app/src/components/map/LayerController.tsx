@@ -197,7 +197,7 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
             <WMSFeatureInfoHandler
                 visible={paradaVisible}
                 layerName="tsig:parada"
-                tolerance={12}
+                tolerance={18}
                 onFeatureInfo={data => {
                     if (data && data.features && data.features.length > 0) {
                         const parada = data.features[0]
@@ -227,7 +227,7 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
             <WMSFeatureInfoHandler
                 visible={lineaVisible}
                 layerName="tsig:linea"
-                tolerance={12}
+                tolerance={6}
                 styles={mapaBaseActivo === 'claro' ? 'tsig:lineas_claro' : 'tsig:lineas_oscuro'}
                 onFeatureInfo={async data => {
                     if (data && data.features && data.features.length > 0) {

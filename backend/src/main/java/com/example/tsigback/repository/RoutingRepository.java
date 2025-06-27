@@ -226,14 +226,12 @@ public class RoutingRepository {
                 start_near_stop AS (
                     SELECT COUNT(*) > 0 as has_start_stop
                     FROM route_endpoints re, parada p
-                    WHERE p.habilitada = true
-                    AND ST_DWithin(re.start_point::geography, p.ubicacion::geography, ?)
+                    WHERE ST_DWithin(re.start_point::geography, p.ubicacion::geography, ?)
                 ),
                 end_near_stop AS (
                     SELECT COUNT(*) > 0 as has_end_stop
                     FROM route_endpoints re, parada p
-                    WHERE p.habilitada = true
-                    AND ST_DWithin(re.end_point::geography, p.ubicacion::geography, ?)
+                    WHERE ST_DWithin(re.end_point::geography, p.ubicacion::geography, ?)
                 )
                 SELECT (sns.has_start_stop AND ens.has_end_stop) as both_endpoints_valid
                 FROM start_near_stop sns, end_near_stop ens

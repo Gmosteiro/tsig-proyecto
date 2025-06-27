@@ -47,4 +47,20 @@ public interface ParadaRepository extends JpaRepository<Parada, Integer> {
                                   @Param("lineaId") Long lineaId, 
                                   @Param("distancia") double distancia);
 
+    @Query(value = """
+        SELECT p.*
+        FROM parada p
+        WHERE ST_DWithin(
+            ST_Transform(p.ubicacion, 3857),
+            ST_Transform(:punto, 3857),
+            :distancia
+        )
+        ORDER BY ST_Distance(
+            ST_Transform(p.ubicacion, 3857),
+            ST_Transform(:punto, 3857)
+        )
+        LIMIT 1
+    """, nativeQuery = true)
+    Parada findNearestParadaToPoint(@Param("punto") Point punto, @Param("distancia") double distancia);
+
 }
