@@ -115,7 +115,7 @@ public interface LineaRepository extends JpaRepository<Linea, Integer> {
                         JOIN horario_parada_linea hpl ON hpl.parada_linea_id = pl.id
                         WHERE hpl.horario BETWEEN CAST(:horaDesde AS time) AND CAST(:horaHasta AS time)
                         AND pl.esta_habilitada = true
-                        AND p.estado = 1
+                        AND p.habilitada = true
                         """, nativeQuery = true)
         List<Linea> findLineasActivasEnRango(@Param("horaDesde") String horaDesde,
                         @Param("horaHasta") String horaHasta);
