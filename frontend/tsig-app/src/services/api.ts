@@ -62,7 +62,6 @@ export async function createStop(stopData: CrearParadaDTO) {
 }
 
 export async function updateStop(stopData: ParadaDTO) {
-    console.log('Updating stop:', stopData)
     try {
         const res = await axios.put(`/apiurl/api/parada/modificar`, stopData);
         return res.data;
@@ -117,7 +116,6 @@ export async function getSchedulesForLineAndStop(lineaId: number, paradaId: numb
 
 export async function getEmpresas(): Promise<{ id: number, nombre: string }[]> {
     const res = await axios.get('/apiurl/api/empresa');
-    console.log('Empresas:', res.data);
     return res.data;
 }
 

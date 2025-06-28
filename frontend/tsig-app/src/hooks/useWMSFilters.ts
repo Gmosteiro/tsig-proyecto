@@ -34,7 +34,6 @@ export const useWMSFilters = () => {
             const response = await axios.post('/apiurl/api/lineas/filtros-wms', criterios)
             const filtros = response.data as FiltroWMS
             setFiltrosWMS(filtros)
-            console.log('Filtros WMS aplicados:', filtros)
             return filtros
         } catch (error) {
             console.error('Error al aplicar filtros WMS:', error)
@@ -62,7 +61,6 @@ export const useWMSFilters = () => {
             const response = await axios.post('/apiurl/api/lineas/limpiar-filtros-wms', {})
             const filtros = response.data as FiltroWMS
             setFiltrosWMS(filtros)
-            console.log('Filtros WMS limpiados:', filtros)
             return filtros
         } catch (error) {
             console.error('Error al limpiar filtros WMS:', error)
@@ -90,7 +88,6 @@ export const useWMSFilters = () => {
             const response = await axios.post('/apiurl/api/lineas/filtros-wms', idsLineas)
             const filtros = response.data as FiltroWMS
             setFiltrosWMS(filtros)
-            console.log('Filtros WMS aplicados por IDs:', filtros)
             return filtros
         } catch (error) {
             console.error('Error al aplicar filtros WMS por IDs:', error)
@@ -114,7 +111,6 @@ export const useWMSFilters = () => {
      */
     const limpiarFiltrosWMSLocal = useCallback(() => {
         setFiltrosWMS(null)
-        console.log('Filtros WMS limpiados localmente')
     }, [])
 
     /**

@@ -94,7 +94,6 @@ const EditStopPopup: React.FC<EditStopPopupProps> = ({ parada, onClose, onSave, 
         }
 
         try {
-            console.log('Eliminando parada:', parada.id);
             await deleteStop(parada.id);
             
             // Alerta de éxito

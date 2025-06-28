@@ -45,12 +45,6 @@ export default function LayerController({
     const [lineaFiltro, setLineaFiltro] = useState<'todos' | 'habilitadas' | 'deshabilitadas'>('todos')
     const [mapaBaseActivo, setMapaBaseActivo] = useState<'claro' | 'oscuro'>('claro')
 
-    // Debug: Detectar cambios en filtros WMS
-    useEffect(() => {
-        console.log('LayerController - Filtros WMS externos cambiaron:', filtrosWMSExternos);
-        console.log('LayerController - Filtros WMS internos cambiaron:', filtrosWMS);
-    }, [filtrosWMSExternos, filtrosWMS]);
-
     // Sincronizar línea seleccionada desde el componente padre
     useEffect(() => {
         setSelectedLinea(selectedLineaFromParent || null)
@@ -71,14 +65,12 @@ export default function LayerController({
         
         // Filtro WMS externo (de búsquedas)
         const filtroWMSExterno = filtrosWMSExternos?.filtroParadas
-        console.log('LayerController - Filtro WMS externo paradas:', filtroWMSExterno);
         if (filtroWMSExterno && filtroWMSExterno !== '1=1' && filtroWMSExterno !== 'null') {
             filtros.push(filtroWMSExterno)
         }
         
         // Filtro WMS interno (del hook)
         const filtroWMSInterno = filtrosWMS?.filtroParadas
-        console.log('LayerController - Filtro WMS interno paradas:', filtroWMSInterno);
         if (filtroWMSInterno && filtroWMSInterno !== '1=1' && filtroWMSInterno !== 'null' && !filtroWMSExterno) {
             filtros.push(filtroWMSInterno)
         }
@@ -88,7 +80,6 @@ export default function LayerController({
                            filtros.length === 1 ? filtros[0] : 
                            filtros.join(' AND ');
         
-        console.log('LayerController - Filtro final paradas:', finalFilter);
         return finalFilter;
     }
 
@@ -109,14 +100,12 @@ export default function LayerController({
         
         // Filtro WMS externo (de búsquedas)
         const filtroWMSExterno = filtrosWMSExternos?.filtroLineas
-        console.log('LayerController - Filtro WMS externo líneas:', filtroWMSExterno);
         if (filtroWMSExterno && filtroWMSExterno !== '1=1' && filtroWMSExterno !== 'null') {
             filtros.push(filtroWMSExterno)
         }
         
         // Filtro WMS interno (del hook)
         const filtroWMSInterno = filtrosWMS?.filtroLineas
-        console.log('LayerController - Filtro WMS interno líneas:', filtroWMSInterno);
         if (filtroWMSInterno && filtroWMSInterno !== '1=1' && filtroWMSInterno !== 'null' && !filtroWMSExterno) {
             filtros.push(filtroWMSInterno)
         }
@@ -126,7 +115,6 @@ export default function LayerController({
                            filtros.length === 1 ? filtros[0] : 
                            filtros.join(' AND ');
         
-        console.log('LayerController - Filtro final líneas:', finalFilter);
         return finalFilter;
     }
 

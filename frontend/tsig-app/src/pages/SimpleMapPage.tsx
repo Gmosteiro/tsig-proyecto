@@ -78,7 +78,6 @@ export default function SimpleMapPage() {
         if (latlngs.length > 0) {
           // Centrar el mapa en la nueva línea
           mapRef.current.fitBounds(latlngs)
-          console.log('Mapa centrado en línea:', selectedLinea.descripcion)
         }
       } catch (error) {
         console.error('Error al procesar GeoJSON de la línea:', error)
@@ -199,7 +198,6 @@ export default function SimpleMapPage() {
       if (hasUserLocation && !hasMapBeenCentered.current) {
         map.setView(position, 13); // Zoom más alto para ubicación del usuario
         hasMapBeenCentered.current = true;
-        console.log('Mapa centrado en ubicación del usuario:', position);
       }
     }, [map, position, hasUserLocation]);
 
@@ -318,34 +316,26 @@ export default function SimpleMapPage() {
             selectedLineaFromParent={selectedLinea}
             filtrosWMSExternos={filtrosWMS || undefined}
             onViewLine={async (linea: LineaDTO) => {
-              console.log('onViewLine llamado para línea:', linea.descripcion, 'ID:', linea.id);
               try {
                 // Limpiar línea anterior si existe
                 if (selectedLinea && selectedLinea.id !== linea.id) {
-                  console.log('Limpiando línea anterior:', selectedLinea.descripcion);
                   setSelectedLinea(null);
                   // Esperar un tick para asegurar que el estado se limpie
                   await new Promise(resolve => setTimeout(resolve, 0));
                 }
                 
                 const line = await updateGeoJSON(linea);
-                console.log('Línea actualizada con GeoJSON:', line.descripcion);
                 setSelectedLinea(line);
               } catch (error) {
                 console.error('Error al actualizar línea:', error);
               }
             }}
             onCenterMap={(latitud: number, longitud: number, zoom?: number) => {
-              console.log('SimpleMapPage - Centrando mapa en:', latitud, longitud, 'zoom:', zoom);
               if (mapRef.current) {
                 mapRef.current.setView([latitud, longitud], zoom || 16);
-                console.log('Mapa centrado exitosamente');
-              } else {
-                console.warn('mapRef.current no disponible');
               }
             }}
             onClearSelectedLine={() => {
-              console.log('Limpiando línea seleccionada');
               setSelectedLinea(null);
             }}
           />

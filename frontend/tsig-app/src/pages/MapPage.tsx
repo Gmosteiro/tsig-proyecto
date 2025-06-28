@@ -90,10 +90,7 @@ export default function MapPage() {
       alert("Primero debe generar la ruta usando el botón de routing en el mapa.");
       return;
     }
-    
-    // Enviar la ruta original sin simplificación para preservar todos los puntos críticos
-    console.log(`Puntos en la ruta: ${latestRouteGeoJSON.current.coordinates?.length || 0}`);
-    
+        
     const payload = {
       routeGeoJSON: JSON.stringify(latestRouteGeoJSON.current)
     };
@@ -208,7 +205,6 @@ export default function MapPage() {
 
   // Handler para iniciar la modificación del recorrido de una línea
   const handleModifyLineRoute = (linea: LineaDTO) => {
-    console.log('Iniciando modificación de recorrido para línea:', linea);
     setModifyingLineRoute(linea);
     
     // Si hay puntos en la línea, cargarlos
@@ -528,12 +524,8 @@ export default function MapPage() {
             onMoveStop={handleMoveStop} 
             onModifyLineRoute={handleModifyLineRoute}
             onCenterMap={(latitud: number, longitud: number, zoom?: number) => {
-              console.log('MapPage - Centrando mapa en:', latitud, longitud, 'zoom:', zoom);
               if (mapRef.current) {
                 mapRef.current.setView([latitud, longitud], zoom || 16);
-                console.log('Mapa centrado exitosamente');
-              } else {
-                console.warn('mapRef.current no disponible');
               }
             }}
           />
@@ -580,7 +572,6 @@ export default function MapPage() {
               serviceUrl="https://router.project-osrm.org/route/v1"
               onRouteGeoJSON={geojson => {
                 latestRouteGeoJSON.current = geojson;
-                console.log("OSRM route GeoJSON:", geojson);
               }}
             />
           )}

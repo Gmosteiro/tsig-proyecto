@@ -42,8 +42,6 @@ const StopInfoReadOnlyPopup: React.FC<StopInfoReadOnlyPopupProps> = ({ parada, o
     const handleViewRoute = (lineaId: number) => {
         if (onViewRoute) {
             onViewRoute(lineaId);
-        } else {
-            console.log('Ver recorrido de línea:', lineaId);
         }
     };
 

@@ -74,7 +74,6 @@ const LineStopsPopup: React.FC<LineStopsPopupProps> = ({
     const handleViewStop = (stop: ParadaLineaDTO) => {
         // Centrar el mapa en la parada
         if (onViewStop && stop.latitudParada && stop.longitudParada) {
-            console.log('Centrando mapa en:', stop.latitudParada, stop.longitudParada);
             onViewStop(stop.latitudParada, stop.longitudParada);
         } else {
             console.warn('No se puede centrar mapa - datos faltantes:', { 
