@@ -1,6 +1,7 @@
 import { useMapEvent } from 'react-leaflet'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { getWMSFeatureInfo } from '../../services/api'
+import { WMS_MAX_FEATURES, WMS_TIMEOUT } from '../../lib/constants'
 
 interface WMSFeatureInfoHandlerProps {
     visible: boolean
@@ -17,10 +18,19 @@ export default function WMSFeatureInfoHandler({
     styles,
     onFeatureInfo,
 }: WMSFeatureInfoHandlerProps) {
+    const abortControllerRef = useRef<AbortController | null>(null)
+
     useMapEvent('click', async (e) => {
-
-
         if (!visible) return
+
+        // Cancelar request anterior si existe
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+        }
+
+        // Crear nuevo AbortController para este request
+        const abortController = new AbortController()
+        abortControllerRef.current = abortController
 
         const map = e.target
         const size = map.getSize()
@@ -36,7 +46,12 @@ export default function WMSFeatureInfoHandler({
         const infoFormat = "application/json"
 
         try {
-            const data = await getWMSFeatureInfo({
+            // Agregar timeout al request
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Timeout')), WMS_TIMEOUT)
+            })
+
+            const requestPromise = getWMSFeatureInfo({
                 layerName,
                 crsCode: crs.code ?? "",
                 bbox,
@@ -44,19 +59,50 @@ export default function WMSFeatureInfoHandler({
                 point,
                 infoFormat,
                 tolerance,
-                styles
+                styles,
+                featureCount: WMS_MAX_FEATURES,
+                abortSignal: abortController.signal
             })
-            if (data.features && data.features.length > 0) {
-                onFeatureInfo(data)
+
+            const data = await Promise.race([requestPromise, timeoutPromise])
+            
+            // Verificar si el request fue cancelado
+            if (abortController.signal.aborted) {
+                return
             }
-        } catch (err) {
-            onFeatureInfo(null)
+
+            if (data && (data as any).features && (data as any).features.length > 0) {
+                onFeatureInfo(data)
+            } else {
+                onFeatureInfo(null)
+            }
+        } catch (err: any) {
+            // Solo reportar error si no fue cancelado
+            if (!abortController.signal.aborted && err.name !== 'AbortError') {
+                console.warn('Error en WMS GetFeatureInfo:', err.message)
+                onFeatureInfo(null)
+            }
         }
     })
 
     useEffect(() => {
-        if (!visible) onFeatureInfo(null)
+        if (!visible) {
+            // Cancelar request pendiente cuando la capa se oculta
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort()
+            }
+            onFeatureInfo(null)
+        }
     }, [visible, onFeatureInfo])
+
+    // Limpiar controller al desmontar
+    useEffect(() => {
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort()
+            }
+        }
+    }, [])
 
     return null
 }

@@ -9,7 +9,7 @@ import StopInfoReadOnlyPopup from './StopInfoReadOnlyPopup'
 import LineInfoReadOnlyPopup from './LineInfoReadOnlyPopup'
 import LineStopsPopup from './LineStopsPopup'
 import MultiFeatureSelector from './MultiFeatureSelector'
-import { WMS_URL, DEFAULT_TILE_SIZE } from '../../lib/constants'
+import { WMS_URL, DEFAULT_TILE_SIZE, WMS_VERSION, WMS_FORMAT, WMS_TIMEOUT, WMS_BUFFER, WMS_MAX_FEATURES } from '../../lib/constants'
 import { useAuth } from '../../context/authContext'
 import { useWMSFilters } from '../../hooks/useWMSFilters'
 import L from 'leaflet'
@@ -231,9 +231,19 @@ export default function LayerController({
                             eventHandlers={{ add: () => setCamineraVisible(true), remove: () => setCamineraVisible(false) }}
                             url={WMS_URL}
                             layers="tsig:ft_caminera_nacional"
-                            format="image/png"
+                            format={WMS_FORMAT}
                             transparent={true}
                             tileSize={DEFAULT_TILE_SIZE}
+                            version={WMS_VERSION}
+                            // Parámetros optimizados para reducir requests y evitar 429
+                            params={{
+                                'TILED': true,
+                                'TILESORIGIN': '-180,-90',
+                                'BUFFER': WMS_BUFFER,
+                                'FORMAT_OPTIONS': 'dpi:96;quantizer:octree',
+                                // Reducir calidad ligeramente para mejor performance
+                                'DPI': 72
+                            } as any}
                         />
                     </LayersControl.Overlay>
                 )}
@@ -245,10 +255,22 @@ export default function LayerController({
                         url={WMS_URL}
                         layers="tsig:linea"
                         styles={mapaBaseActivo === 'claro' ? 'tsig:lineas_claro' : 'tsig:lineas_oscuro'}
-                        format="image/png"
+                        format={WMS_FORMAT}
                         transparent={true}
                         tileSize={DEFAULT_TILE_SIZE}
-                            params={lineaCqlFilter ? ({ CQL_FILTER: lineaCqlFilter } as any) : {}}
+                        version={WMS_VERSION}
+                        // Combinar parámetros de filtro con optimizaciones
+                        params={{
+                            ...(lineaCqlFilter ? { CQL_FILTER: lineaCqlFilter } : {}),
+                            'TILED': true,
+                            'TILESORIGIN': '-180,-90',
+                            'BUFFER': WMS_BUFFER,
+                            'FORMAT_OPTIONS': 'dpi:72;quantizer:octree',
+                            // Reducir DPI para tiles más livianos
+                            'DPI': 72,
+                            // Habilitar compresión
+                            'COMPRESSION': 'DEFLATE'
+                        } as any}
                         />
                 </LayersControl.Overlay>
                 <LayersControl.Overlay name="Paradas" checked={paradaVisible}>
@@ -258,10 +280,22 @@ export default function LayerController({
                         url={WMS_URL}
                         layers="tsig:parada"
                         styles="tsig:parada_condicional"
-                        format="image/png"
+                        format={WMS_FORMAT}
                         transparent={true}
                         tileSize={DEFAULT_TILE_SIZE}
-                        params={paradaCqlFilter ? ({ CQL_FILTER: paradaCqlFilter } as any) : {}}
+                        version={WMS_VERSION}
+                        // Combinar parámetros de filtro con optimizaciones
+                        params={{
+                            ...(paradaCqlFilter ? { CQL_FILTER: paradaCqlFilter } : {}),
+                            'TILED': true,
+                            'TILESORIGIN': '-180,-90',
+                            'BUFFER': WMS_BUFFER,
+                            'FORMAT_OPTIONS': 'dpi:72;quantizer:octree',
+                            // Reducir DPI para tiles más livianos
+                            'DPI': 72,
+                            // Habilitar compresión
+                            'COMPRESSION': 'DEFLATE'
+                        } as any}
                     />
                 </LayersControl.Overlay>
             </LayersControl>

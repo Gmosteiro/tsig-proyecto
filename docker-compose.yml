@@ -24,10 +24,41 @@ services:
         environment:
             GEOSERVER_ADMIN_USER: admin
             GEOSERVER_ADMIN_PASSWORD: geoserver
+            # Optimizaciones de memoria y performance
+            INITIAL_MEMORY: 1G
+            MAXIMUM_MEMORY: 3G
+            # Configuraciones de JVM optimizadas para evitar 429
+            JAVA_OPTS: >-
+                -XX:+UseG1GC
+                -XX:MaxGCPauseMillis=200
+                -XX:ParallelGCThreads=4
+                -XX:ConcGCThreads=2
+                -XX:+UseStringDeduplication
+                -Duser.timezone=America/Montevideo
+                -Djava.awt.headless=true
+                -Dfile.encoding=UTF8
+                -Duser.timezone=GMT
+                -DGEOSERVER_CSRF_DISABLED=true
+                -Djava.util.concurrent.ForkJoinPool.common.parallelism=8
+                -Dorg.geotools.referencing.forceXY=true
+            # Configuraciones específicas de GeoServer
+            GEOSERVER_CSRF_DISABLED: true
+            PROXY_BASE_URL: http://localhost:8080/geoserver
+            # Configuraciones para evitar rate limiting
+            GEOSERVER_LOG_LOCATION: /opt/geoserver/data_dir/logs/geoserver.log
         ports:
             - "8080:8080"
         volumes:
             - ./geoserver_data:/opt/geoserver/data_dir
+        # Aumentar recursos del contenedor para manejar más requests
+        deploy:
+            resources:
+                limits:
+                    memory: 4G
+                    cpus: '2.5'
+                reservations:
+                    memory: 2G
+                    cpus: '1.5'
 
     backend:
         build:

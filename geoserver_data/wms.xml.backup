@@ -18,33 +18,20 @@
     <position>BOT_RIGHT</position>
     <transparency>100</transparency>
   </watermark>
-  <!-- Optimización de interpolación para mejor rendimiento -->
-  <interpolation>Bilinear</interpolation>
+  <interpolation>Nearest</interpolation>
   <getFeatureInfoMimeTypeCheckingEnabled>false</getFeatureInfoMimeTypeCheckingEnabled>
   <getMapMimeTypeCheckingEnabled>false</getMapMimeTypeCheckingEnabled>
   <dynamicStylingDisabled>false</dynamicStylingDisabled>
   <featuresReprojectionDisabled>false</featuresReprojectionDisabled>
-  <!-- Configuración de buffers y límites optimizados -->
-  <maxBuffer>64</maxBuffer>
-  <!-- 512 MB máximo de memoria para requests WMS -->
-  <maxRequestMemory>536870912</maxRequestMemory>
-  <!-- 45 segundos máximo de rendering para evitar timeouts -->
-  <maxRenderingTime>45000</maxRenderingTime>
-  <!-- Máximo 50 errores de rendering antes de abortar -->
-  <maxRenderingErrors>50</maxRenderingErrors>
-  <!-- Configuración de cache optimizada -->
+  <maxBuffer>0</maxBuffer>
+  <maxRequestMemory>0</maxRequestMemory>
+  <maxRenderingTime>0</maxRenderingTime>
+  <maxRenderingErrors>0</maxRenderingErrors>
   <cacheConfiguration>
-    <enabled>true</enabled>
-    <!-- Aumentar entradas de cache para mejor performance -->
-    <maxEntries>5000</maxEntries>
-    <!-- Aumentar tamaño máximo de entrada a 500KB -->
-    <maxEntrySize>512000</maxEntrySize>
+    <enabled>false</enabled>
+    <maxEntries>1000</maxEntries>
+    <maxEntrySize>51200</maxEntrySize>
   </cacheConfiguration>
   <transformFeatureInfoDisabled>false</transformFeatureInfoDisabled>
   <autoEscapeTemplateValues>false</autoEscapeTemplateValues>
-  <!-- Configuraciones adicionales para optimización -->
-  <defaultLocale>es</defaultLocale>
-  <bboxForEachCRS>false</bboxForEachCRS>
-  <!-- Limitar features en GetFeatureInfo para mejor performance -->
-  <maxFeatures>50</maxFeatures>
 </wms>

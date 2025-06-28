@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <gwcConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://geowebcache.org/schema/1.26.0 http://geowebcache.org/schema/1.26.0/geowebcache.xsd" xmlns="http://geowebcache.org/schema/1.26.0">
   <version>1.26.0</version>
-  <!-- Aumentar timeout del backend para evitar timeouts con Docker -->
-  <backendTimeout>300</backendTimeout>
+  <backendTimeout>120</backendTimeout>
   <blobStores/>
   <gridSets>
     <gridSet>

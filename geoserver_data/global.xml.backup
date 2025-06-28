@@ -15,16 +15,16 @@
   </settings>
   <jai>
     <allowInterpolation>false</allowInterpolation>
-    <recycling>true</recycling>
+    <recycling>false</recycling>
     <tilePriority>5</tilePriority>
-    <tileThreads>8</tileThreads>
-    <memoryCapacity>0.75</memoryCapacity>
-    <memoryThreshold>0.85</memoryThreshold>
-    <imageIOCache>true</imageIOCache>
-    <pngAcceleration>true</pngAcceleration>
-    <jpegAcceleration>true</jpegAcceleration>
-    <allowNativeMosaic>true</allowNativeMosaic>
-    <allowNativeWarp>true</allowNativeWarp>
+    <tileThreads>7</tileThreads>
+    <memoryCapacity>0.5</memoryCapacity>
+    <memoryThreshold>0.75</memoryThreshold>
+    <imageIOCache>false</imageIOCache>
+    <pngAcceleration>false</pngAcceleration>
+    <jpegAcceleration>false</jpegAcceleration>
+    <allowNativeMosaic>false</allowNativeMosaic>
+    <allowNativeWarp>false</allowNativeWarp>
     <pngEncoderType>PNGJ</pngEncoderType>
     <jaiext>
       <jaiExtOperations class="sorted-set">
@@ -54,14 +54,14 @@
     </jaiext>
   </jai>
   <coverageAccess>
-    <maxPoolSize>8</maxPoolSize>
-    <corePoolSize>4</corePoolSize>
+    <maxPoolSize>5</maxPoolSize>
+    <corePoolSize>5</corePoolSize>
     <keepAliveTime>30000</keepAliveTime>
     <queueType>UNBOUNDED</queueType>
     <imageIOCacheThreshold>10240</imageIOCacheThreshold>
   </coverageAccess>
   <updateSequence>140</updateSequence>
-  <featureTypeCacheSize>10000</featureTypeCacheSize>
+  <featureTypeCacheSize>0</featureTypeCacheSize>
   <globalServices>true</globalServices>
   <xmlPostRequestLogBufferSize>1024</xmlPostRequestLogBufferSize>
   <xmlExternalEntitiesEnabled>false</xmlExternalEntitiesEnabled>

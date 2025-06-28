@@ -147,6 +147,7 @@ export type WMSFeatureInfoParams = {
     tolerance?: number
     featureCount?: number
     styles?: string
+    abortSignal?: AbortSignal
 }
 
 // Puedes ajustar este tipo según la estructura real de la respuesta del WMS
@@ -165,7 +166,8 @@ export async function getWMSFeatureInfo({
     infoFormat = "application/json",
     tolerance = 5,
     featureCount = 5,
-    styles = ''
+    styles = '',
+    abortSignal
 }: WMSFeatureInfoParams): Promise<WMSFeatureInfoResponse> {
     const url = new URL(WMS_URL);
     url.search = new URLSearchParams({
@@ -188,7 +190,10 @@ export async function getWMSFeatureInfo({
         BUFFER: tolerance.toString()
     } as Record<string, string>).toString();
 
-    const resp = await axios.get(url.toString());
+    const resp = await axios.get(url.toString(), {
+        signal: abortSignal,
+        timeout: 10000 // 10 segundos de timeout
+    });
     return resp.data;
 }
 
