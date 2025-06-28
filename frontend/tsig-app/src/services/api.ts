@@ -192,8 +192,9 @@ export async function getWMSFeatureInfo({
 
     const resp = await axios.get(url.toString(), {
         signal: abortSignal,
-        timeout: 10000 // 10 segundos de timeout
+        timeout: 8000 // Reducir timeout a 8 segundos para GetFeatureInfo
     });
+    
     return resp.data;
 }
 

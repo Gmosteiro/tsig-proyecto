@@ -110,12 +110,21 @@ export default function MultiFeatureSelector({
     }
 
     return (
-        <div style={containerStyle}>
+        <div 
+            style={containerStyle}
+            onClick={(e) => {
+                e.stopPropagation(); // Prevenir que clicks dentro del selector lleguen al mapa
+            }}
+        >
             <div style={headerStyle}>
                 <span>Elementos encontrados ({features.length})</span>
                 <button 
                     style={closeButtonStyle}
-                    onClick={onClose}
+                    onClick={(e) => {
+                        e.stopPropagation(); // Prevenir propagación del click
+                        e.preventDefault();
+                        onClose();
+                    }}
                     title="Cerrar"
                 >
                     ×
@@ -126,6 +135,9 @@ export default function MultiFeatureSelector({
                     <div
                         key={`${feature.type}-${feature.id}-${index}`}
                         style={itemStyle}
+                        onClick={(e) => {
+                            e.stopPropagation(); // Prevenir propagación del click en el item
+                        }}
                         onMouseEnter={(e) => {
                             Object.assign(e.currentTarget.style, itemHoverStyle)
                         }}
@@ -149,7 +161,11 @@ export default function MultiFeatureSelector({
                         </div>
                         <button
                             style={buttonStyle}
-                            onClick={() => onSelectFeature(feature)}
+                            onClick={(e) => {
+                                e.stopPropagation(); // Prevenir propagación del click
+                                e.preventDefault();
+                                onSelectFeature(feature);
+                            }}
                             onMouseEnter={(e) => {
                                 e.currentTarget.style.backgroundColor = '#2563eb'
                             }}
