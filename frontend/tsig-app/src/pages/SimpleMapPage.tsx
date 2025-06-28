@@ -9,6 +9,7 @@ import { LineaDTO, updateGeoJSON, getLinesByGeoJson } from '../services/linea';
 import Searcher from '../components/search/Searcher';
 import PolygonDrawControl from '../components/map/PolygonDrawControl';
 import LayerController from '../components/map/LayerController';
+import { useWMSFilters } from '../hooks/useWMSFilters';
 import React from 'react';
 
 const customIcon = new L.Icon({
@@ -22,11 +23,51 @@ export default function SimpleMapPage() {
   const [hasUserLocation, setHasUserLocation] = useState(false); // Para saber si se obtuvo geolocalización
   const [selectedLinea, setSelectedLinea] = useState<any | null>(null);
   const [showSearcher, setShowSearcher] = useState(false);
+  const [searchType, setSearchType] = useState<'origenDestino' | 'nombre' | 'horario' | 'kilometro' | 'poligono' | null>(null); // Estado para mantener el tipo de búsqueda
+  
+  // Hook para manejar filtros WMS
+  const { 
+    aplicarFiltrosPorIdsLineas, 
+    limpiarFiltrosWMSLocal, 
+    filtrosWMS 
+  } = useWMSFilters();
+  
+  // Estado para manejar los resultados de búsqueda actuales
+  const [resultadosBusqueda, setResultadosBusqueda] = useState<LineaDTO[]>([]);
+  
+  // Función para manejar cuando hay nuevos resultados de búsqueda
+  const handleResultadosBusqueda = (lineas: LineaDTO[]) => {
+    setResultadosBusqueda(lineas);
+    
+    // Si hay resultados, aplicar filtros WMS
+    if (lineas.length > 0) {
+      const idsLineas = lineas.map(linea => linea.id).filter((id): id is number => id !== undefined);
+      aplicarFiltrosPorIdsLineas(idsLineas);
+    } else {
+      // Si no hay resultados, aplicar filtros que oculten todo (no mostrar nada)
+      aplicarFiltrosPorIdsLineas([]); // Lista vacía = filtros que ocultan todo
+    }
+  };
+  
+  // Función para limpiar búsqueda y filtros completamente (mostrar todo)
+  const handleLimpiarBusquedaCompleta = () => {
+    setResultadosBusqueda([]);
+    limpiarFiltrosWMSLocal(); // Esto remove los filtros completamente, mostrando todo
+  };
+  
+  // Estados para mantener los valores de cada tipo de búsqueda
+  const [rutaKilometroState, setRutaKilometroState] = useState({
+    ruta: '',
+    kilometro: '',
+    resultados: [] as any[]
+  });
+  
   const [polygonCoords, setPolygonCoords] = useState<[number, number][]>([]);
   const [polygonLines, setPolygonLines] = useState<any[] | null>(null);
   const [drawingPolygon, setDrawingPolygon] = useState(false);
   const mapRef = useRef<any>(null);
   const featureGroupRef = useRef<any>(null);
+  const hasMapBeenCentered = useRef(false); // Flag global para evitar re-centrado
 
   useEffect(() => {
     if (selectedLinea && selectedLinea.rutaGeoJSON && mapRef.current) {
@@ -45,13 +86,53 @@ export default function SimpleMapPage() {
     }
   }, [selectedLinea?.id, selectedLinea?.rutaGeoJSON]); // Dependencias más específicas
 
+  // Efecto para sincronizar los resultados de polígono con los filtros WMS
+  useEffect(() => {
+    if (polygonLines && polygonLines.length > 0 && searchType === 'poligono') {
+      handleResultadosBusqueda(polygonLines);
+    }
+  }, [polygonLines, searchType]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleCancelPolygon = () => {
     setDrawingPolygon(false)
     setPolygonLines(null)
+    setSearchType(null) // Limpiar el tipo de búsqueda
     if (featureGroupRef.current) {
       featureGroupRef.current.clearLayers()
     }
     setPolygonCoords([])
+    // Limpiar filtros WMS completamente (mostrar todo)
+    handleLimpiarBusquedaCompleta()
+  }
+
+  const handleEnablePolygonDraw = () => {
+    setDrawingPolygon(true)
+    // Limpiar resultados de polígono anteriores
+    setPolygonLines(null)
+    // Limpiar el polígono actual del mapa
+    if (featureGroupRef.current) {
+      featureGroupRef.current.clearLayers()
+    }
+    setPolygonCoords([])
+  }
+
+  const handleSearchTypeChange = (type: 'origenDestino' | 'nombre' | 'horario' | 'kilometro' | 'poligono' | null) => {
+    // Si se cambia de filtro, limpiar el polígono
+    if (type !== 'poligono') {
+      setDrawingPolygon(false)
+      setPolygonLines(null)
+      if (featureGroupRef.current) {
+        featureGroupRef.current.clearLayers()
+      }
+      setPolygonCoords([])
+    }
+    
+    // Si se cambia el tipo de búsqueda, limpiar filtros WMS anteriores completamente
+    if (type !== searchType) {
+      handleLimpiarBusquedaCompleta()
+    }
+    
+    setSearchType(type)
   }
 
   function SetMapRef({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null> }) {
@@ -71,9 +152,22 @@ export default function SimpleMapPage() {
 
       const lines = await getLinesByGeoJson(geoJson);
       setPolygonLines(lines);
-      setShowSearcher(false); // Oculta el buscador normal si está abierto
+      setSearchType('poligono'); // Establecer el tipo de búsqueda para polígono
+      setShowSearcher(true); // Asegurar que el buscador esté visible con los resultados
       setDrawingPolygon(false); // Ya no estamos dibujando
 
+      // Aplicar filtros WMS para las líneas encontradas por polígono
+      if (lines.length > 0) {
+        const idsLineas = lines.map((linea: LineaDTO) => linea.id).filter((id): id is number => id !== undefined);
+        aplicarFiltrosPorIdsLineas(idsLineas);
+        setResultadosBusqueda(lines);
+      } else {
+        // Si no hay líneas en el polígono, aplicar filtros que oculten todo
+        aplicarFiltrosPorIdsLineas([]);
+        setResultadosBusqueda([]);
+      }
+
+      // Limpiar el layer del mapa ya que mostraremos las líneas encontradas
       if (featureGroupRef.current) {
         featureGroupRef.current.clearLayers();
       }
@@ -96,21 +190,51 @@ export default function SimpleMapPage() {
     );
   }, []);
 
+  // Componente auxiliar para manejar el centrado inicial del mapa
+  function MapCenterController({ position, hasUserLocation }: { position: [number, number], hasUserLocation: boolean }) {
+    const map = useMap();
+
+    useEffect(() => {
+      // Solo centrar una vez cuando se obtiene la geolocalización del usuario
+      if (hasUserLocation && !hasMapBeenCentered.current) {
+        map.setView(position, 13); // Zoom más alto para ubicación del usuario
+        hasMapBeenCentered.current = true;
+        console.log('Mapa centrado en ubicación del usuario:', position);
+      }
+    }, [map, position, hasUserLocation]);
+
+    return null;
+  }
+
   return (
     <div className="min-h-screen">
       <NavigationBar />
 
       <div className="flex justify-center my-6">
-        {(showSearcher || polygonLines) && (
+        {showSearcher && (
           <div className="w-full max-w-4xl mx-auto px-4">
             <Searcher
               onVerLinea={async (data: LineaDTO) => {
                 const line = await updateGeoJSON(data);
                 setSelectedLinea(line);
-                setShowSearcher(false);
-                setPolygonLines(null);
+                // No cerrar el buscador al hacer clic en "Ver"
+                // setShowSearcher(false);
+                
+                // Solo limpiar polygonLines si NO estamos en modo polígono
+                if (searchType !== 'poligono') {
+                  setPolygonLines(null);
+                }
               }}
+              onResultadosBusqueda={handleResultadosBusqueda}
               initialLines={polygonLines}
+              searchType={searchType}
+              onSearchTypeChange={handleSearchTypeChange}
+              // Props para el estado de RutaKilometro
+              rutaKilometroState={rutaKilometroState}
+              onRutaKilometroStateChange={setRutaKilometroState}
+              // Props para el polígono
+              onEnablePolygonDraw={handleEnablePolygonDraw}
+              polygonLines={polygonLines}
             />
           </div>
         )}
@@ -120,23 +244,45 @@ export default function SimpleMapPage() {
         <div className="flex gap-2 justify-center my-4">
           <button
             className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer"
-            onClick={() => setShowSearcher(v => !v)}
+            onClick={() => {
+              if (showSearcher) {
+                // Si está visible, solo ocultarlo (mantener filtros activos)
+                setShowSearcher(false);
+              } else {
+                // Si está oculto, mostrarlo
+                setShowSearcher(true);
+                // Si hay resultados de polígono pero no hay tipo de búsqueda, restaurarlo
+                if (polygonLines && polygonLines.length > 0 && !searchType) {
+                  setSearchType('poligono');
+                }
+              }
+            }}
           >
             {showSearcher ? "Ocultar Buscador" : "Buscar Rutas"}
           </button>
-          {/* <button
-            className="bg-green-600 text-white px-4 py-2 rounded cursor-pointer"
-            onClick={() => setDrawingPolygon(true)}
-          >
-            Filtrar por Área
-          </button> */}
           {(showSearcher || selectedLinea || polygonLines) && (
             <button
               className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded cursor-pointer"
               onClick={() => {
+                // El botón cancelar cierra el buscador y limpia todo
                 setShowSearcher(false);
+                setSearchType(null); // Limpiar el tipo de búsqueda
                 setSelectedLinea(null);
                 setPolygonLines(null);
+                setDrawingPolygon(false);
+                // Limpiar el polígono del mapa
+                if (featureGroupRef.current) {
+                  featureGroupRef.current.clearLayers();
+                }
+                setPolygonCoords([]);
+                // Limpiar filtros WMS completamente (mostrar todo)
+                handleLimpiarBusquedaCompleta();
+                // Limpiar todos los estados de búsqueda
+                setRutaKilometroState({
+                  ruta: '',
+                  kilometro: '',
+                  resultados: []
+                });
               }}
             >
               Cancelar
@@ -167,8 +313,10 @@ export default function SimpleMapPage() {
           style={{ height: '75vh', width: '100%' }}
         >
           <SetMapRef mapRef={mapRef} />
+          <MapCenterController position={position} hasUserLocation={hasUserLocation} />
           <LayerController 
             selectedLineaFromParent={selectedLinea}
+            filtrosWMSExternos={filtrosWMS || undefined}
             onViewLine={async (linea: LineaDTO) => {
               console.log('onViewLine llamado para línea:', linea.descripcion, 'ID:', linea.id);
               try {
@@ -238,6 +386,7 @@ export default function SimpleMapPage() {
             polygonCoords={polygonCoords}
             setPolygonCoords={setPolygonCoords}
             handleCreated={handleCreated}
+            autoEnable={drawingPolygon}
           />
 
         </MapContainer>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { updateLine, deleteLine, LineaDTO, changeLineStatus } from '../../services/linea';
+import { updateLine, deleteLine, LineaDTO } from '../../services/linea';
 import { getEmpresas } from '../../services/api';
 import styles from '../../styles/EditStopPopup.module.css'; // Reutilizamos los estilos
 
@@ -68,12 +68,7 @@ const EditLinePopup: React.FC<EditLinePopupProps> = ({
         try {
             const updatedLinea = { ...linea, ...form };
             
-            // Si cambió el estado de la línea, usar el endpoint específico
-            if (linea.estaHabilitada !== form.estaHabilitada) {
-                await changeLineStatus(linea.id!, form.estaHabilitada);
-            }
-            
-            // Actualizar otros campos
+            // Usar solo updateLine que ahora maneja tanto cambios de estado como otros campos
             await updateLine(updatedLinea);
             
             if (onSave) onSave(updatedLinea);

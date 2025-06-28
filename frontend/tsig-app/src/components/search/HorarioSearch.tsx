@@ -4,9 +4,10 @@ import LinesList from './LinesList'
 
 interface HorarioSearchProps {
     onVerLinea?: (linea: LineaDTO) => void
+    onResultadosBusqueda?: (lineas: LineaDTO[]) => void
 }
 
-const HorarioSearch: React.FC<HorarioSearchProps> = ({ onVerLinea }) => {
+const HorarioSearch: React.FC<HorarioSearchProps> = ({ onVerLinea, onResultadosBusqueda }) => {
     const [horaDesde, setHoraDesde] = useState('')
     const [horaHasta, setHoraHasta] = useState('')
     const [resultados, setResultados] = useState<any[]>([])
@@ -28,6 +29,8 @@ const HorarioSearch: React.FC<HorarioSearchProps> = ({ onVerLinea }) => {
             } else {
                 setResultados(lineas)
             }
+            // Notificar al componente padre sobre los resultados
+            onResultadosBusqueda?.(lineas)
             setLoading(false)
         } catch (err) {
             setError('Error al buscar líneas por horario')

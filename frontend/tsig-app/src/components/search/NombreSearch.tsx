@@ -5,9 +5,10 @@ import LinesList from './LinesList'
 
 interface NombreSearchProps {
     onVerLinea?: (linea: LineaDTO) => void
+    onResultadosBusqueda?: (lineas: LineaDTO[]) => void
 }
 
-const NombreSearch: React.FC<NombreSearchProps> = ({ onVerLinea }) => {
+const NombreSearch: React.FC<NombreSearchProps> = ({ onVerLinea, onResultadosBusqueda }) => {
     const [nombre, setNombre] = useState('')
     const [empresas, setEmpresas] = useState<{ id: number, nombre: string }[]>([])
     const [resultados, setResultados] = useState<any[]>([])
@@ -38,6 +39,8 @@ const NombreSearch: React.FC<NombreSearchProps> = ({ onVerLinea }) => {
                 setError('No se encontraron líneas con ese nombre')
             }
             setResultados(res)
+            // Notificar al componente padre sobre los resultados
+            onResultadosBusqueda?.(res)
             setLoading(false)
         } catch (err) {
             setError('Error al buscar líneas por nombre')

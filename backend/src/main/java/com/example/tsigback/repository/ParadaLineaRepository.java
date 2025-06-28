@@ -58,5 +58,11 @@ public interface ParadaLineaRepository extends JpaRepository<ParadaLinea, Intege
         )
     """, nativeQuery = true)
     List<ParadaLinea> findByLineaIdOrderedByRecorrido(@Param("lineaId") int lineaId);
+
+    /**
+     * Encuentra todas las asociaciones parada-línea habilitadas para una lista de IDs de líneas
+     * Usado para obtener paradas asociadas a líneas específicas en filtros WMS
+     */
+    List<ParadaLinea> findByLineaIdInAndEstaHabilitadaTrue(List<Long> lineaIds);
 }
 

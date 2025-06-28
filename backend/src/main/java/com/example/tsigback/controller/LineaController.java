@@ -5,26 +5,36 @@ import com.example.tsigback.entities.request.OrigenDestinoRequest;
 import com.example.tsigback.entities.dtos.LineaDTO;
 import com.example.tsigback.entities.dtos.ValidarRutaDTO;
 import com.example.tsigback.entities.dtos.ParadaLineaDTO;
+import com.example.tsigback.entities.dtos.CriteriosFiltroDTO;
+import com.example.tsigback.entities.dtos.FiltroWMSDTO;
 import com.example.tsigback.exception.LineaNoEncontradaException;
 import com.example.tsigback.exception.ParadaNoEncontradaException;
 import com.example.tsigback.service.LineaService;
+import com.example.tsigback.service.FiltroWMSService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.LocalTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestController
 @RequestMapping("/api/lineas")
 public class LineaController {
 
     @Autowired
     private LineaService lineaService;
+
+    @Autowired
+    private FiltroWMSService filtroWMSService;
 
     // Base implementation for route validation
     @PostMapping("/validar")
@@ -262,6 +272,82 @@ public class LineaController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Genera filtros CQL simples para WMS basados únicamente en IDs de líneas
+     * Enfoque simplificado: filtrar por ID de línea e IDs de paradas asociadas
+     */
+    @PostMapping("/filtros-wms")
+    public ResponseEntity<FiltroWMSDTO> generarFiltrosWMS(@RequestBody List<Long> idsLineas) {
+        try {
+            log.info("Solicitud de filtros WMS recibida para líneas: {}", idsLineas);
+            
+            if (idsLineas == null || idsLineas.isEmpty()) {
+                // Si no hay líneas, devolver filtros que no muestren nada usando 1=0 (universalmente válido)
+                FiltroWMSDTO filtroVacio = FiltroWMSDTO.builder()
+                        .filtroLineas("1=0")
+                        .filtroParadas("1=0")
+                        .tieneResultados(false)
+                        .totalLineas(0)
+                        .totalParadas(0)
+                        .build();
+                return ResponseEntity.ok(filtroVacio);
+            }
+            
+            // Obtener IDs de paradas asociadas a estas líneas
+            List<Integer> idsParadas = lineaService.obtenerIdsParadasPorLineas(idsLineas);
+            
+            // Crear filtros usando id en formato correcto de GeoServer
+            // Para líneas: formato id = 'linea.X' o id IN ('linea.1', 'linea.2', ...)
+            String filtroLineas;
+            if (idsLineas.size() == 1) {
+                filtroLineas = "id = 'linea." + idsLineas.get(0) + "'";
+            } else {
+                String idsLineasStr = idsLineas.stream()
+                        .map(id -> "'linea." + id + "'")
+                        .collect(Collectors.joining(","));
+                filtroLineas = "id IN (" + idsLineasStr + ")";
+            }
+            
+            // Para paradas: formato id = 'parada.X' o id IN ('parada.1', 'parada.2', ...)
+            String filtroParadas;
+            if (idsParadas.isEmpty()) {
+                filtroParadas = "1=0"; // No mostrar paradas si no hay ninguna asociada
+            } else if (idsParadas.size() == 1) {
+                filtroParadas = "id = 'parada." + idsParadas.get(0) + "'";
+            } else {
+                String idsParadasStr = idsParadas.stream()
+                        .map(id -> "'parada." + id + "'")
+                        .collect(Collectors.joining(","));
+                filtroParadas = "id IN (" + idsParadasStr + ")";
+            }
+            
+            FiltroWMSDTO filtros = FiltroWMSDTO.builder()
+                    .filtroLineas(filtroLineas)
+                    .filtroParadas(filtroParadas)
+                    .tieneResultados(true)
+                    .totalLineas(idsLineas.size())
+                    .totalParadas(idsParadas.size())
+                    .build();
+                    
+            log.info("Filtros WMS generados - Líneas: {}, Paradas: {}", idsLineas.size(), idsParadas.size());
+            log.info("Filtro líneas: {}", filtroLineas);
+            log.info("Filtro paradas: {}", filtroParadas);
+            return ResponseEntity.ok(filtros);
+            
+        } catch (Exception e) {
+            log.error("Error al generar filtros WMS: {}", e.getMessage(), e);
+            // En caso de error, devolver filtros que no muestren nada
+            FiltroWMSDTO filtroError = FiltroWMSDTO.builder()
+                    .filtroLineas("1=0")
+                    .filtroParadas("1=0")
+                    .tieneResultados(false)
+                    .totalLineas(0)
+                    .totalParadas(0)
+                    .build();
+            return ResponseEntity.ok(filtroError);
         }
     }
 

@@ -4,9 +4,10 @@ import LinesList from './LinesList'
 
 type OrigenDestinoSearchProps = {
     onVerLinea?: (linea: LineaDTO) => void
+    onResultadosBusqueda?: (lineas: LineaDTO[]) => void
 }
 
-const OrigenDestinoSearch: React.FC<OrigenDestinoSearchProps> = ({ onVerLinea }) => {
+const OrigenDestinoSearch: React.FC<OrigenDestinoSearchProps> = ({ onVerLinea, onResultadosBusqueda }) => {
     const [departamentos, setDepartamentos] = useState<{ id: number, nombre: string }[]>([])
     const [origen, setOrigen] = useState<number | ''>('')
     const [destino, setDestino] = useState<number | ''>('')
@@ -36,6 +37,8 @@ const OrigenDestinoSearch: React.FC<OrigenDestinoSearchProps> = ({ onVerLinea })
                 } else {
                     setResultados(res)
                 }
+                // Notificar al componente padre sobre los resultados
+                onResultadosBusqueda?.(res)
             }
         } catch (err) {
             setError('Error al buscar líneas por origen y destino')

@@ -1,5 +1,5 @@
 import { TileLayer, WMSTileLayer, LayersControl } from 'react-leaflet'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { ParadaDTO, ParadaLineaDTO } from '../../services/api'
 import { LineaDTO, getLineById } from '../../services/linea'
 import WMSFeatureInfoHandler from './WMSFeatureInfoHandler'
@@ -8,63 +8,48 @@ import LineInfoPopupContainer from './LineInfoPopupContainer'
 import StopInfoReadOnlyPopup from './StopInfoReadOnlyPopup'
 import LineInfoReadOnlyPopup from './LineInfoReadOnlyPopup'
 import LineStopsPopup from './LineStopsPopup'
+import MultiFeatureSelector from './MultiFeatureSelector'
 import { WMS_URL, DEFAULT_TILE_SIZE } from '../../lib/constants'
 import { useAuth } from '../../context/authContext'
+import { useWMSFilters } from '../../hooks/useWMSFilters'
 import L from 'leaflet'
 
-export default function LayerController({ onMoveStop, onModifyLineRoute, onViewLine, onCenterMap, selectedLineaFromParent, onClearSelectedLine }: { 
+export default function LayerController({ 
+    onMoveStop, 
+    onModifyLineRoute, 
+    onViewLine, 
+    onCenterMap, 
+    selectedLineaFromParent, 
+    onClearSelectedLine,
+    filtrosWMSExternos
+}: { 
     onMoveStop?: (parada: ParadaDTO) => void
     onModifyLineRoute?: (linea: LineaDTO) => void 
     onViewLine?: (linea: LineaDTO) => void
     onCenterMap?: (latitud: number, longitud: number, zoom?: number) => void
     selectedLineaFromParent?: LineaDTO | null
     onClearSelectedLine?: () => void
+    filtrosWMSExternos?: { filtroLineas?: string; filtroParadas?: string } | null
 }) {
     const { isAuthenticated } = useAuth()
+    const { filtrosWMS } = useWMSFilters()
     const [camineraVisible, setCamineraVisible] = useState(false)
     const [paradaVisible, setParadaVisible] = useState(true)
     const [lineaVisible, setLineaVisible] = useState(true)
     const [selectedParada, setSelectedParada] = useState<ParadaDTO | null>(null)
     const [selectedLinea, setSelectedLinea] = useState<LineaDTO | null>(null)
     const [showLineStops, setShowLineStops] = useState<{ lineaId: number; lineaDescripcion: string } | null>(null)
+    const [multiFeatures, setMultiFeatures] = useState<any[]>([])
+    const [showMultiSelector, setShowMultiSelector] = useState(false)
     const [paradaFiltro, setParadaFiltro] = useState<'todos' | 'habilitadas' | 'deshabilitadas'>('todos')
     const [lineaFiltro, setLineaFiltro] = useState<'todos' | 'habilitadas' | 'deshabilitadas'>('todos')
     const [mapaBaseActivo, setMapaBaseActivo] = useState<'claro' | 'oscuro'>('claro')
-    const hasInitializedMap = useRef(false) // Para evitar centrar el mapa múltiples veces
 
-    // Obtener geolocalización para centrar el mapa (sin filtrar contenido) - SOLO EN LA CARGA INICIAL
+    // Debug: Detectar cambios en filtros WMS
     useEffect(() => {
-        // Solo ejecutar si no se ha inicializado antes
-        if (hasInitializedMap.current) return
-        
-        if (!isAuthenticated) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude
-                    const lng = position.coords.longitude
-                    // Centrar mapa en la ubicación del usuario con zoom para ver ~4km de radio
-                    if (onCenterMap) {
-                        onCenterMap(lat, lng, 13) // Zoom 13 aproximadamente muestra 4km de radio
-                    }
-                    hasInitializedMap.current = true
-                },
-                (error) => {
-                    console.error("Error obteniendo geolocalización:", error)
-                    // Si no se puede obtener geolocalización, centrar en Uruguay
-                    if (onCenterMap) {
-                        onCenterMap(-32.5, -56.0, 7) // Centro de Uruguay con zoom para ver todo el país
-                    }
-                    hasInitializedMap.current = true
-                }
-            )
-        } else {
-            // Para usuarios autenticados, siempre mostrar todo Uruguay
-            if (onCenterMap) {
-                onCenterMap(-32.5, -56.0, 7) // Centro de Uruguay con zoom para ver todo el país
-            }
-            hasInitializedMap.current = true
-        }
-    }, [isAuthenticated]) // Remover onCenterMap de las dependencias
+        console.log('LayerController - Filtros WMS externos cambiaron:', filtrosWMSExternos);
+        console.log('LayerController - Filtros WMS internos cambiaron:', filtrosWMS);
+    }, [filtrosWMSExternos, filtrosWMS]);
 
     // Sincronizar línea seleccionada desde el componente padre
     useEffect(() => {
@@ -72,32 +57,151 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
     }, [selectedLineaFromParent])
 
     /**
-     * Construye el filtro CQL para paradas según el estado seleccionado
+     * Construye el filtro CQL para paradas según el estado seleccionado y filtros WMS
      */
     const buildCqlFilter = () => {
+        const filtros = []
+        
+        // Filtro por estado habilitado/deshabilitado
         if (paradaFiltro === 'habilitadas') {
-            return 'habilitada=true'  // true = Habilitada
+            filtros.push('habilitada=true')
         } else if (paradaFiltro === 'deshabilitadas') {
-            return 'habilitada=false'  // false = Deshabilitada
+            filtros.push('habilitada=false')
         }
-        return undefined
+        
+        // Filtro WMS externo (de búsquedas)
+        const filtroWMSExterno = filtrosWMSExternos?.filtroParadas
+        console.log('LayerController - Filtro WMS externo paradas:', filtroWMSExterno);
+        if (filtroWMSExterno && filtroWMSExterno !== '1=1' && filtroWMSExterno !== 'null') {
+            filtros.push(filtroWMSExterno)
+        }
+        
+        // Filtro WMS interno (del hook)
+        const filtroWMSInterno = filtrosWMS?.filtroParadas
+        console.log('LayerController - Filtro WMS interno paradas:', filtroWMSInterno);
+        if (filtroWMSInterno && filtroWMSInterno !== '1=1' && filtroWMSInterno !== 'null' && !filtroWMSExterno) {
+            filtros.push(filtroWMSInterno)
+        }
+        
+        // Combinar filtros con AND
+        const finalFilter = filtros.length === 0 ? undefined : 
+                           filtros.length === 1 ? filtros[0] : 
+                           filtros.join(' AND ');
+        
+        console.log('LayerController - Filtro final paradas:', finalFilter);
+        return finalFilter;
     }
 
     const paradaCqlFilter = buildCqlFilter()
 
     /**
-     * Construye el filtro CQL para lineas según el estado seleccionado
+     * Construye el filtro CQL para lineas según el estado seleccionado y filtros WMS
      */
     const buildLineaCqlFilter = () => {
+        const filtros = []
+        
+        // Filtro por estado habilitado/deshabilitado
         if (lineaFiltro === 'habilitadas') {
-            return 'esta_habilitada=true'
+            filtros.push('esta_habilitada=true')
         } else if (lineaFiltro === 'deshabilitadas') {
-            return 'esta_habilitada=false'
+            filtros.push('esta_habilitada=false')
         }
-        return undefined
+        
+        // Filtro WMS externo (de búsquedas)
+        const filtroWMSExterno = filtrosWMSExternos?.filtroLineas
+        console.log('LayerController - Filtro WMS externo líneas:', filtroWMSExterno);
+        if (filtroWMSExterno && filtroWMSExterno !== '1=1' && filtroWMSExterno !== 'null') {
+            filtros.push(filtroWMSExterno)
+        }
+        
+        // Filtro WMS interno (del hook)
+        const filtroWMSInterno = filtrosWMS?.filtroLineas
+        console.log('LayerController - Filtro WMS interno líneas:', filtroWMSInterno);
+        if (filtroWMSInterno && filtroWMSInterno !== '1=1' && filtroWMSInterno !== 'null' && !filtroWMSExterno) {
+            filtros.push(filtroWMSInterno)
+        }
+        
+        // Combinar filtros con AND
+        const finalFilter = filtros.length === 0 ? undefined : 
+                           filtros.length === 1 ? filtros[0] : 
+                           filtros.join(' AND ');
+        
+        console.log('LayerController - Filtro final líneas:', finalFilter);
+        return finalFilter;
     }
 
     const lineaCqlFilter = buildLineaCqlFilter()
+
+    // Funciones auxiliares para manejar múltiples features
+    const processParadaFeatures = (features: any[]) => {
+        return features.map(feature => {
+            const props = feature.properties
+            const paradaId = feature.id.split('.')[1]
+            return {
+                type: 'parada' as const,
+                id: paradaId,
+                displayName: props.nombre || `Parada ${paradaId}`,
+                data: feature
+            }
+        })
+    }
+
+    const processLineaFeatures = (features: any[]) => {
+        return features.map(feature => {
+            const props = feature.properties
+            const lineaId = feature.id.split('.')[1]
+            return {
+                type: 'linea' as const,
+                id: lineaId,
+                displayName: props.descripcion || `Línea ${lineaId}`,
+                data: feature
+            }
+        })
+    }
+
+    const handleFeatureSelection = async (feature: any) => {
+        setShowMultiSelector(false)
+        setMultiFeatures([])
+        
+        if (feature.type === 'parada') {
+            const parada = feature.data
+            const props = parada.properties
+            const [x, y] = parada.geometry.coordinates
+            const latlng = L.CRS.EPSG3857.unproject(L.point(x, y))
+            
+            setSelectedParada({
+                id: feature.id,
+                nombre: props.nombre,
+                habilitada: props.habilitada === true || props.habilitada === 1,
+                refugio: props.refugio,
+                observacion: props.observacion,
+                latitud: latlng.lat,
+                longitud: latlng.lng,
+            })
+            setSelectedLinea(null)
+        } else if (feature.type === 'linea') {
+            try {
+                const linea = await getLineById(parseInt(feature.id))
+                setSelectedLinea(linea)
+                setSelectedParada(null)
+            } catch (error) {
+                console.error('Error al obtener la línea:', error)
+                const props = feature.data.properties
+                setSelectedLinea({
+                    id: parseInt(feature.id),
+                    descripcion: props.descripcion || `Línea ${feature.id}`,
+                    empresa: props.empresa || '',
+                    observacion: props.observacion || '',
+                    origen: props.origen || '',
+                    destino: props.destino || '',
+                    estaHabilitada: true,
+                    puntos: [],
+                    rutaGeoJSON: ''
+                })
+                setSelectedParada(null)
+            }
+        }
+    }
 
     return (
         <>
@@ -136,7 +240,7 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
                 {/* IMPORTANTE: Las líneas van ANTES de las paradas para que las paradas se rendericen por encima */}
                 <LayersControl.Overlay name="Líneas" checked={lineaVisible}>
                     <WMSTileLayer
-                        key={`lineas-${lineaFiltro}-${mapaBaseActivo}-${isAuthenticated}`}
+                        key={`lineas-${lineaFiltro}-${mapaBaseActivo}-${isAuthenticated}-${lineaCqlFilter || 'sin-filtro'}`}
                         eventHandlers={{ add: () => setLineaVisible(true), remove: () => setLineaVisible(false) }}
                         url={WMS_URL}
                         layers="tsig:linea"
@@ -149,7 +253,7 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
                 </LayersControl.Overlay>
                 <LayersControl.Overlay name="Paradas" checked={paradaVisible}>
                     <WMSTileLayer
-                        key={`paradas-${paradaFiltro}-${isAuthenticated}`}
+                        key={`paradas-${paradaFiltro}-${isAuthenticated}-${paradaCqlFilter || 'sin-filtro'}`}
                         eventHandlers={{ add: () => setParadaVisible(true), remove: () => setParadaVisible(false) }}
                         url={WMS_URL}
                         layers="tsig:parada"
@@ -200,25 +304,39 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
                 tolerance={18}
                 onFeatureInfo={data => {
                     if (data && data.features && data.features.length > 0) {
-                        const parada = data.features[0]
-                        const props = data.features[0].properties
-                        const paradaId = parada.id.split('.')[1]
+                        // Si hay múltiples features, mostrar el selector
+                        if (data.features.length > 1) {
+                            const processedFeatures = processParadaFeatures(data.features)
+                            setMultiFeatures(processedFeatures)
+                            setShowMultiSelector(true)
+                            // Cerrar popups existentes
+                            setSelectedParada(null)
+                            setSelectedLinea(null)
+                        } else {
+                            // Comportamiento original para una sola feature
+                            const parada = data.features[0]
+                            const props = data.features[0].properties
+                            const paradaId = parada.id.split('.')[1]
 
-                        const [x, y] = parada.geometry.coordinates
-                        const latlng = L.CRS.EPSG3857.unproject(L.point(x, y))
-                        setSelectedParada({
-                            id: paradaId,
-                            nombre: props.nombre,
-                            habilitada: props.habilitada === true || props.habilitada === 1, // Convertir 1/0 o true/false a boolean
-                            refugio: props.refugio,
-                            observacion: props.observacion,
-                            latitud: latlng.lat,
-                            longitud: latlng.lng,
-                        })
-                        // Siempre cerrar el popup de línea cuando se selecciona una parada
-                        setSelectedLinea(null)
+                            const [x, y] = parada.geometry.coordinates
+                            const latlng = L.CRS.EPSG3857.unproject(L.point(x, y))
+                            setSelectedParada({
+                                id: paradaId,
+                                nombre: props.nombre,
+                                habilitada: props.habilitada === true || props.habilitada === 1, // Convertir 1/0 o true/false a boolean
+                                refugio: props.refugio,
+                                observacion: props.observacion,
+                                latitud: latlng.lat,
+                                longitud: latlng.lng,
+                            })
+                            // Siempre cerrar el popup de línea cuando se selecciona una parada
+                            setSelectedLinea(null)
+                            // Cerrar selector múltiple si estaba abierto
+                            setShowMultiSelector(false)
+                        }
                     } else {
                         setSelectedParada(null)
+                        setShowMultiSelector(false)
                     }
                 }}
             />
@@ -231,34 +349,49 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
                 styles={mapaBaseActivo === 'claro' ? 'tsig:lineas_claro' : 'tsig:lineas_oscuro'}
                 onFeatureInfo={async data => {
                     if (data && data.features && data.features.length > 0) {
-                        const lineaFeature = data.features[0]
-                        const props = lineaFeature.properties
-                        const lineaId = lineaFeature.id.split('.')[1]
+                        // Si hay múltiples features, mostrar el selector
+                        if (data.features.length > 1) {
+                            const processedFeatures = processLineaFeatures(data.features)
+                            setMultiFeatures(processedFeatures)
+                            setShowMultiSelector(true)
+                            // Cerrar popups existentes
+                            setSelectedParada(null)
+                            setSelectedLinea(null)
+                        } else {
+                            // Comportamiento original para una sola feature
+                            const lineaFeature = data.features[0]
+                            const props = lineaFeature.properties
+                            const lineaId = lineaFeature.id.split('.')[1]
 
-                        try {
-                            // Obtener la línea completa del servidor
-                            const linea = await getLineById(parseInt(lineaId))
-                            setSelectedLinea(linea)
-                            // Siempre cerrar el popup de parada cuando se selecciona una línea
-                            setSelectedParada(null)
-                        } catch (error) {
-                            console.error('Error al obtener la línea:', error)
-                            // Fallback: crear LineaDTO básica con la info del WMS
-                            setSelectedLinea({
-                                id: parseInt(lineaId),
-                                descripcion: props.descripcion || `Línea ${lineaId}`,
-                                empresa: props.empresa || '',
-                                observacion: props.observacion || '',
-                                origen: props.origen || '',
-                                destino: props.destino || '',
-                                estaHabilitada: true, // Default value
-                                puntos: [],
-                                rutaGeoJSON: ''
-                            })
-                            setSelectedParada(null)
+                            try {
+                                // Obtener la línea completa del servidor
+                                const linea = await getLineById(parseInt(lineaId))
+                                setSelectedLinea(linea)
+                                // Siempre cerrar el popup de parada cuando se selecciona una línea
+                                setSelectedParada(null)
+                                // Cerrar selector múltiple si estaba abierto
+                                setShowMultiSelector(false)
+                            } catch (error) {
+                                console.error('Error al obtener la línea:', error)
+                                // Fallback: crear LineaDTO básica con la info del WMS
+                                setSelectedLinea({
+                                    id: parseInt(lineaId),
+                                    descripcion: props.descripcion || `Línea ${lineaId}`,
+                                    empresa: props.empresa || '',
+                                    observacion: props.observacion || '',
+                                    origen: props.origen || '',
+                                    destino: props.destino || '',
+                                    estaHabilitada: true, // Default value
+                                    puntos: [],
+                                    rutaGeoJSON: ''
+                                })
+                                setSelectedParada(null)
+                                setShowMultiSelector(false)
+                            }
                         }
                     } else {
                         setSelectedLinea(null)
+                        setShowMultiSelector(false)
                     }
                 }}
             />
@@ -385,6 +518,18 @@ export default function LayerController({ onMoveStop, onModifyLineRoute, onViewL
                     )}
                 </>
             )}
+
+            {/* Selector de múltiples features */}
+            <MultiFeatureSelector
+                features={multiFeatures}
+                visible={showMultiSelector}
+                onSelectFeature={handleFeatureSelection}
+                onClose={() => {
+                    setShowMultiSelector(false)
+                    setMultiFeatures([])
+                }}
+                hasActivePopup={selectedParada !== null || selectedLinea !== null || showLineStops !== null}
+            />
         </>
     )
 }
