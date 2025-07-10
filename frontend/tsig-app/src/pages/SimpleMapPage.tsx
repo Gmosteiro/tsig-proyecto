@@ -356,7 +356,21 @@ export default function SimpleMapPage() {
           )}
 
           {/* Líneas encontradas por polígono */}
-          {polygonLines && polygonLines.map((linea: any, idx: number) => (
+          {polygonLines && polygonLines.length === 1 && polygonLines[0].rutaGeoJSON && (
+            <GeoJSON
+              key={`polygon-single-line-${polygonLines[0].id}`}
+              data={JSON.parse(polygonLines[0].rutaGeoJSON)}
+              style={{ color: 'red', weight: 3, opacity: 0.8 }}
+            >
+              <Popup>
+                <strong>Línea:</strong> {polygonLines[0].descripcion}<br />
+                <strong>Empresa:</strong> {polygonLines[0].empresa}<br />
+                <strong>Origen:</strong> {polygonLines[0].origen}<br />
+                <strong>Destino:</strong> {polygonLines[0].destino}
+              </Popup>
+            </GeoJSON>
+          )}
+          {polygonLines && polygonLines.length > 1 && polygonLines.map((linea: any, idx: number) => (
             <GeoJSON
               key={idx}
               data={JSON.parse(linea.rutaGeoJSON)}

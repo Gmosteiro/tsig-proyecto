@@ -91,14 +91,96 @@ public class ParadaService {
         parada.setObservacion(paradaDTO.getObservacion());
 
         paradaRepository.save(parada);
+
+        List<ParadaLinea> asociaciones = paradaLineaRepository.findByParadaId(parada.getId());
+        List<Linea> lineasAfectadas = new ArrayList<>();
+        for (ParadaLinea asociacion : asociaciones) {
+            Linea linea = asociacion.getLinea();
+
+            boolean esValida = lineaRepository.esParadaCercaDelRecorrido(parada.getUbicacion(), linea.getId(), DEFAULT_BUFFER);
+            if (!esValida && asociacion.isEstaHabilitada()) {
+                asociacion.setEstaHabilitada(false);
+                paradaLineaRepository.save(asociacion);
+            }
+            if (!lineasAfectadas.contains(linea)) {
+                lineasAfectadas.add(linea);
+            }
+        }
+
+        procesamientoDeParadaLinea(parada);
+        for (Linea linea : lineasAfectadas) {
+            List<ParadaLinea> asociacionesLinea = paradaLineaRepository.findByLineaId(linea.getId());
+            List<ParadaLinea> asociacionesOrdenadas = paradaLineaRepository.findByLineaIdOrderedByRecorrido(linea.getId());
+            boolean deshabilitarLinea = false;
+            // Regla 1: Si la línea tiene solo dos asociaciones y una o ambas están deshabilitadas
+            if (asociacionesLinea.size() == 2) {
+                long habilitadas = asociacionesLinea.stream().filter(ParadaLinea::isEstaHabilitada).count();
+                if (habilitadas < 2) {
+                    deshabilitarLinea = true;
+                }
+            }
+            // Regla 2: Si la parada de inicio o fin tiene el ParadaLinea deshabilitado
+            if (asociacionesOrdenadas.size() >= 2) {
+                ParadaLinea inicio = asociacionesOrdenadas.get(0);
+                ParadaLinea fin = asociacionesOrdenadas.get(asociacionesOrdenadas.size() - 1);
+                if (!inicio.isEstaHabilitada() || !fin.isEstaHabilitada()) {
+                    deshabilitarLinea = true;
+                }
+            }
+            if (deshabilitarLinea && linea.isEstaHabilitada()) {
+                linea.setEstaHabilitada(false);
+                lineaRepository.save(linea);
+            }
+        }
     }
 
     public void eliminarParada(int id) throws ParadaNoEncontradaException {
         Parada parada = paradaRepository.findById(id)
               .orElseThrow(() -> new ParadaNoEncontradaException("Parada con id " + id + " no encontrada"));
 
-        paradaLineaRepository.deshabilitarPorParadaId(parada.getId());
-        parada.setHabilitada(true);
+        // Obtener todas las asociaciones ParadaLinea de la parada
+        List<ParadaLinea> asociaciones = paradaLineaRepository.findByParadaId(parada.getId());
+        List<Linea> lineasAfectadas = new ArrayList<>();
+        for (ParadaLinea asociacion : asociaciones) {
+            Linea linea = asociacion.getLinea();
+            paradaLineaRepository.delete(asociacion);
+            if (!lineasAfectadas.contains(linea)) {
+                lineasAfectadas.add(linea);
+            }
+        }
+
+        // Ajustar el estado de las líneas asociadas
+        for (Linea linea : lineasAfectadas) {
+            List<ParadaLinea> asociacionesLinea = paradaLineaRepository.findByLineaId(linea.getId());
+            List<ParadaLinea> asociacionesOrdenadas = paradaLineaRepository.findByLineaIdOrderedByRecorrido(linea.getId());
+            boolean deshabilitarLinea = false;
+            // Nueva regla: Si la línea tiene menos de 2 asociaciones, debe deshabilitarse
+            if (asociacionesLinea.size() < 2) {
+                deshabilitarLinea = true;
+            }
+            // Regla 1: Si la línea tiene solo dos asociaciones y una o ambas están deshabilitadas o no existen
+            else if (asociacionesLinea.size() == 2) {
+                long habilitadas = asociacionesLinea.stream().filter(ParadaLinea::isEstaHabilitada).count();
+                if (habilitadas < 2) {
+                    deshabilitarLinea = true;
+                }
+            }
+            // Regla 2: Si la parada de inicio o fin tiene el ParadaLinea deshabilitado o no existe
+            if (asociacionesOrdenadas.size() >= 2) {
+                ParadaLinea inicio = asociacionesOrdenadas.get(0);
+                ParadaLinea fin = asociacionesOrdenadas.get(asociacionesOrdenadas.size() - 1);
+                if (inicio == null || !inicio.isEstaHabilitada() || fin == null || !fin.isEstaHabilitada()) {
+                    deshabilitarLinea = true;
+                }
+            }
+            if (asociacionesLinea.isEmpty() || deshabilitarLinea) {
+                if (linea.isEstaHabilitada()) {
+                    linea.setEstaHabilitada(false);
+                    lineaRepository.save(linea);
+                }
+            }
+        }
+
         paradaRepository.delete(parada);
     }
 

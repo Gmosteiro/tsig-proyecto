@@ -451,24 +451,24 @@ public class LineaService {
      */
     private void crearOActualizarAsociacion(Parada parada, Linea linea) {
         ParadaLinea asociacionExistente = paradaLineaRepository.findByParadaIdAndLineaId(parada.getId(), linea.getId());
-        
+
         if (asociacionExistente == null) {
-            // Crear nueva asociación con el estado apropiado
-            boolean estadoAsociacion = linea.isEstaHabilitada();
+
             ParadaLinea nuevaAsociacion = ParadaLinea.builder()
                     .parada(parada)
                     .linea(linea)
-                    .estaHabilitada(estadoAsociacion)
+                    .estaHabilitada(true)
                     .build();
-            
             paradaLineaRepository.save(nuevaAsociacion);
-            log.info("Nueva asociación creada: parada {} - línea {} (estado: {})", 
-                    parada.getId(), linea.getId(), estadoAsociacion);
-            
-            // Actualizar el estado de la parada según sus asociaciones
-            actualizarEstadoParada(parada);
+            log.info("Nueva asociación creada: parada {} - línea {} (estado: habilitada)", 
+                    parada.getId(), linea.getId());
+
+            if (!parada.isHabilitada()) {
+                parada.setHabilitada(true);
+                paradaRepository.save(parada);
+                log.info("Parada {} habilitada por nueva asociación habilitada", parada.getId());
+            }
         }
-        // Si la asociación ya existe, no la modificamos automáticamente
     }
 
     /**

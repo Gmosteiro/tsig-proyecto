@@ -299,27 +299,19 @@ public class LineaController {
             // Obtener IDs de paradas asociadas a estas líneas
             List<Integer> idsParadas = lineaService.obtenerIdsParadasPorLineas(idsLineas);
             
-            // Crear filtros usando id en formato correcto de GeoServer
-            // Para líneas: formato id = 'linea.X' o id IN ('linea.1', 'linea.2', ...)
-            String filtroLineas;
-            if (idsLineas.size() == 1) {
-                filtroLineas = "id = 'linea." + idsLineas.get(0) + "'";
-            } else {
-                String idsLineasStr = idsLineas.stream()
-                        .map(id -> "'linea." + id + "'")
-                        .collect(Collectors.joining(","));
-                filtroLineas = "id IN (" + idsLineasStr + ")";
-            }
+            // Siempre usar IN para evitar errores de CQL con un solo valor
+            String idsLineasStr = idsLineas.stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(","));
+            String filtroLineas = "id IN (" + idsLineasStr + ")";
             
-            // Para paradas: formato id = 'parada.X' o id IN ('parada.1', 'parada.2', ...)
+            // Siempre usar IN para evitar errores de CQL con un solo valor
             String filtroParadas;
             if (idsParadas.isEmpty()) {
                 filtroParadas = "1=0"; // No mostrar paradas si no hay ninguna asociada
-            } else if (idsParadas.size() == 1) {
-                filtroParadas = "id = 'parada." + idsParadas.get(0) + "'";
             } else {
                 String idsParadasStr = idsParadas.stream()
-                        .map(id -> "'parada." + id + "'")
+                        .map(String::valueOf)
                         .collect(Collectors.joining(","));
                 filtroParadas = "id IN (" + idsParadasStr + ")";
             }

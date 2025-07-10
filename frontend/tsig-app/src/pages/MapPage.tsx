@@ -181,7 +181,13 @@ export default function MapPage() {
 
   // Handler para mover parada
   const handleMoveStop = (stopData: any) => {
-    setMovingStop(stopData);
+    // Busca la parada original por id
+    const paradaOriginal = stops.find((s: any) => s.id === stopData.id);
+    if (paradaOriginal) {
+      setMovingStop({ ...paradaOriginal, ...stopData });
+    } else {
+      setMovingStop(stopData);
+    }
     setEditingStop(null);
   };
 
